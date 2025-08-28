@@ -47,6 +47,12 @@
       "frameworks": {
         "net9.0-windows7.0": {
           "targetAlias": "net9.0-windows",
+          "dependencies": {
+            "System.Data.SQLite": {
+              "target": "Package",
+              "version": "[2.0.1, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
