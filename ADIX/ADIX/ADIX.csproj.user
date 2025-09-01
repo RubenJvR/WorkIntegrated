@@ -7,21 +7,51 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="ProductWindow.xaml.cs">
+    <Compile Update="Pages\Dashboard.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="Staff.xaml.cs">
+    <Compile Update="Pages\Finance.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Pages\Inventory.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Pages\PointOfSale.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Pages\Products.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Pages\Sales.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Pages\Supplier.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Page Update="Pages\Dashboard.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Pages\Finance.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Pages\Inventory.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Update="MainWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="ProductWindow.xaml">
+    <Page Update="Pages\PointOfSale.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="Staff.xaml">
+    <Page Update="Pages\Products.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Pages\Sales.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Pages\Supplier.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

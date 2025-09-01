@@ -22,15 +22,10 @@ namespace ADIX
         {
             InitializeComponent();
             Database.Initialize();
+            var mainWindow = Window.GetWindow(this) as MainWindow;
+            mainWindow?.MainFrame.Navigate(new Dashboard());
 
 
-            
-        }
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            ProductWindow window = new ProductWindow();
-            window.Show();
-            this.Close();
         }
 
 
