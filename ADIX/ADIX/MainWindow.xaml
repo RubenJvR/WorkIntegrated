@@ -7,8 +7,8 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <Button Content="Product Page" Width="100"
-        Height="30" Click="Button_Click"/>
+        <local:Sidebar Panel.ZIndex="100"/>
 
+        <Frame x:Name="MainFrame" Grid.Column="1" NavigationUIVisibility="Hidden"/>
     </Grid>
 </Window>
