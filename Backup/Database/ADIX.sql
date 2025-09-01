@@ -86,3 +86,6 @@ CREATE TABLE IF NOT EXISTS INVOICEITEM(
     FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
 );
 
+INSERT INTO ITEM (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, supplierID, sellerID)
+VALUES (1, 'Bow', 3000, 15.00, 50, 0, 1, 1);
+
