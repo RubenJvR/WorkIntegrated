@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
 C:\Users\explo\OneDrive\Desktop\XBCIS\Project\WorkIntegrated\ADIX\ADIX\App.xaml
-91996499634
+111633152959
 
-161901443143
+181196101809
 217-1846226395
-MainWindow.xaml;Pages\Dashboard.xaml;Pages\Finance.xaml;Pages\Inventory.xaml;Pages\PointOfSale.xaml;Pages\Products.xaml;Pages\Sales.xaml;Pages\Supplier.xaml;Sidebar.xaml;
+Components\HorizontalCarousel.xaml;Components\Sidebar.xaml;HCarousel.xaml;MainWindow.xaml;Pages\Dashboard.xaml;Pages\Finance.xaml;Pages\Inventory.xaml;Pages\PointOfSale.xaml;Pages\Products.xaml;Pages\Sales.xaml;Pages\Supplier.xaml;
 
 False
 

@@ -23,6 +23,11 @@ namespace ADIX
         public Dashboard()
         {
             InitializeComponent();
+
+            COne.AddItem("Item 1");
+            COne.AddItem("Item 2");
+            COne.AddItem("Item 3");
+            COne.AddItem("Item 4");
         }
     }
 }
