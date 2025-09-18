@@ -4,17 +4,17 @@
 winexe
 C#
 .cs
-C:\Users\explo\OneDrive\Desktop\XBCIS\Project\WorkIntegrated\ADIX\ADIX\obj\Debug\net8.0-windows\
+D:\VStudio work\Repos\WorkIntegrated\ADIX\ADIX\obj\Debug\net8.0-windows\
 ADIX
 none
 false
-TRACE;DEBUG;NET;NET8_0;NETCOREAPP
-C:\Users\explo\OneDrive\Desktop\XBCIS\Project\WorkIntegrated\ADIX\ADIX\App.xaml
+TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
+D:\VStudio work\Repos\WorkIntegrated\ADIX\ADIX\App.xaml
 111633152959
 
-181196101809
-217-1846226395
+19-1373423720
+2171790871131
 Components\HorizontalCarousel.xaml;Components\Sidebar.xaml;HCarousel.xaml;MainWindow.xaml;Pages\Dashboard.xaml;Pages\Finance.xaml;Pages\Inventory.xaml;Pages\PointOfSale.xaml;Pages\Products.xaml;Pages\Sales.xaml;Pages\Supplier.xaml;
 
-False
+True
 

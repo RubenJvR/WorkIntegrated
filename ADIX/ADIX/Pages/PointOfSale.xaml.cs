@@ -1,28 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace ADIX
 {
-    /// <summary>
-    /// Interaction logic for PointOfSale.xaml
-    /// </summary>
     public partial class PointOfSale : Page
     {
         public PointOfSale()
         {
             InitializeComponent();
+
+            // Auto-fill Date
+            DateText.Text = DateTime.Now.ToString("dd/MM/yyyy");
+
+            // Auto-generate Invoice Number (example)
+            InvoiceText.Text = "INV-" + DateTime.Now.Ticks.ToString().Substring(10);
         }
     }
 }

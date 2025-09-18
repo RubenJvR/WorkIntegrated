@@ -1,20 +1,24 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj": {}
+    "D:\\VStudio work\\Repos\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj": {}
   },
   "projects": {
-    "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj": {
+    "D:\\VStudio work\\Repos\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
+        "projectUniqueName": "D:\\VStudio work\\Repos\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
         "projectName": "ADIX",
-        "projectPath": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
-        "packagesPath": "C:\\Users\\explo\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\obj\\",
+        "projectPath": "D:\\VStudio work\\Repos\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
+        "packagesPath": "D:\\VStudio work\\Repos\\WorkIntegrated\\ADIX\\NuGetPackages",
+        "outputPath": "D:\\VStudio work\\Repos\\WorkIntegrated\\ADIX\\ADIX\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "D:\\Program fike (SDK tools)\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "C:\\Users\\explo\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\kagis\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -22,9 +26,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
-          "https://api.nuget.org/v3/index.json": {},
-          "https://www.nuget.org/api/v2/": {}
+          "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0-windows7.0": {
@@ -41,7 +43,8 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        }
+        },
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
         "net8.0-windows7.0": {
@@ -71,7 +74,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.400/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
