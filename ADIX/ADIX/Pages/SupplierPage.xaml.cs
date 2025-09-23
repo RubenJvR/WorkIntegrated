@@ -16,19 +16,18 @@ using System.Windows.Shapes;
 namespace ADIX
 {
     /// <summary>
-    /// Interaction logic for Sales.xaml
+    /// Interaction logic for Supplier.xaml
     /// </summary>
-    public partial class Sales : Page
+    public partial class SupplierPage : Page
     {
-        public Sales()
+        public SupplierPage()
         {
             InitializeComponent();
         }
 
-        private void SalesDate_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void DateRange_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-
-            if (SalesDate.SelectedItem is ComboBoxItem selected)
+            if (DateRange.SelectedItem is ComboBoxItem selected)
             {
                 string choice = selected.Content.ToString();
                 if (choice == "Custom")
@@ -41,7 +40,7 @@ namespace ADIX
                 }
             }
         }
+
     }
 
-    
-    }
+}

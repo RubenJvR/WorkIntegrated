@@ -8,7 +8,197 @@
       d:DesignHeight="450" d:DesignWidth="800"
       Title="Finance">
 
-    <Grid>
-        <TextBlock HorizontalAlignment="Center">Finance</TextBlock>
+    <Page.Resources>
+        <Style x:Key="HeaderBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="#4AA902"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style x:Key="HeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="23"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="InputBorderStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Background" Value="#4F4F4F"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+    </Page.Resources>
+
+    <Grid Background="#878787">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Sidebar -->
+        <local:Sidebar Grid.Column="0" Margin="0,0,10,0"/>
+
+        <!-- Main Content -->
+        <ScrollViewer Grid.Column="1" Margin="10" VerticalScrollBarVisibility="Auto">
+            <StackPanel Orientation="Vertical" >
+
+                <!-- Finance Header -->
+                <Border Style="{StaticResource HeaderBorderStyle}">
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Finance"/>
+                </Border>
+
+
+                <ScrollViewer Grid.Column="2" Margin="10" HorizontalScrollBarVisibility="Auto">
+                    
+                    <!-- Finance Metrics -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10" >
+                        <Border  Margin="0,0,0,5">
+                            <TextBlock Width="180" Height="60" Background="#4F4F4F" x:Name="MonthlyTurnover"
+                         Text="Monthly Turnover"
+                         Foreground="White"
+                         Padding="5,0,5,0"
+                         VerticalAlignment="Center"/>
+                        </Border>
+
+                        <Border  Margin="10,0,0,5">
+                            <TextBlock Width="180" Height="60" Background="#4F4F4F" x:Name="MonthlyExpense"
+                         Text="Monthly Expense"
+                         Foreground="White"
+                         Padding="5,0,5,0"
+                         VerticalAlignment="Center"/>
+                        </Border>
+
+                        <Border  Margin="10,0,0,5">
+                            <TextBlock Width="180" Height="60" Background="#4F4F4F" x:Name="ProfitLoss"
+                         Text="Profit / Loss"
+                         Foreground="White"
+                         Padding="5,0,5,0"
+                         VerticalAlignment="Center"/>
+                        </Border>
+
+                        <Border  Margin="10,0,0,5">
+                            <TextBlock Width="180" Height="60" Background="#4F4F4F" x:Name="OutstandingSuppPayment"
+                         Text="Outstanding Supplier Payment"
+                         Foreground="White"
+                         Padding="5,0,5,0"
+                         VerticalAlignment="Center"/>
+                        </Border>
+
+
+                    </StackPanel>
+
+                </ScrollViewer>
+                <!-- Expense Breakdown -->
+                <Border Style="{StaticResource HeaderBorderStyle}">
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Expense Breakdown Table"/>
+                </Border>
+
+                <!--  Expense Breakdown Table -->
+                <ScrollViewer Grid.Row="12" Margin="0,10,0,10"
+               HorizontalScrollBarVisibility="Auto"
+               VerticalScrollBarVisibility="Auto">
+                    <DataGrid x:Name="PosItemGrid"
+               AutoGenerateColumns="False"
+               IsReadOnly="False"
+               Background="#4F4F4F"
+               Foreground="White"
+               GridLinesVisibility="All"
+               BorderBrush="Black"
+               BorderThickness="1"
+               HeadersVisibility="Column"
+               CanUserAddRows="True"
+               RowHeight="35"
+               ColumnHeaderHeight="40"
+               FontSize="14"
+               Height="178">
+                        <DataGrid.ColumnHeaderStyle>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Background" Value="#2D2D2D"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter Property="BorderBrush" Value="Black"/>
+                                <Setter Property="BorderThickness" Value="0.5"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            </Style>
+                        </DataGrid.ColumnHeaderStyle>
+                        <DataGrid.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="BorderBrush" Value="Black"/>
+                                <Setter Property="BorderThickness" Value="0.5"/>
+                                <Setter Property="Padding" Value="5,2"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            </Style>
+                        </DataGrid.CellStyle>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="150"/>
+                            <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="150"/>
+                            <DataGridTextColumn Header="Amount" Binding="{Binding Amount}" Width="150"/>
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="150"/>
+                            
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </ScrollViewer>
+
+
+
+                <!-- Graphs -->
+                <Border Style="{StaticResource HeaderBorderStyle}">
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Graphs"/>
+                </Border>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10" >
+                    <Border Background="White" Width="200" Height="150" CornerRadius="10"/>
+                    <Border Background="White" Width="200" Height="150" CornerRadius="10"/>
+                    <Border Background="White" Width="200" Height="150" CornerRadius="10"/>
+                </StackPanel>
+
+                <!-- Supplier Payments Section -->
+                <Border Style="{StaticResource HeaderBorderStyle}">
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Supplier Payments Section"/>
+                </Border>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10" >
+                    <ComboBox Width="150" Height="30" Background="#4F4F4F" Foreground="White">
+                        <ComboBoxItem Content="Supplier"/>
+                    </ComboBox>
+                    <ComboBox Width="150" Height="30" Background="#4F4F4F" Foreground="White">
+                        <ComboBoxItem Content="Status"/>
+                    </ComboBox>
+                    <ComboBox Width="150" Height="30" Background="#4F4F4F" Foreground="White">
+                        <ComboBoxItem Content="Date Range"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Supplier Payments Table -->
+                <DataGrid AutoGenerateColumns="False" Height="200" Margin="0,10,0,10"
+                          Background="#4F4F4F" Foreground="White"
+                          GridLinesVisibility="All"
+                          BorderBrush="Black" BorderThickness="1">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Supplier Name" Width="150"/>
+                        <DataGridTextColumn Header="Invoice Number" Width="150"/>
+                        <DataGridTextColumn Header="Invoice Date" Width="120"/>
+                        <DataGridTextColumn Header="Due Date" Width="120"/>
+                        <DataGridTextColumn Header="Invoice Amount" Width="150"/>
+                        <DataGridTextColumn Header="Amount Paid" Width="150"/>
+                        <DataGridTextColumn Header="Balance Due" Width="150"/>
+                        <DataGridTextColumn Header="Status" Width="120"/>
+                        <DataGridTextColumn Header="Payment Method" Width="150"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Export Button -->
+                <Button Content="Export Data to PDF" Width="200" Height="40"
+                        HorizontalAlignment="Right" Margin="0,10,0,0"
+                        Background="#4F4F4F" Foreground="White"/>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Page>
