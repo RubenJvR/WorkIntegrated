@@ -1,0 +1,377 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\hcarousel.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\hcarousel.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\hcarousel.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\hcarousel.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\dashboard.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\dashboard.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\dashboard.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\dashboard.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\components\\horizontalcarousel.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\components\\horizontalcarousel.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\components\\dynamictable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\components\\dynamictable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\components\\horizontalcarousel.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\components\\horizontalcarousel.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\adix.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\adix.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\components\\sidebar.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\components\\sidebar.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\finance.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\finance.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\supplier.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\supplier.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\sales.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\sales.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\products.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\products.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\pointofsale.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\pointofsale.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\inventory.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\inventory.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\components\\sidebar.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\components\\sidebar.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\products.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\products.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\pointofsale.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\pointofsale.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\database\\database.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\database\\database.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\database\\adix.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\database\\adix.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Dashboard.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Dashboard.xaml.cs",
+              "RelativeDocumentMoniker": "ADIX\\Pages\\Dashboard.xaml.cs",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Dashboard.xaml.cs",
+              "RelativeToolTip": "ADIX\\Pages\\Dashboard.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB0AAAAjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-02T13:12:09.236Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "HCarousel.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\HCarousel.xaml.cs",
+              "RelativeDocumentMoniker": "ADIX\\HCarousel.xaml.cs",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\HCarousel.xaml.cs",
+              "RelativeToolTip": "ADIX\\HCarousel.xaml.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAAACMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-02T13:08:17.022Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "HCarousel.xaml",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\HCarousel.xaml",
+              "RelativeDocumentMoniker": "ADIX\\HCarousel.xaml",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\HCarousel.xaml",
+              "RelativeToolTip": "ADIX\\HCarousel.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-09-02T13:07:56.812Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "HorizontalCarousel.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\HorizontalCarousel.xaml.cs",
+              "RelativeDocumentMoniker": "ADIX\\Components\\HorizontalCarousel.xaml.cs",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\HorizontalCarousel.xaml.cs",
+              "RelativeToolTip": "ADIX\\Components\\HorizontalCarousel.xaml.cs",
+              "ViewState": "AgIAABIAAAAAAAAAAAAAACwAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-02T09:23:00Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "HorizontalCarousel.xaml",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\HorizontalCarousel.xaml",
+              "RelativeDocumentMoniker": "ADIX\\Components\\HorizontalCarousel.xaml",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\HorizontalCarousel.xaml",
+              "RelativeToolTip": "ADIX\\Components\\HorizontalCarousel.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-09-02T09:22:47.115Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Dashboard.xaml",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Dashboard.xaml",
+              "RelativeDocumentMoniker": "ADIX\\Pages\\Dashboard.xaml",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Dashboard.xaml",
+              "RelativeToolTip": "ADIX\\Pages\\Dashboard.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-09-01T17:13:40.034Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "DynamicTable.cs",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\DynamicTable.cs",
+              "RelativeDocumentMoniker": "ADIX\\Components\\DynamicTable.cs",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\DynamicTable.cs",
+              "RelativeToolTip": "ADIX\\Components\\DynamicTable.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-28T13:32:06.96Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "ADIX.csproj",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
+              "RelativeDocumentMoniker": "ADIX\\ADIX.csproj",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
+              "RelativeToolTip": "ADIX\\ADIX.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-09-02T09:22:36.124Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "Finance.xaml",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Finance.xaml",
+              "RelativeDocumentMoniker": "ADIX\\Pages\\Finance.xaml",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Finance.xaml",
+              "RelativeToolTip": "ADIX\\Pages\\Finance.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-09-01T17:14:57.653Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Sidebar.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\Sidebar.xaml.cs",
+              "RelativeDocumentMoniker": "ADIX\\Components\\Sidebar.xaml.cs",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\Sidebar.xaml.cs",
+              "RelativeToolTip": "ADIX\\Components\\Sidebar.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACYAAAA8AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-01T17:08:50.361Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "MainWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\MainWindow.xaml",
+              "RelativeDocumentMoniker": "ADIX\\MainWindow.xaml",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\MainWindow.xaml",
+              "RelativeToolTip": "ADIX\\MainWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-08-28T10:32:49.519Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "Supplier.xaml",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Supplier.xaml",
+              "RelativeDocumentMoniker": "ADIX\\Pages\\Supplier.xaml",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Supplier.xaml",
+              "RelativeToolTip": "ADIX\\Pages\\Supplier.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-09-01T17:14:16.946Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "Products.xaml",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Products.xaml",
+              "RelativeDocumentMoniker": "ADIX\\Pages\\Products.xaml",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Products.xaml",
+              "RelativeToolTip": "ADIX\\Pages\\Products.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-09-01T16:57:11.45Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "PointOfSale.xaml",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\PointOfSale.xaml",
+              "RelativeDocumentMoniker": "ADIX\\Pages\\PointOfSale.xaml",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\PointOfSale.xaml",
+              "RelativeToolTip": "ADIX\\Pages\\PointOfSale.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-09-01T16:56:00.14Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "Inventory.xaml",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Inventory.xaml",
+              "RelativeDocumentMoniker": "ADIX\\Pages\\Inventory.xaml",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Inventory.xaml",
+              "RelativeToolTip": "ADIX\\Pages\\Inventory.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-09-01T17:13:59.393Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "Sales.xaml",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Sales.xaml",
+              "RelativeDocumentMoniker": "ADIX\\Pages\\Sales.xaml",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Sales.xaml",
+              "RelativeToolTip": "ADIX\\Pages\\Sales.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-09-01T17:15:13.339Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "MainWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\MainWindow.xaml.cs",
+              "RelativeDocumentMoniker": "ADIX\\MainWindow.xaml.cs",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\MainWindow.xaml.cs",
+              "RelativeToolTip": "ADIX\\MainWindow.xaml.cs",
+              "ViewState": "AgIAAA0AAAAAAAAAAAAgwBkAAAA8AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-28T10:32:45.093Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "Sidebar.xaml",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\Sidebar.xaml",
+              "RelativeDocumentMoniker": "ADIX\\Components\\Sidebar.xaml",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\Sidebar.xaml",
+              "RelativeToolTip": "ADIX\\Components\\Sidebar.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-09-01T17:09:54.696Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "Products.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Products.xaml.cs",
+              "RelativeDocumentMoniker": "ADIX\\Pages\\Products.xaml.cs",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Products.xaml.cs",
+              "RelativeToolTip": "ADIX\\Pages\\Products.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEQAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-01T16:57:17.725Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "PointOfSale.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\PointOfSale.xaml.cs",
+              "RelativeDocumentMoniker": "ADIX\\Pages\\PointOfSale.xaml.cs",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\PointOfSale.xaml.cs",
+              "RelativeToolTip": "ADIX\\Pages\\PointOfSale.xaml.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-01T16:56:36.228Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "Database.cs",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Database\\Database.cs",
+              "RelativeDocumentMoniker": "ADIX\\Database\\Database.cs",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Database\\Database.cs",
+              "RelativeToolTip": "ADIX\\Database\\Database.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAA4AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-28T13:45:07.667Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "ADIX.sql",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Database\\ADIX.sql",
+              "RelativeDocumentMoniker": "ADIX\\Database\\ADIX.sql",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Database\\ADIX.sql",
+              "RelativeToolTip": "ADIX\\Database\\ADIX.sql",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2025-09-01T10:23:31.262Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "App.xaml",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\App.xaml",
+              "RelativeDocumentMoniker": "ADIX\\App.xaml",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\App.xaml",
+              "RelativeToolTip": "ADIX\\App.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-08-28T13:41:16.257Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
