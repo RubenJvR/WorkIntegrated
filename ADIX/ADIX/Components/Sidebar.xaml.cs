@@ -60,7 +60,7 @@ namespace ADIX
         {
 
             var mainWindow = Window.GetWindow(this) as MainWindow;
-            mainWindow?.MainFrame.Navigate(new Supplier());
+            mainWindow?.MainFrame.Navigate(new SupplierPage ());
         }
         private void Finance_Click(object sender, RoutedEventArgs e)
         {

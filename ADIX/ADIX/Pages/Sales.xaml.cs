@@ -24,5 +24,24 @@ namespace ADIX
         {
             InitializeComponent();
         }
+
+        private void SalesDate_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+            if (SalesDate.SelectedItem is ComboBoxItem selected)
+            {
+                string choice = selected.Content.ToString();
+                if (choice == "Custom")
+                {
+                    CustomDatePanel.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    CustomDatePanel.Visibility = Visibility.Collapsed;
+                }
+            }
+        }
     }
-}
+
+    
+    }

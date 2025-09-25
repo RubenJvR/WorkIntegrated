@@ -12,12 +12,14 @@
       }
     ],
     "additionalProbingPaths": [
-      "C:\\Users\\explo\\.dotnet\\store\\|arch|\\|tfm|",
-      "C:\\Users\\explo\\.nuget\\packages"
+      "C:\\Users\\kagis\\.dotnet\\store\\|arch|\\|tfm|",
+      "D:\\VStudio work\\Repos\\WorkIntegrated\\ADIX\\NuGetPackages",
+      "D:\\Program fike (SDK tools)\\NuGetPackages"
     ],
     "configProperties": {
       "System.Reflection.NullabilityInfoContext.IsSupported": true,
       "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": true,
+      "CSWINRT_USE_WINDOWS_UI_XAML_PROJECTIONS": false,
       "Microsoft.NETCore.DotNetHostPolicy.SetAppPaths": true
     }
   }
