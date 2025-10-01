@@ -4,9 +4,12 @@
   "Documents": [
     {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Dashboard.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:ADIX\\Pages\\Dashboard.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
 =======
+=======
+>>>>>>> Stashed changes
       "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\database\\adix_azure.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}",
       "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\database\\adix_azure.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}"
     },
@@ -21,6 +24,7 @@
     {
       "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\database\\database.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\database\\database.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+<<<<<<< Updated upstream
 >>>>>>> Stashed changes
     },
     {
@@ -32,12 +36,21 @@
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\HCarousel.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:ADIX\\HCarousel.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
 =======
+=======
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\hcarousel.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\hcarousel.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+>>>>>>> Stashed changes
       "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\components\\horizontalcarousel.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\components\\horizontalcarousel.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\dashboard.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\dashboard.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+<<<<<<< Updated upstream
 >>>>>>> Stashed changes
     },
     {
@@ -49,12 +62,21 @@
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\HorizontalCarousel.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:ADIX\\Components\\HorizontalCarousel.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
 =======
+=======
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\dashboard.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\dashboard.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+>>>>>>> Stashed changes
       "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\hcarousel.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\hcarousel.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\components\\horizontalcarousel.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\components\\horizontalcarousel.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+<<<<<<< Updated upstream
 >>>>>>> Stashed changes
     },
     {
@@ -135,6 +157,66 @@
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\App.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:ADIX\\App.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
 =======
+=======
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\components\\dynamictable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\components\\dynamictable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\adix.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\adix.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\components\\sidebar.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\components\\sidebar.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\finance.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\finance.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\supplier.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\supplier.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\sales.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\sales.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\products.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\products.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\pointofsale.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\pointofsale.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\inventory.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\inventory.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\components\\sidebar.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\components\\sidebar.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\products.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\products.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\pages\\pointofsale.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\pages\\pointofsale.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+>>>>>>> Stashed changes
       "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
@@ -145,6 +227,9 @@
     {
       "AbsoluteMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|c:\\users\\explo\\onedrive\\desktop\\xbcis\\project\\workintegrated\\adix\\adix\\database\\adix.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame",
       "RelativeMoniker": "D:0:0:{249CA42E-A3C8-4744-B2EC-D736099B7FE5}|ADIX\\ADIX.csproj|solutionrelative:adix\\database\\adix.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame"
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     }
   ],
@@ -161,6 +246,7 @@
               "$type": "Document",
               "DocumentIndex": 0,
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
               "Title": "Dashboard.xaml.cs",
               "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Dashboard.xaml.cs",
               "RelativeDocumentMoniker": "ADIX\\Pages\\Dashboard.xaml.cs",
@@ -169,6 +255,8 @@
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-02T13:12:09.236Z"
 =======
+=======
+>>>>>>> Stashed changes
               "Title": "ADIX_Azure.sql ",
               "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Database\\ADIX_Azure.sql",
               "RelativeDocumentMoniker": "ADIX\\Database\\ADIX_Azure.sql",
@@ -177,6 +265,9 @@
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
               "WhenOpened": "2025-09-23T16:03:18.48Z",
               "EditorCaption": ""
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
             },
             {
@@ -206,7 +297,11 @@
             {
               "$type": "Document",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
               "DocumentIndex": 2,
+=======
+              "DocumentIndex": 8,
+>>>>>>> Stashed changes
 =======
               "DocumentIndex": 8,
 >>>>>>> Stashed changes
@@ -220,6 +315,7 @@
             },
             {
               "$type": "Document",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
               "DocumentIndex": 3,
               "Title": "HorizontalCarousel.xaml.cs",
@@ -237,6 +333,9 @@
 =======
               "DocumentIndex": 5,
 >>>>>>> Stashed changes
+=======
+              "DocumentIndex": 5,
+>>>>>>> Stashed changes
               "Title": "HorizontalCarousel.xaml",
               "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\HorizontalCarousel.xaml",
               "RelativeDocumentMoniker": "ADIX\\Components\\HorizontalCarousel.xaml",
@@ -248,7 +347,11 @@
             {
               "$type": "Document",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
               "DocumentIndex": 5,
+=======
+              "DocumentIndex": 6,
+>>>>>>> Stashed changes
 =======
               "DocumentIndex": 6,
 >>>>>>> Stashed changes
@@ -263,8 +366,11 @@
             {
               "$type": "Document",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
               "DocumentIndex": 6,
 =======
+=======
+>>>>>>> Stashed changes
               "DocumentIndex": 1,
               "Title": "ADIX.sql ",
               "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Database\\ADIX.sql",
@@ -314,6 +420,9 @@
             {
               "$type": "Document",
               "DocumentIndex": 10,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
               "Title": "DynamicTable.cs",
               "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\DynamicTable.cs",
@@ -339,7 +448,11 @@
             {
               "$type": "Document",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
               "DocumentIndex": 8,
+=======
+              "DocumentIndex": 14,
+>>>>>>> Stashed changes
 =======
               "DocumentIndex": 14,
 >>>>>>> Stashed changes
@@ -366,7 +479,11 @@
             {
               "$type": "Document",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
               "DocumentIndex": 10,
+=======
+              "DocumentIndex": 12,
+>>>>>>> Stashed changes
 =======
               "DocumentIndex": 12,
 >>>>>>> Stashed changes
@@ -392,7 +509,11 @@
             {
               "$type": "Document",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
               "DocumentIndex": 12,
+=======
+              "DocumentIndex": 17,
+>>>>>>> Stashed changes
 =======
               "DocumentIndex": 17,
 >>>>>>> Stashed changes
@@ -407,7 +528,11 @@
             {
               "$type": "Document",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
               "DocumentIndex": 13,
+=======
+              "DocumentIndex": 18,
+>>>>>>> Stashed changes
 =======
               "DocumentIndex": 18,
 >>>>>>> Stashed changes
@@ -422,7 +547,11 @@
             {
               "$type": "Document",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
               "DocumentIndex": 14,
+=======
+              "DocumentIndex": 19,
+>>>>>>> Stashed changes
 =======
               "DocumentIndex": 19,
 >>>>>>> Stashed changes
@@ -437,7 +566,11 @@
             {
               "$type": "Document",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
               "DocumentIndex": 15,
+=======
+              "DocumentIndex": 16,
+>>>>>>> Stashed changes
 =======
               "DocumentIndex": 16,
 >>>>>>> Stashed changes

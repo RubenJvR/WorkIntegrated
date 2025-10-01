@@ -121,6 +121,7 @@
               "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Database\\AzureDatabasse.cs",
               "RelativeToolTip": "ADIX\\Database\\AzureDatabasse.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAuAAAAAAAAAA==",
+<<<<<<< Updated upstream
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
 <<<<<<< Updated upstream
               "WhenOpened": "2025-09-02T13:12:09.236Z"
@@ -226,12 +227,105 @@
               "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Dashboard.xaml.cs",
               "RelativeToolTip": "ADIX\\Pages\\Dashboard.xaml.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAB0AAAAjAAAAAAAAAA==",
+=======
+>>>>>>> Stashed changes
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T15:14:52.518Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+<<<<<<< Updated upstream
+=======
+              "DocumentIndex": 2,
+              "Title": "HCarousel.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\HCarousel.xaml.cs",
+              "RelativeDocumentMoniker": "ADIX\\HCarousel.xaml.cs",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\HCarousel.xaml.cs",
+              "RelativeToolTip": "ADIX\\HCarousel.xaml.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAAACMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-02T13:08:17.022Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "HCarousel.xaml",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\HCarousel.xaml",
+              "RelativeDocumentMoniker": "ADIX\\HCarousel.xaml",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\HCarousel.xaml",
+              "RelativeToolTip": "ADIX\\HCarousel.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-09-02T13:07:56.812Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "HorizontalCarousel.xaml",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\HorizontalCarousel.xaml",
+              "RelativeDocumentMoniker": "ADIX\\Components\\HorizontalCarousel.xaml",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\HorizontalCarousel.xaml",
+              "RelativeToolTip": "ADIX\\Components\\HorizontalCarousel.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-09-02T09:22:47.115Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Dashboard.xaml",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Dashboard.xaml",
+              "RelativeDocumentMoniker": "ADIX\\Pages\\Dashboard.xaml",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Dashboard.xaml",
+              "RelativeToolTip": "ADIX\\Pages\\Dashboard.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-09-01T17:13:40.034Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Database.cs",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Database\\Database.cs",
+              "RelativeDocumentMoniker": "ADIX\\Database\\Database.cs",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Database\\Database.cs",
+              "RelativeToolTip": "ADIX\\Database\\Database.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-28T13:45:07.667Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "HorizontalCarousel.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\HorizontalCarousel.xaml.cs",
+              "RelativeDocumentMoniker": "ADIX\\Components\\HorizontalCarousel.xaml.cs",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\HorizontalCarousel.xaml.cs",
+              "RelativeToolTip": "ADIX\\Components\\HorizontalCarousel.xaml.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAIBJwCwAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-02T09:23:00Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Dashboard.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Dashboard.xaml.cs",
+              "RelativeDocumentMoniker": "ADIX\\Pages\\Dashboard.xaml.cs",
+              "ToolTip": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Pages\\Dashboard.xaml.cs",
+              "RelativeToolTip": "ADIX\\Pages\\Dashboard.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB0AAAAjAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-02T13:12:09.236Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
+>>>>>>> Stashed changes
               "DocumentIndex": 8,
               "Title": "DynamicTable.cs",
               "DocumentMoniker": "C:\\Users\\explo\\OneDrive\\Desktop\\XBCIS\\Project\\WorkIntegrated\\ADIX\\ADIX\\Components\\DynamicTable.cs",
