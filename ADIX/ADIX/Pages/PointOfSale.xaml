@@ -95,33 +95,53 @@
             </Border>
 
             <!-- Sales Staff ComboBox -->
-            <ComboBox Grid.Row="4"
-                      ItemsSource="{Binding StaffMembers}"
-                      SelectedItem="{Binding SelectedStaff}"
-                      DisplayMemberPath="Name"
-                      Background="#4F4F4F"
-                      Foreground="White"
-                      BorderBrush="Black"
-                      Height="30">
-                <ComboBox.Style>
-                    <Style TargetType="ComboBox">
-                        <Style.Triggers>
-                            <Trigger Property="SelectedItem" Value="{x:Null}">
-                                <Setter Property="Foreground" Value="LightGray"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </ComboBox.Style>
-            </ComboBox>
+            <Grid Grid.Row="4">
+                <ComboBox ItemsSource="{Binding StaffMembers}"
+                          SelectedItem="{Binding SelectedStaff}"
+                          DisplayMemberPath="Name"
+                          Background="#4F4F4F"
+                          Foreground="White"
+                          BorderBrush="Black"
+                          BorderThickness="1"
+                          Height="30">
+                    <ComboBox.ItemContainerStyle>
+                        <Style TargetType="ComboBoxItem">
+                            <Setter Property="Foreground" Value="Black"/>
+                            <Setter Property="Background" Value="White"/>
+                        </Style>
+                    </ComboBox.ItemContainerStyle>
+                </ComboBox>
+                <TextBlock Text="Sales Staff"
+                           Foreground="LightGray"
+                           Margin="8,0,30,0"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False"
+                           Visibility="{Binding SelectedStaff, Converter={StaticResource NullToVisibilityConverter}}"/>
+            </Grid>
 
             <!-- Payment Method ComboBox -->
-            <ComboBox Grid.Row="6"
-                      ItemsSource="{Binding PaymentMethods}"
-                      SelectedItem="{Binding SelectedPaymentMethod}"
-                      Background="#4F4F4F"
-                      Foreground="White"
-                      BorderBrush="Black"
-                      Height="30"/>
+            <Grid Grid.Row="6">
+                <ComboBox ItemsSource="{Binding PaymentMethods}"
+                          SelectedItem="{Binding SelectedPaymentMethod}"
+                          Background="#4F4F4F"
+                          Foreground="White"
+                          BorderBrush="Black"
+                          BorderThickness="1"
+                          Height="30">
+                    <ComboBox.ItemContainerStyle>
+                        <Style TargetType="ComboBoxItem">
+                            <Setter Property="Foreground" Value="Black"/>
+                            <Setter Property="Background" Value="White"/>
+                        </Style>
+                    </ComboBox.ItemContainerStyle>
+                </ComboBox>
+                <TextBlock Text="Payment Method"
+                           Foreground="LightGray"
+                           Margin="8,0,30,0"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False"
+                           Visibility="{Binding SelectedPaymentMethod, Converter={StaticResource NullToVisibilityConverter}}"/>
+            </Grid>
 
             <!-- Payment Received ComboBox -->
             <CheckBox Grid.Row="8"
@@ -168,7 +188,8 @@
                           CanUserDeleteRows="False"
                           RowHeight="35"
                           ColumnHeaderHeight="40"
-                          FontSize="14">
+                          FontSize="14"
+                          AlternatingRowBackground="#5A5A5A">
                     <DataGrid.ColumnHeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="Background" Value="#2D2D2D"/>
@@ -178,6 +199,7 @@
                             <Setter Property="BorderThickness" Value="0.5"/>
                             <Setter Property="HorizontalContentAlignment" Value="Center"/>
                             <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            <Setter Property="Padding" Value="5"/>
                         </Style>
                     </DataGrid.ColumnHeaderStyle>
                     <DataGrid.CellStyle>
@@ -187,18 +209,118 @@
                             <Setter Property="Padding" Value="5,2"/>
                             <Setter Property="HorizontalContentAlignment" Value="Center"/>
                             <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#6A6A6A"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="BorderBrush" Value="#4AA902"/>
+                                </Trigger>
+                            </Style.Triggers>
                         </Style>
                     </DataGrid.CellStyle>
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Background" Value="#4F4F4F"/>
+                            <Setter Property="Foreground" Value="White"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#6A6A6A"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#5A5A5A"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Item Name" Binding="{Binding ItemName}" Width="200" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Width="100"/>
-                        <DataGridTextColumn Header="Stock Control" Binding="{Binding StockControl}" Width="120" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Price" Binding="{Binding Price, StringFormat=F2}" Width="120" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Total Amount" Binding="{Binding TotalAmount, StringFormat=F2}" Width="150" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="In Stock" Binding="{Binding InStock}" Width="100" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Item Discount %" Binding="{Binding ItemDiscount, UpdateSourceTrigger=PropertyChanged}" Width="130"/>
-                        <DataGridTextColumn Header="Discounted Amount" Binding="{Binding DiscountedItemAmount, StringFormat=F2}" Width="180" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Total Discounted" Binding="{Binding TotalDiscounted, StringFormat=F2}" Width="150" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Item Name" Binding="{Binding ItemName}" Width="200" IsReadOnly="True">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Width="100">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                            <DataGridTextColumn.EditingElementStyle>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Foreground" Value="Black"/>
+                                    <Setter Property="Background" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.EditingElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Stock Control" Binding="{Binding StockControl}" Width="120" IsReadOnly="True">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Price" Binding="{Binding Price, StringFormat=F2}" Width="120" IsReadOnly="True">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Total Amount" Binding="{Binding TotalAmount, StringFormat=F2}" Width="150" IsReadOnly="True">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="In Stock" Binding="{Binding InStock}" Width="100" IsReadOnly="True">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Item Discount %" Binding="{Binding ItemDiscount, UpdateSourceTrigger=PropertyChanged}" Width="130">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                            <DataGridTextColumn.EditingElementStyle>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Foreground" Value="Black"/>
+                                    <Setter Property="Background" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.EditingElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Discounted Amount" Binding="{Binding DiscountedItemAmount, StringFormat=F2}" Width="180" IsReadOnly="True">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Total Discounted" Binding="{Binding TotalDiscounted, StringFormat=F2}" Width="150" IsReadOnly="True">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </ScrollViewer>

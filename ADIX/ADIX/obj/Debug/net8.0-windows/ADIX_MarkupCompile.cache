@@ -4,15 +4,15 @@
 winexe
 C#
 .cs
-C:\Users\explo.BEN-PC\Source\Repos\WorkIntegrated\ADIX\ADIX\obj\Debug\net8.0-windows\
+C:\Users\explo.BEN-PC\source\repos\WorkIntegrated\ADIX\ADIX\obj\Debug\net8.0-windows\
 ADIX
 none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
-C:\Users\explo.BEN-PC\Source\Repos\WorkIntegrated\ADIX\ADIX\App.xaml
+C:\Users\explo.BEN-PC\source\repos\WorkIntegrated\ADIX\ADIX\App.xaml
 11-930421262
 11928065099
-202006999826
+21-2010641624
 227848033902
 Components\HorizontalCarousel.xaml;Components\Sidebar.xaml;HCarousel.xaml;MainWindow.xaml;Pages\Dashboard.xaml;Pages\Finance.xaml;Pages\Inventory.xaml;Pages\PointOfSale.xaml;Pages\Products.xaml;Pages\Sales.xaml;Pages\SupplierPage.xaml;
 
