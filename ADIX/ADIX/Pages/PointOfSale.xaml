@@ -39,93 +39,6 @@
         <!-- Converters -->
         <local:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
         <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
-
-        <!-- Rounded ComboBox with placeholder -->
-        <Style x:Key="RoundedComboBoxStyle" TargetType="ComboBox">
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Background" Value="#4F4F4F"/>
-            <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="5,0,30,0"/>
-            <Setter Property="Height" Value="30"/>
-            <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBox">
-                        <Grid>
-                            <Border x:Name="Border"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="6"/>
-                            <!-- Placeholder -->
-                            <TextBlock x:Name="PlaceholderText"
-                                       Text="{TemplateBinding Tag}"
-                                       Foreground="LightGray"
-                                       Margin="8,0,30,0"
-                                       VerticalAlignment="Center"
-                                       IsHitTestVisible="False"
-                                       Visibility="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource NullToVisibilityConverter}}"/>
-                            <!-- Selected item -->
-                            <ContentPresenter x:Name="ContentSite"
-                                              Content="{TemplateBinding SelectionBoxItem}"
-                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                              VerticalAlignment="Center"
-                                              Margin="8,0,30,0"/>
-                            <!-- Toggle button arrow -->
-                            <ToggleButton x:Name="ToggleButton"
-                                          Focusable="False"
-                                          IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                                          ClickMode="Press"
-                                          HorizontalAlignment="Right"
-                                          VerticalAlignment="Center"
-                                          Width="20">
-                                <Path Fill="White" Data="M 0 0 L 4 4 L 8 0 Z" Stretch="Uniform"/>
-                            </ToggleButton>
-                            <!-- Dropdown Popup -->
-                            <Popup x:Name="PART_Popup"
-                                   Placement="Bottom"
-                                   IsOpen="{TemplateBinding IsDropDownOpen}"
-                                   AllowsTransparency="True"
-                                   Focusable="False"
-                                   PopupAnimation="Fade">
-                                <Border Background="{TemplateBinding Background}"
-                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                        BorderThickness="{TemplateBinding BorderThickness}"
-                                        CornerRadius="6">
-                                    <ScrollViewer Margin="0" SnapsToDevicePixels="True">
-                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
-                                    </ScrollViewer>
-                                </Border>
-                            </Popup>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Rounded input style (TextBox + ComboBox)  (Might delete)-->
-        <Style x:Key="RoundedInputStyle" TargetType="Control">
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Background" Value="#4F4F4F"/>
-            <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Height" Value="30"/>
-            <Setter Property="Padding" Value="5,0,5,0"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Control">
-                        <Border CornerRadius="6"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}">
-                            <ContentPresenter VerticalAlignment="Center"
-                                              Margin="{TemplateBinding Padding}"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </Page.Resources>
 
     <Grid Background="#878787">
@@ -141,29 +54,20 @@
         <Grid Grid.Column="1" Margin="10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <!-- Header -->
                 <RowDefinition Height="10"/>
                 <RowDefinition Height="Auto"/>
-                <!-- Customer -->
                 <RowDefinition Height="8"/>
                 <RowDefinition Height="Auto"/>
-                <!-- Sales Staff -->
                 <RowDefinition Height="8"/>
                 <RowDefinition Height="Auto"/>
-                <!-- Payment Method -->
                 <RowDefinition Height="8"/>
                 <RowDefinition Height="Auto"/>
-                <!-- Payment Received -->
                 <RowDefinition Height="8"/>
                 <RowDefinition Height="Auto"/>
-                <!-- VAT -->
                 <RowDefinition Height="8"/>
                 <RowDefinition Height="*"/>
-                <!-- DataGrid -->
                 <RowDefinition Height="Auto"/>
-                <!-- Totals -->
                 <RowDefinition Height="Auto"/>
-                <!-- Buttons -->
             </Grid.RowDefinitions>
 
             <!-- Header -->
@@ -175,6 +79,7 @@
             <Border Grid.Row="2" Style="{StaticResource InputBorderStyle}">
                 <Grid>
                     <TextBox x:Name="CustomerNameTextBox"
+                             Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}"
                              Background="Transparent"
                              BorderThickness="0"
                              Foreground="White"
@@ -189,57 +94,59 @@
                 </Grid>
             </Border>
 
-
             <!-- Sales Staff ComboBox -->
             <ComboBox Grid.Row="4"
-                      x:Name="SalesStuff"
-                      Style="{StaticResource RoundedComboBoxStyle}"
-                      Tag="Sales Staff"
-                      SelectedIndex="-1">
-                <ComboBoxItem Content="OL"/>
-                <ComboBoxItem Content="IV"/>
-                <ComboBoxItem Content="TR"/>
-                <ComboBoxItem Content="REN"/>
-                <ComboBoxItem Content="AP"/>
+                      ItemsSource="{Binding StaffMembers}"
+                      SelectedItem="{Binding SelectedStaff}"
+                      DisplayMemberPath="Name"
+                      Background="#4F4F4F"
+                      Foreground="White"
+                      BorderBrush="Black"
+                      Height="30">
+                <ComboBox.Style>
+                    <Style TargetType="ComboBox">
+                        <Style.Triggers>
+                            <Trigger Property="SelectedItem" Value="{x:Null}">
+                                <Setter Property="Foreground" Value="LightGray"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </ComboBox.Style>
             </ComboBox>
 
             <!-- Payment Method ComboBox -->
             <ComboBox Grid.Row="6"
-                      x:Name="PaymentMethod"
-                      Style="{StaticResource RoundedComboBoxStyle}"
-                      Tag="Payment Method"
-                      SelectedIndex="-1">
-                <ComboBoxItem Content="Cash"/>
-                <ComboBoxItem Content="EFT"/>
-                <ComboBoxItem Content="Credit"/>
-                <ComboBoxItem Content="Return"/>
-            </ComboBox>
+                      ItemsSource="{Binding PaymentMethods}"
+                      SelectedItem="{Binding SelectedPaymentMethod}"
+                      Background="#4F4F4F"
+                      Foreground="White"
+                      BorderBrush="Black"
+                      Height="30"/>
 
             <!-- Payment Received ComboBox -->
-            <ComboBox Grid.Row="8"
-                      x:Name="PaymentReceived"
-                      Style="{StaticResource RoundedComboBoxStyle}"
-                      Tag="Payment Received"
-                      SelectedIndex="-1">
-                <ComboBoxItem Content="Yes"/>
-                <ComboBoxItem Content="No"/>
-            </ComboBox>
+            <CheckBox Grid.Row="8"
+                      Content="Payment Received"
+                      IsChecked="{Binding PaymentReceived}"
+                      Foreground="White"
+                      VerticalAlignment="Center"
+                      Height="30"/>
 
             <!-- VAT TextBox -->
             <Border Grid.Row="10" Style="{StaticResource InputBorderStyle}">
                 <Grid>
                     <TextBox x:Name="VATTextBox"
+                             Text="{Binding VATAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
                              Background="Transparent"
                              BorderThickness="0"
                              Foreground="White"
                              Padding="5,0,5,0"
                              VerticalContentAlignment="Center"/>
-                    <TextBlock Text="VAT"
+                    <TextBlock Text="VAT Amount"
                                Foreground="LightGray"
                                Margin="8,0,0,0"
                                VerticalAlignment="Center"
                                IsHitTestVisible="False"
-                               Visibility="{Binding Text, ElementName=VATTextBox, Converter={StaticResource EmptyStringToVisibilityConverter}}" HorizontalAlignment="Left" Width="540"/>
+                               Visibility="{Binding Text, ElementName=VATTextBox, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
                 </Grid>
             </Border>
 
@@ -247,7 +154,8 @@
             <ScrollViewer Grid.Row="12" Margin="0,10,0,10"
                           HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto">
-                <DataGrid x:Name="PosItemGrid"
+                <DataGrid x:Name="ItemsGrid"
+                          ItemsSource="{Binding CartItems}"
                           AutoGenerateColumns="False"
                           IsReadOnly="False"
                           Background="#4F4F4F"
@@ -256,11 +164,11 @@
                           BorderBrush="Black"
                           BorderThickness="1"
                           HeadersVisibility="Column"
-                          CanUserAddRows="True"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
                           RowHeight="35"
                           ColumnHeaderHeight="40"
-                          FontSize="14"
-                          Height="178">
+                          FontSize="14">
                     <DataGrid.ColumnHeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="Background" Value="#2D2D2D"/>
@@ -282,15 +190,15 @@
                         </Style>
                     </DataGrid.CellStyle>
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Item Name" Binding="{Binding ItemName}" Width="200"/>
-                        <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity}" Width="100"/>
-                        <DataGridTextColumn Header="Stock Control" Binding="{Binding StockControl}" Width="120"/>
-                        <DataGridTextColumn Header="Price" Binding="{Binding Price}" Width="120"/>
-                        <DataGridTextColumn Header="Total Amount" Binding="{Binding TotalAmount}" Width="150"/>
-                        <DataGridTextColumn Header="In Stock" Binding="{Binding InStock}" Width="100"/>
-                        <DataGridTextColumn Header="Item Discount" Binding="{Binding ItemDiscount}" Width="130"/>
-                        <DataGridTextColumn Header="Discounted Item Amount" Binding="{Binding DiscountedItemAmount}" Width="180"/>
-                        <DataGridTextColumn Header="Total Discounted" Binding="{Binding TotalDiscounted}" Width="150"/>
+                        <DataGridTextColumn Header="Item Name" Binding="{Binding ItemName}" Width="200" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Width="100"/>
+                        <DataGridTextColumn Header="Stock Control" Binding="{Binding StockControl}" Width="120" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Price" Binding="{Binding Price, StringFormat=F2}" Width="120" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Total Amount" Binding="{Binding TotalAmount, StringFormat=F2}" Width="150" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="In Stock" Binding="{Binding InStock}" Width="100" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Item Discount %" Binding="{Binding ItemDiscount, UpdateSourceTrigger=PropertyChanged}" Width="130"/>
+                        <DataGridTextColumn Header="Discounted Amount" Binding="{Binding DiscountedItemAmount, StringFormat=F2}" Width="180" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Total Discounted" Binding="{Binding TotalDiscounted, StringFormat=F2}" Width="150" IsReadOnly="True"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </ScrollViewer>
@@ -305,101 +213,112 @@
 
                 <!-- Left Totals -->
                 <StackPanel Grid.Column="0" Orientation="Vertical" Margin="5">
-
                     <!-- Total Bill (ReadOnly) -->
                     <Border Style="{StaticResource InputBorderStyle}" Margin="0,0,0,5">
-                        <TextBlock x:Name="TotalBillText"
-                       Text="Total Bill Amount: R 0.00"
-                       Foreground="White"
-                       Padding="5,0,5,0"
-                       VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding TotalBill, StringFormat='Total Bill Amount: R {0:F2}'}"
+                                   Foreground="White"
+                                   Padding="5,0,5,0"
+                                   VerticalAlignment="Center"
+                                   FontWeight="Bold"/>
                     </Border>
 
                     <!-- Total Excluding Discount (ReadOnly) -->
                     <Border Style="{StaticResource InputBorderStyle}" Margin="0,0,0,5">
-                        <TextBlock x:Name="TotalExclDiscountText"
-                       Text="Total Excluding Discount: R 0.00"
-                       Foreground="White"
-                       Padding="5,0,5,0"
-                       VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding TotalExcludingDiscount, StringFormat='Total Excluding Discount: R {0:F2}'}"
+                                   Foreground="White"
+                                   Padding="5,0,5,0"
+                                   VerticalAlignment="Center"/>
                     </Border>
 
                     <!-- Discount % (Editable) -->
                     <Border Style="{StaticResource InputBorderStyle}">
                         <Grid>
                             <TextBox x:Name="DiscountPercentTextBox"
-                         Background="Transparent"
-                         BorderThickness="0"
-                         Foreground="White"
-                         Padding="5,0,5,0"
-                         VerticalContentAlignment="Center"/>
-                            <TextBlock Text="Discount %"
-                           Foreground="LightGray"
-                           Margin="8,0,0,0"
-                           VerticalAlignment="Center"
-                           IsHitTestVisible="False"
-                           Visibility="{Binding Text, ElementName=DiscountPercentTextBox, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+                                     Text="{Binding DiscountPercent, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="White"
+                                     Padding="5,0,5,0"
+                                     VerticalContentAlignment="Center"/>
+                            <TextBlock Text="Overall Discount %"
+                                       Foreground="LightGray"
+                                       Margin="8,0,0,0"
+                                       VerticalAlignment="Center"
+                                       IsHitTestVisible="False"
+                                       Visibility="{Binding Text, ElementName=DiscountPercentTextBox, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
                         </Grid>
                     </Border>
                 </StackPanel>
 
                 <!-- Middle Info -->
                 <StackPanel Grid.Column="1" Orientation="Vertical" Margin="5">
-
-                    <!-- Date (ReadOnly, Auto-filled in code) -->
+                    <!-- Date (ReadOnly) -->
                     <Border Style="{StaticResource InputBorderStyle}" Margin="0,0,0,5">
-                        <TextBlock x:Name="DateText"
-                       Text="Date"
-                       Foreground="White"
-                       Padding="5,0,5,0"
-                       VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding CurrentDate, StringFormat='Date: {0}'}"
+                                   Foreground="White"
+                                   Padding="5,0,5,0"
+                                   VerticalAlignment="Center"/>
                     </Border>
 
-                    <!-- Invoice # (ReadOnly, Auto-filled in code) -->
+                    <!-- Invoice # (ReadOnly) -->
                     <Border Style="{StaticResource InputBorderStyle}">
-                        <TextBlock x:Name="InvoiceText"
-                       Text="Invoice #"
-                       Foreground="White"
-                       Padding="5,0,5,0"
-                       VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding InvoiceNumber, StringFormat='Invoice #: {0}'}"
+                                   Foreground="White"
+                                   Padding="5,0,5,0"
+                                   VerticalAlignment="Center"/>
                     </Border>
                 </StackPanel>
 
-                <!-- Right Address (Editable, Bigger Height) -->
-                <Border Grid.Column="2" Style="{StaticResource InputBorderStyle}" Margin="5">
+                <!-- Right Address (Editable) -->
+                <Border Grid.Column="2" Style="{StaticResource InputBorderStyle}" Margin="5" Height="100">
                     <Grid>
                         <TextBox x:Name="AddressTextBox"
-                     Background="Transparent"
-                     BorderThickness="0"
-                     Foreground="White"
-                     Padding="5,0,5,0"
-                     VerticalContentAlignment="Top"
-                     Height="100"
-                     AcceptsReturn="True"
-                     TextWrapping="Wrap"/>
-                        <TextBlock Text="Address"
-                       Foreground="LightGray"
-                       Margin="8,5,0,0"
-                       VerticalAlignment="Top"
-                       IsHitTestVisible="False"
-                       Visibility="{Binding Text, ElementName=AddressTextBox, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+                                 Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 Foreground="White"
+                                 Padding="5,5,5,5"
+                                 VerticalContentAlignment="Top"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"/>
+                        <TextBlock Text="Customer Address"
+                                   Foreground="LightGray"
+                                   Margin="8,5,0,0"
+                                   VerticalAlignment="Top"
+                                   IsHitTestVisible="False"
+                                   Visibility="{Binding Text, ElementName=AddressTextBox, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
                     </Grid>
                 </Border>
             </Grid>
 
-
-
             <!-- Bottom Buttons -->
             <StackPanel Grid.Row="14" Orientation="Horizontal"
                         HorizontalAlignment="Center" Margin="0,10,0,0">
-                <Button Content="Cancel Transaction" Width="150" Height="40"
-                        Background="Red" Foreground="White" FontWeight="Bold" Margin="5"/>
-                <Button Content="Checkout" Width="150" Height="40"
-                        Background="Green" Foreground="White" FontWeight="Bold" Margin="5"/>
-                <Button Content="Quote" Width="150" Height="40"
-                        Background="#4F4F4F" Foreground="White" Margin="5"/>
-                <Button Content="Print" Width="150" Height="40"
-                        Background="#4F4F4F" Foreground="White" Margin="5"/>
+                <Button Content="Cancel Transaction" 
+                        Command="{Binding CancelTransactionCommand}"
+                        Width="150" Height="40"
+                        Background="Red" 
+                        Foreground="White" 
+                        FontWeight="Bold" 
+                        Margin="5"
+                        Cursor="Hand"/>
+                <Button Content="Checkout" 
+                        Command="{Binding CheckoutCommand}"
+                        Width="150" Height="40"
+                        Background="Green" 
+                        Foreground="White" 
+                        FontWeight="Bold" 
+                        Margin="5"
+                        Cursor="Hand"/>
+                <Button Content="Create Quote" 
+                        Command="{Binding CreateQuoteCommand}"
+                        Width="150" Height="40"
+                        Background="#4AA902" 
+                        Foreground="White" 
+                        FontWeight="Bold"
+                        Margin="5"
+                        Cursor="Hand"/>
             </StackPanel>
         </Grid>
     </Grid>
