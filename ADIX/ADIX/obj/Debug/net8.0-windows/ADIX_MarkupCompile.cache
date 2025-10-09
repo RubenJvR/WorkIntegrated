@@ -4,16 +4,16 @@
 winexe
 C#
 .cs
-D:\VStudio work\Repos\WorkIntegrated\ADIX\ADIX\obj\Debug\net8.0-windows\
+D:\VStudio work\Repos\workintegratedV2\ADIX\ADIX\obj\Debug\net8.0-windows\
 ADIX
 none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
-D:\VStudio work\Repos\WorkIntegrated\ADIX\ADIX\App.xaml
+D:\VStudio work\Repos\workintegratedV2\ADIX\ADIX\App.xaml
 11-930421262
 
 17573307323
-227460598806
+227-1639280617
 Components\HorizontalCarousel.xaml;Components\Sidebar.xaml;HCarousel.xaml;MainWindow.xaml;Pages\Dashboard.xaml;Pages\Finance.xaml;Pages\Inventory.xaml;Pages\PointOfSale.xaml;Pages\Products.xaml;Pages\Sales.xaml;Pages\SupplierPage.xaml;
 
 False

@@ -1873,17 +1873,17 @@
     ]
   },
   "packageFolders": {
-    "D:\\VStudio work\\Repos\\WorkIntegrated\\ADIX\\NuGetPackages": {},
+    "D:\\VStudio work\\Repos\\workintegratedV2\\ADIX\\NuGetPackages": {},
     "D:\\Program fike (SDK tools)\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\VStudio work\\Repos\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
+      "projectUniqueName": "D:\\VStudio work\\Repos\\workintegratedV2\\ADIX\\ADIX\\ADIX.csproj",
       "projectName": "ADIX",
-      "projectPath": "D:\\VStudio work\\Repos\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
-      "packagesPath": "D:\\VStudio work\\Repos\\WorkIntegrated\\ADIX\\NuGetPackages",
-      "outputPath": "D:\\VStudio work\\Repos\\WorkIntegrated\\ADIX\\ADIX\\obj\\",
+      "projectPath": "D:\\VStudio work\\Repos\\workintegratedV2\\ADIX\\ADIX\\ADIX.csproj",
+      "packagesPath": "D:\\VStudio work\\Repos\\workintegratedV2\\ADIX\\NuGetPackages",
+      "outputPath": "D:\\VStudio work\\Repos\\workintegratedV2\\ADIX\\ADIX\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "D:\\Program fike (SDK tools)\\NuGetPackages"
