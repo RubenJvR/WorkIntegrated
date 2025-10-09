@@ -1,5 +1,5 @@
-﻿using System;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
+using ADIX.ViewModels;
 
 namespace ADIX
 {
@@ -8,12 +8,7 @@ namespace ADIX
         public PointOfSale()
         {
             InitializeComponent();
-
-            // Auto-fill Date
-            DateText.Text = DateTime.Now.ToString("dd/MM/yyyy");
-
-            // Auto-generate Invoice Number (example)
-            InvoiceText.Text = "INV-" + DateTime.Now.Ticks.ToString().Substring(10);
+            DataContext = new PointOfSaleViewModel();
         }
     }
 }
