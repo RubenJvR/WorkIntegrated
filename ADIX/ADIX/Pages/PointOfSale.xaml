@@ -39,7 +39,137 @@
         <!-- Converters -->
         <local:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
         <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+
+        <!-- Rounded ComboBox with placeholder -->
+        <Style x:Key="RoundedComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#4F4F4F"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="5,0,30,0"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <Border x:Name="Border"
+                             Background="{TemplateBinding Background}"
+                             BorderBrush="{TemplateBinding BorderBrush}"
+                             BorderThickness="{TemplateBinding BorderThickness}"
+                             CornerRadius="6"/>
+                            <!-- Placeholder -->
+                            <TextBlock x:Name="PlaceholderText"
+                                Text="{TemplateBinding Tag}"
+                                Foreground="LightGray"
+                                Margin="8,0,30,0"
+                                VerticalAlignment="Center"
+                                IsHitTestVisible="False"
+                                Visibility="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource NullToVisibilityConverter}}"/>
+                            <!-- Selected item -->
+                            <ContentPresenter x:Name="ContentSite"
+                                       Content="{TemplateBinding SelectionBoxItem}"
+                                       ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,30,0"/>
+                            <!-- Toggle button arrow -->
+                            <ToggleButton x:Name="ToggleButton"
+                                   Focusable="False"
+                                   IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                   ClickMode="Press"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   Width="20">
+                                <Path Fill="White" Data="M 0 0 L 4 4 L 8 0 Z" Stretch="Uniform"/>
+                            </ToggleButton>
+                            <!-- Dropdown Popup -->
+                            <Popup x:Name="PART_Popup"
+                            Placement="Bottom"
+                            IsOpen="{TemplateBinding IsDropDownOpen}"
+                            AllowsTransparency="True"
+                            Focusable="False"
+                            PopupAnimation="Fade">
+                                <Border Background="{TemplateBinding Background}"
+                                 BorderBrush="{TemplateBinding BorderBrush}"
+                                 BorderThickness="{TemplateBinding BorderThickness}"
+                                 CornerRadius="6">
+                                    <ScrollViewer Margin="0" SnapsToDevicePixels="True">
+                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Rounded dark CheckBox style -->
+        <Style x:Key="RoundedCheckBoxStyle" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#4F4F4F"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Border x:Name="Border"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="6"
+                        Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <!-- Custom tick box -->
+                                    <Border x:Name="CheckMarkBorder"
+                                    Width="16"
+                                    Height="16"
+                                    BorderBrush="White"
+                                    BorderThickness="1"
+                                    CornerRadius="3"
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,8,0">
+                                        <Path x:Name="CheckMark"
+                                      Data="M 2 8 L 6 12 L 14 2"
+                                      Stroke="White"
+                                      StrokeThickness="2"
+                                      Visibility="Collapsed"/>
+                                    </Border>
+
+                                    <!-- Content text -->
+                                    <ContentPresenter VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- Checked -->
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#3A3A3A"/>
+                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <!-- Hover -->
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#5A5A5A"/>
+                            </Trigger>
+                            <!-- Disabled -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+
     </Page.Resources>
+    
+    
 
     <Grid Background="#878787">
         <Grid.ColumnDefinitions>
@@ -97,41 +227,28 @@
             <!-- Sales Staff ComboBox -->
             <Grid Grid.Row="4">
                 <ComboBox ItemsSource="{Binding StaffMembers}"
-                          SelectedItem="{Binding SelectedStaff}"
-                          DisplayMemberPath="Name"
-                          Background="#4F4F4F"
-                          Foreground="White"
-                          BorderBrush="Black"
-                          BorderThickness="1"
-                          Height="30">
+              SelectedItem="{Binding SelectedStaff}"
+              DisplayMemberPath="Name"
+              Tag="Sales Staff"    
+                    Style="{StaticResource RoundedComboBoxStyle}">
                     <ComboBox.ItemContainerStyle>
                         <Style TargetType="ComboBoxItem">
-                            <Setter Property="Foreground" Value="Black"/>
-                            <Setter Property="Background" Value="White"/>
+                            <Setter Property="Foreground" Value="white"/>
+                            <Setter Property="Background" Value="#4F4F4F"/>
                         </Style>
                     </ComboBox.ItemContainerStyle>
                 </ComboBox>
-                <TextBlock Text="Sales Staff"
-                           Foreground="LightGray"
-                           Margin="8,0,30,0"
-                           VerticalAlignment="Center"
-                           IsHitTestVisible="False"
-                           Visibility="{Binding SelectedStaff, Converter={StaticResource NullToVisibilityConverter}}"/>
             </Grid>
 
             <!-- Payment Method ComboBox -->
             <Grid Grid.Row="6">
                 <ComboBox ItemsSource="{Binding PaymentMethods}"
                           SelectedItem="{Binding SelectedPaymentMethod}"
-                          Background="#4F4F4F"
-                          Foreground="White"
-                          BorderBrush="Black"
-                          BorderThickness="1"
-                          Height="30">
+                          Style="{StaticResource RoundedComboBoxStyle}">
                     <ComboBox.ItemContainerStyle>
                         <Style TargetType="ComboBoxItem">
-                            <Setter Property="Foreground" Value="Black"/>
-                            <Setter Property="Background" Value="White"/>
+                            <Setter Property="Foreground" Value="white"/>
+                            <Setter Property="Background" Value="#4F4F4F"/>
                         </Style>
                     </ComboBox.ItemContainerStyle>
                 </ComboBox>
@@ -143,13 +260,12 @@
                            Visibility="{Binding SelectedPaymentMethod, Converter={StaticResource NullToVisibilityConverter}}"/>
             </Grid>
 
-            <!-- Payment Received ComboBox -->
+            <!-- Payment Received Checkbox -->
             <CheckBox Grid.Row="8"
                       Content="Payment Received"
                       IsChecked="{Binding PaymentReceived}"
-                      Foreground="White"
-                      VerticalAlignment="Center"
-                      Height="30"/>
+                      
+                     Style="{StaticResource RoundedCheckBoxStyle}"/>
 
             <!-- VAT TextBox -->
             <Border Grid.Row="10" Style="{StaticResource InputBorderStyle}">
