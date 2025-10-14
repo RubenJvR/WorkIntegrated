@@ -3,17 +3,423 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:sys="clr-namespace:System;assembly=mscorlib"
+
       xmlns:local="clr-namespace:ADIX"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="Products">
 
-    <Grid>
-        <TextBlock HorizontalAlignment="Center">Products</TextBlock>
-        <local:Sidebar Panel.ZIndex="100"/>
-        <DataGrid x:Name="ItemGrid"
-      AutoGenerateColumns="False"
-      Margin="10"
-      IsReadOnly="True" />  
+    <Page.Resources>
+        <!-- Header styles -->
+        <Style x:Key="HeaderBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="#4AA902"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style x:Key="HeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="23"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Rounded input border -->
+        <Style x:Key="InputBorderStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Background" Value="#4F4F4F"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <!-- Converters -->
+        <local:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
+        <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+
+        <!-- Rounded ComboBox with placeholder -->
+        <Style x:Key="RoundedComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#4F4F4F"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="5,0,30,0"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <Border x:Name="Border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="6"/>
+                            <!-- Placeholder -->
+                            <TextBlock x:Name="PlaceholderText"
+                                       Text="{TemplateBinding Tag}"
+                                       Foreground="LightGray"
+                                       Margin="8,0,30,0"
+                                       VerticalAlignment="Center"
+                                       IsHitTestVisible="False"
+                                       Visibility="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource NullToVisibilityConverter}}"/>
+                            <!-- Selected item -->
+                            <ContentPresenter x:Name="ContentSite"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              VerticalAlignment="Center"
+                                              Margin="8,0,30,0"/>
+                            <!-- Toggle button arrow -->
+                            <ToggleButton x:Name="ToggleButton"
+                                          Focusable="False"
+                                          IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                          ClickMode="Press"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Center"
+                                          Width="20">
+                                <Path Fill="White" Data="M 0 0 L 4 4 L 8 0 Z" Stretch="Uniform"/>
+                            </ToggleButton>
+                            <!-- Dropdown Popup -->
+                            <Popup x:Name="PART_Popup"
+                                   Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="Fade">
+                                <Border Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="6">
+                                    <ScrollViewer Margin="0" SnapsToDevicePixels="True">
+                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Rounded input style (TextBox + ComboBox)  (Might delete)-->
+        <Style x:Key="RoundedInputStyle" TargetType="Control">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#4F4F4F"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="5,0,5,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Control">
+                        <Border CornerRadius="6"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
+    <Grid Background="#878787">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Sidebar -->
+        <local:Sidebar Grid.Column="0" Margin="0,0,10,209"/>
+
+        <!-- Main Content -->
+        <Grid Grid.Column="1" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <!-- Supplier -->
+                <RowDefinition Height="10"/>
+                <RowDefinition Height="Auto"/>
+                <!-- Date Range -->
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="Auto"/>
+                <!-- Stock Type -->
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="Auto"/>
+                <!-- Low Stock-->
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="Auto"/>
+                <!-- Payment Status -->
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="Auto"/>
+                <!-- VAT -->
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="*"/>
+                <!-- DataGrid -->
+                <RowDefinition Height="Auto"/>
+
+                <!-- Buttons -->
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Border Grid.Row="0" Style="{StaticResource HeaderBorderStyle}">
+                <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Product Management"/>
+            </Border>
+
+            <!-- Item Group-->
+            <ComboBox Grid.Row="2"
+          x:Name="ItemGroup"
+          Style="{StaticResource RoundedComboBoxStyle}"
+          Tag="Item Group"
+          SelectedIndex="-1">
+                <ComboBoxItem Content="ItemGroup 1"/>
+            </ComboBox>
+            
+            
+            <!-- Item Name-->
+            <ComboBox Grid.Row="4"
+          x:Name="ItemName"
+          Style="{StaticResource RoundedComboBoxStyle}"
+          Tag="Item Name"
+          SelectedIndex="-1">
+                <ComboBoxItem Content="ItemName 1"/>
+            </ComboBox>
+
+
+            
+
+            <!-- Low Stock + Payment Status (WPF-compatible, responsive) -->
+            <Grid Grid.Row="6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Low Stock Toggle (fixed width; shows ON/OFF) -->
+                <ToggleButton x:Name="LowStockToggle"
+                  Grid.Column="0"
+                  Width="150"
+                  Height="30"
+                  Margin="0,0,10,0"
+                  Background="#4F4F4F"
+                  Foreground="White"
+                  BorderBrush="Black"
+                  BorderThickness="1"
+                  HorizontalContentAlignment="Center"
+                  VerticalContentAlignment="Center">
+                    <ToggleButton.Style>
+                        <Style TargetType="ToggleButton">
+                            <Setter Property="Background" Value="#4F4F4F"/>
+                            <Setter Property="BorderBrush" Value="Black"/>
+                            <Setter Property="BorderThickness" Value="1"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border CornerRadius="10"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                            <Grid>
+                                                <!-- Knob -->
+                                                <Ellipse x:Name="Knob"
+                                             Width="20" Height="20"
+                                             Fill="White"
+                                             HorizontalAlignment="Left"
+                                             Margin="4,0"/>
+                                                <!-- State text -->
+                                                <TextBlock x:Name="StateText"
+                                               Text="Low Stock"
+                                               Foreground="White"
+                                               FontWeight="Bold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Triggers to move knob and change text/color -->
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
+                                                <Setter Property="Background" Value="Green"/>
+                                                <Setter TargetName="StateText" Property="Text" Value="Low Stock ON"/>
+                                            </Trigger>
+                                            <Trigger Property="IsChecked" Value="False">
+                                                <Setter TargetName="StateText" Property="Text" Value="Low Stock OFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ToggleButton.Style>
+                </ToggleButton>
+
+                <!-- High Value stock Toggle (fixed width; shows ON/OFF) -->
+                <ToggleButton x:Name="HighValueStockToggle"
+  Grid.Column="1"
+  Width="180"
+  Height="30"
+  Margin="230,0,10,0"
+  Background="#4F4F4F"
+  Foreground="White"
+  BorderBrush="Black"
+  BorderThickness="1"
+  HorizontalContentAlignment="Center"
+  VerticalContentAlignment="Center">
+                    <ToggleButton.Style>
+                        <Style TargetType="ToggleButton">
+                            <Setter Property="Background" Value="#4F4F4F"/>
+                            <Setter Property="BorderBrush" Value="Black"/>
+                            <Setter Property="BorderThickness" Value="1"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border CornerRadius="10"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}">
+                                            <Grid>
+                                                <!-- Knob -->
+                                                <Ellipse x:Name="Knob"
+                             Width="20" Height="20"
+                             Fill="White"
+                             HorizontalAlignment="Left"
+                             Margin="4,0"/>
+                                                <!-- State text -->
+                                                <TextBlock x:Name="StateText"
+                               Text="High value Stock"
+                               Foreground="White"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Triggers to move knob and change text/color -->
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
+                                                <Setter Property="Background" Value="Green"/>
+                                                <Setter TargetName="StateText" Property="Text" Value="High Value Stock ON"/>
+                                            </Trigger>
+                                            <Trigger Property="IsChecked" Value="False">
+                                                <Setter TargetName="StateText" Property="Text" Value="High Value Stock OFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ToggleButton.Style>
+                </ToggleButton>
+
+
+
+
+            </Grid>
+
+
+            <!-- Stock Type-->
+            <ComboBox Grid.Row="8"
+          x:Name="SKU"
+          Style="{StaticResource RoundedComboBoxStyle}"
+          Tag="SKU"
+          SelectedIndex="-1">
+                <ComboBoxItem Content="Adix"/>
+                <ComboBoxItem Content="Consignment"/>
+
+            </ComboBox>
+
+            <!-- Products Table -->
+            <ScrollViewer Grid.Row="12" Margin="0,10,0,10"
+              HorizontalScrollBarVisibility="Auto"
+              VerticalScrollBarVisibility="Auto">
+                <DataGrid x:Name="ProductsGrid"
+              AutoGenerateColumns="False"
+              IsReadOnly="False"
+              Background="#4F4F4F"
+              Foreground="White"
+              GridLinesVisibility="All"
+              BorderBrush="Black"
+              BorderThickness="1"
+              HeadersVisibility="Column"
+              CanUserAddRows="True"
+              RowHeight="35"
+              ColumnHeaderHeight="40"
+              FontSize="14"
+              Height="178"
+              SelectionMode="Single"
+              SelectionUnit="FullRow">
+
+                    <!-- Column Header Styling -->
+                    <DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="Background" Value="#2D2D2D"/>
+                            <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="BorderBrush" Value="Black"/>
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                        </Style>
+                    </DataGrid.ColumnHeaderStyle>
+
+                    <!-- Cell Styling -->
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderBrush" Value="Black"/>
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="Padding" Value="5,2"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            <Style.Triggers>
+                                <!-- Keep dark theme on selection -->
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#2D2D2D"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.CellStyle>
+
+                    <!-- Columns -->
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Product ID" Binding="{Binding ProductID}" Width="100"/>
+                        <DataGridTextColumn Header="Product Name" Binding="{Binding ProductName}" Width="180"/>
+                        <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="200"/>
+                        <DataGridTextColumn Header="Retail Price" Binding="{Binding RetailPrice}" Width="120"/>
+                        <DataGridTextColumn Header="Cost Price" Binding="{Binding CostPrice}" Width="120"/>
+                        <DataGridTextColumn Header="Stock Quantity" Binding="{Binding StockQuantity}" Width="130"/>
+                        <DataGridTextColumn Header="Stock Sold" Binding="{Binding StockSold}" Width="120"/>
+                        <DataGridTextColumn Header="Supplier ID" Binding="{Binding SupplierID}" Width="120"/>
+                        <DataGridTextColumn Header="Seller ID" Binding="{Binding SellerID}" Width="120"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </ScrollViewer>
+
+
+
+
+            <!-- Bottom Buttons -->
+            <StackPanel Grid.Row="14" Orientation="Horizontal"
+                        HorizontalAlignment="Center" Margin="0,10,0,0">
+
+                <Button Content="Delete Product" Width="150" Height="40"
+                        Background="Red" Foreground="White" FontWeight="Bold" Margin="5"/>
+
+                <Button Content="Add Product" Width="150" Height="40"
+                        Background="Green" Foreground="White" FontWeight="Bold" Margin="5"/>
+
+                <Button Content="Edit Product" Width="150" Height="40"
+                        Background="#4F4F4F" Foreground="White" Margin="5"/>
+
+            </StackPanel>
+        </Grid>
     </Grid>
 </Page>

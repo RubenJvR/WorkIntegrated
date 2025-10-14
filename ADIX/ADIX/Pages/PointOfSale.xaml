@@ -589,6 +589,16 @@
                         FontWeight="Bold"
                         Margin="5"
                         Cursor="Hand"/>
+                
+                <Button Content="Invoice" 
+                        Command="{Binding }"
+                        Width="150" Height="40"
+                        Background="Green"
+                         Style="{StaticResource SolidButtonStyle}"
+                        Foreground="White" 
+                        FontWeight="Bold"
+                        Margin="5"
+                        Cursor="Hand"/>
             </StackPanel>
         </Grid>
     </Grid>
