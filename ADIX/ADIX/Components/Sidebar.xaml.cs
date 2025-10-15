@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -74,6 +75,14 @@ namespace ADIX
             var mainWindow = Window.GetWindow(this) as MainWindow;
             mainWindow?.MainFrame.Navigate(new Sales());
         }
+        private void Consignment_Click(object sender, RoutedEventArgs e)
+        {
+
+            var mainWindow = Window.GetWindow(this) as MainWindow;
+            mainWindow?.MainFrame.Navigate(new Consignment());
+        }
+
+
 
     }
 }

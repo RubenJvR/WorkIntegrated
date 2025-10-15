@@ -10,6 +10,9 @@
     <Compile Update="HCarousel.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Pages\Consignment.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Pages\Dashboard.xaml.cs">
       <SubType>Code</SubType>
     </Compile>

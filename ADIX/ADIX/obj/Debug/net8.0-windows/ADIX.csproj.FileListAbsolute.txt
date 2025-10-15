@@ -404,3 +404,5 @@ D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\refi
 D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\ADIX.pdb
 D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\ADIX.genruntimeconfig.cache
 D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\ref\ADIX.dll
+D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Consignment.g.cs
+D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Consignment.baml
