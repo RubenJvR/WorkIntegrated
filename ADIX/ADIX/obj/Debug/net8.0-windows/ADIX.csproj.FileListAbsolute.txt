@@ -406,3 +406,7 @@ D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\ADIX
 D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\ref\ADIX.dll
 D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Consignment.g.cs
 D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Consignment.baml
+D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Qoute.g.cs
+D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Qoute.baml
+D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Invoice.g.cs
+D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Invoice.baml
