@@ -1,4 +1,4 @@
-﻿<Page x:Class="ADIX.SupplierPage"
+﻿<Page x:Class="ADIX.Consignment"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -169,149 +169,102 @@
 
             <!-- Header -->
             <Border Grid.Row="0" Style="{StaticResource HeaderBorderStyle}">
-                <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Supplier"/>
+                <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Consignment"/>
             </Border>
 
-            <!-- Supplier-->
-            <ComboBox Grid.Row="2"
-          x:Name="Supplier"
-          Style="{StaticResource RoundedComboBoxStyle}"
-          Tag="Suppliers"
-          SelectedIndex="-1">
-            <ComboBoxItem Content="Supplier One"/>
-            </ComboBox>
-
-
             <!-- Date Range -->
-            <StackPanel Grid.Row="4" Orientation="Vertical">
+            <StackPanel Grid.Row="2" Orientation="Vertical">
                 <!-- Main date range selector -->
                 <ComboBox x:Name="DateRange"
-              Style="{StaticResource RoundedComboBoxStyle}"
-              Tag="Date Range"
-              SelectedIndex="-1"
-              SelectionChanged="DateRange_SelectionChanged">
-                    <ComboBoxItem Content="This Month"/>
-                    <ComboBoxItem Content="Last 30 Days"/>
-                    <ComboBoxItem Content="Custom"/>
-                </ComboBox>
+                  Style="{StaticResource RoundedComboBoxStyle}"
+                  Tag="Select Date :"
+                  SelectedIndex="-1"
+                  SelectionChanged="DateRange_SelectionChanged">
+                                    <ComboBoxItem Content="This Month"/>
+                                    <ComboBoxItem Content="Last 30 Days"/>
+                                    <ComboBoxItem Content="Custom"/>
+                                </ComboBox>
 
-                <!-- Custom range pickers (hidden by default) -->
-                <StackPanel x:Name="CustomDatePanel"
-            Orientation="Horizontal"
-            Margin="0,5,0,0"
-            Visibility="Collapsed"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Center">
-                    <DatePicker x:Name="StartDatePicker"
-                Width="150"
-                SelectedDate="{x:Static sys:DateTime.Now}"
-                Margin="0,0,10,0"/>
-                    
-                    <TextBlock Text="to"
-               VerticalAlignment="Center"
-               Foreground="White"
-               Margin="0,0,10,0"/>
+                                <!-- Custom range pickers (hidden by default) -->
+                                <StackPanel x:Name="CustomDatePanel"
+                Orientation="Horizontal"
+                Margin="0,5,0,0"
+                Visibility="Collapsed"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center">
+                                    <DatePicker x:Name="StartDatePicker"
+                    Width="150"
+                    SelectedDate="{x:Static sys:DateTime.Now}"
+                    Margin="0,0,10,0"/>
 
-                    <DatePicker x:Name="EndDatePicker"
-                Width="150"
-                SelectedDate="{x:Static sys:DateTime.Now}"/>
-                </StackPanel>
-            </StackPanel>
+                                    <TextBlock Text="to"
+                   VerticalAlignment="Center"
+                   Foreground="White"
+                   Margin="0,0,10,0"/>
 
+                                    <DatePicker x:Name="EndDatePicker"
+                    Width="150"
+                    SelectedDate="{x:Static sys:DateTime.Now}"/>
+                                </StackPanel>
+                            </StackPanel>
+
+            <!-- Client TextBox -->
+            <Border Grid.Row="4" Style="{StaticResource InputBorderStyle}">
+                <Grid>
+                    <TextBox x:Name="CustomerNameTextBox"
+                 Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 Foreground="White"
+                 Padding="5,0,5,0"
+                 VerticalContentAlignment="Center"/>
+                    <TextBlock Text="Client"
+                   Foreground="LightGray"
+                   Margin="8,0,30,0"
+                   VerticalAlignment="Center"
+                   IsHitTestVisible="False"
+                   Visibility="{Binding Text, ElementName=CustomerNameTextBox, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+                </Grid>
+            </Border>
 
             <!-- Stock Type-->
             <ComboBox Grid.Row="6"
-                      x:Name="StockType"
-                      Style="{StaticResource RoundedComboBoxStyle}"
-                      Tag="Stock Type"
-                      SelectedIndex="-1">
+          x:Name="StockType"
+          Style="{StaticResource RoundedComboBoxStyle}"
+          Tag="Stock Type"
+          SelectedIndex="-1">
                 <ComboBoxItem Content="Adix"/>
                 <ComboBoxItem Content="Consignment"/>
-               
+
             </ComboBox>
 
-            <!-- Low Stock + Payment Status (WPF-compatible, responsive) -->
-            <Grid Grid.Row="8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+            <!-- Sold-->
+            <ComboBox Grid.Row="8"
+          x:Name="Sold"
+          Style="{StaticResource RoundedComboBoxStyle}"
+          Tag="Sold"
+          SelectedIndex="-1">
+                <ComboBoxItem Content="Yes"/>
+                <ComboBoxItem Content="No"/>
 
-                <!-- Low Stock Toggle (fixed width; shows ON/OFF) -->
-                <ToggleButton x:Name="LowStockToggle"
-                  Grid.Column="0"
-                  Width="150"
-                  Height="30"
-                  Margin="0,0,10,0"
-                  Background="#4F4F4F"
-                  Foreground="White"
-                  BorderBrush="Black"
-                  BorderThickness="1"
-                  HorizontalContentAlignment="Center"
-                  VerticalContentAlignment="Center">
-                    <ToggleButton.Style>
-                        <Style TargetType="ToggleButton">
-                            <Setter Property="Background" Value="#4F4F4F"/>
-                            <Setter Property="BorderBrush" Value="Black"/>
-                            <Setter Property="BorderThickness" Value="1"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ToggleButton">
-                                        <Border CornerRadius="10"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}">
-                                            <Grid>
-                                                <!-- Knob -->
-                                                <Ellipse x:Name="Knob"
-                                             Width="20" Height="20"
-                                             Fill="White"
-                                             HorizontalAlignment="Left"
-                                             Margin="4,0"/>
-                                                <!-- State text -->
-                                                <TextBlock x:Name="StateText"
-                                               Text="Low Stock"
-                                               Foreground="White"
-                                               FontWeight="Bold"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"/>
-                                            </Grid>
-                                        </Border>
+            </ComboBox>
+            
+            <!-- Paid-->
+            <ComboBox Grid.Row="10"
+          x:Name="Paid"
+          Style="{StaticResource RoundedComboBoxStyle}"
+          Tag="Paid"
+          SelectedIndex="-1">
+                <ComboBoxItem Content="Yes"/>
+                <ComboBoxItem Content="No"/>
 
-                                        <!-- Triggers to move knob and change text/color -->
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsChecked" Value="True">
-                                                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
-                                                <Setter Property="Background" Value="Green"/>
-                                                <Setter TargetName="StateText" Property="Text" Value="Low Stock ON"/>
-                                            </Trigger>
-                                            <Trigger Property="IsChecked" Value="False">
-                                                <Setter TargetName="StateText" Property="Text" Value="Low Stock OFF"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </ToggleButton.Style>
-                </ToggleButton>
+            </ComboBox>
 
-                <!-- Payment Status ComboBox (fills remaining width) -->
-                <ComboBox x:Name="PaymentStatus"
-              Grid.Column="1"
-              Style="{StaticResource RoundedComboBoxStyle}"
-              Tag="Payment Status"
-              SelectedIndex="-1"
-              VerticalAlignment="Center">
-                    <ComboBoxItem Content="Paid"/>
-                    <ComboBoxItem Content="Pending"/>
-                    <ComboBoxItem Content="Overdue"/>
-                </ComboBox>
-            </Grid>
-
-
-
-
+            
+            <!-- Header -->
+            <Border Grid.Row="10" Style="{StaticResource HeaderBorderStyle}">
+                <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Consignment Table"/>
+            </Border>
 
 
 
@@ -355,20 +308,23 @@
                         </Style>
                     </DataGrid.CellStyle>
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Supplier/Consignor" Binding="{Binding Supplier}" Width="200"/>
-                        <DataGridTextColumn Header="SKU" Binding="{Binding Quantity}" Width="70"/>
-                        <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="230"/>
-                        <DataGridTextColumn Header="Stock Received" Binding="{Binding StockReceived}" Width="120"/>
-                        <DataGridTextColumn Header="Stock Balance" Binding="{Binding StockBalance}" Width="150"/>
-                        <DataGridTextColumn Header="Amount Sold" Binding="{Binding AmountSold}" Width="100"/>
-                        <DataGridTextColumn Header="Cost Price" Binding="{Binding CostPrice}" Width="130"/>
-                        <DataGridTextColumn Header="Selling Price" Binding="{Binding SellingPrice}" Width="180"/>
-                        <DataGridTextColumn Header="Total Sales" Binding="{Binding TotalSales}" Width="150"/>
-                        <DataGridTextColumn Header="Profit" Binding="{Binding Profit}" Width="150"/>
-                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="150"/>
-                        <DataGridTextColumn Header="Amount Paid" Binding="{Binding AmountPaid}" Width="150"/>
-                        <DataGridTextColumn Header="Total to pay" Binding="{Binding TotalToPay}" Width="150"/>
-                        <DataGridTextColumn Header="Invoice Ref" Binding="{Binding InvoiceRef}" Width="150"/>
+                        <DataGridTextColumn Header="Date" Binding="{Binding }" Width="120"/>
+                        <DataGridTextColumn Header="Client" Binding="{Binding }" Width="120"/>
+                        <DataGridTextColumn Header="SKU" Binding="{Binding }" Width="120"/>
+                        <DataGridTextColumn Header="Description" Binding="{Binding }" Width="120"/>
+                        <DataGridTextColumn Header="Stock Type" Binding="{Binding }" Width="120"/>
+                        <DataGridTextColumn Header="Quantity" Binding="{Binding }" Width="120"/>
+                        <DataGridTextColumn Header="Unit Asking Price" Binding="{Binding }" Width="120"/>
+                        <DataGridTextColumn Header="Asking Price" Binding="{Binding }" Width="120"/>
+                        <DataGridTextColumn Header="Adix Price" Binding="{Binding }" Width="120"/>
+                        <DataGridTextColumn Header="Commision" Binding="{Binding }" Width="120"/>
+                        <DataGridTextColumn Header="Less Comission" Binding="{Binding }" Width="120"/>
+                        <DataGridTextColumn Header="Paid" Binding="{Binding }" Width="120"/>
+                        <DataGridTextColumn Header="Paid Amount" Binding="{Binding }" Width="120"/>
+                        <DataGridTextColumn Header="Sold" Binding="{Binding }" Width="120"/>
+                        <DataGridTextColumn Header="Notes" Binding="{Binding }" Width="120"/>
+                        
+                        
                     </DataGrid.Columns>
                 </DataGrid>
             </ScrollViewer>

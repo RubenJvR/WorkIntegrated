@@ -30,15 +30,22 @@ namespace ADIX
             LoadItem();
         }
 
+        public class Product
+        {
+            public int ItemID { get; set; }
+            public string Description { get; set; }
+            public decimal RetailPrice { get; set; }
+            public decimal CostPrice { get; set; }
+            public int StockQuantity { get; set; }
+            public int StockSold { get; set; }
+            public int SupplierID { get; set; }
+            public int SellerID { get; set; }
+        }
+
+
         private void LoadItem()
         {
-            var headers = new List<string>
-        {
-            "Item ID", "Description", "Retail Price", "Cost Price",
-            "Stock Quantity", "Stock Sold", "Supplier ID", "Seller ID"
-        };
-            Console.WriteLine("Hello World");
-            var rows = new List<TableDataRow>();
+            var productList = new List<Product>();
 
             using var conn = new SqliteConnection("Data Source=ADIX.db");
             conn.Open();
@@ -46,27 +53,27 @@ namespace ADIX
             using var cmd = new SqliteCommand(
                 "SELECT itemID, description, retailPrice, costPrice, stockQuantity, stockSold, supplierID, sellerID FROM ITEM",
                 conn);
+
             using var reader = cmd.ExecuteReader();
 
             while (reader.Read())
             {
-                var cells = new List<string>
-            {
-                reader["itemID"]?.ToString() ?? "",
-                reader["description"]?.ToString() ?? "",
-                reader["retailPrice"]?.ToString() ?? "",
-                reader["costPrice"]?.ToString() ?? "",
-                reader["stockQuantity"]?.ToString() ?? "",
-                reader["stockSold"]?.ToString() ?? "",
-                reader["supplierID"]?.ToString() ?? "",
-                reader["sellerID"]?.ToString() ?? ""
-            };
-
-                rows.Add(new TableDataRow(cells));
+                productList.Add(new Product
+                {
+                    ItemID = Convert.ToInt32(reader["itemID"]),
+                    Description = reader["description"]?.ToString(),
+                    RetailPrice = Convert.ToDecimal(reader["retailPrice"]),
+                    CostPrice = Convert.ToDecimal(reader["costPrice"]),
+                    StockQuantity = Convert.ToInt32(reader["stockQuantity"]),
+                    StockSold = Convert.ToInt32(reader["stockSold"]),
+                    SupplierID = Convert.ToInt32(reader["supplierID"]),
+                    SellerID = Convert.ToInt32(reader["sellerID"])
+                });
             }
 
-            ItemGrid.SetValue(DataGridHelper.TableDataProperty, new TableData(headers, rows));
+           ProductsGrid.ItemsSource = productList;
         }
+
 
         private void InsertSampleItem()
         {

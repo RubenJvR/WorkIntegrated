@@ -21,6 +21,8 @@
             <Button Content="Supplier" Click="Supplier_Click"/>
             <Button Content="Finance" Click="Finance_Click"/>
             <Button Content="Sales" Click="Sales_Click"/>
+            <Button Content="Consignment" Click="Consignment_Click"/>
+            
         </StackPanel>
 
         <ContentPresenter Grid.Column="1" x:Name="ContentArea"/>
