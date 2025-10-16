@@ -53,7 +53,7 @@ namespace ADIX {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/ADIX;component/pages/inventory.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/ADIX;V1.0.0.0;component/pages/inventory.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\Pages\Inventory.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

@@ -1,14 +1,146 @@
 ﻿<Page x:Class="ADIX.Inventory"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:ADIX"
-      mc:Ignorable="d" 
-      d:DesignHeight="450" d:DesignWidth="800"
-      Title="Inventory">
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      mc:Ignorable="d"
+      Title="Inventory"
+      d:DesignHeight="700" d:DesignWidth="1000">
 
-    <Grid>
-        <TextBlock HorizontalAlignment="Center">Inventory</TextBlock>
+    <Page.Resources>
+        <!-- Header style -->
+        <Style x:Key="HeaderBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="#4AA902"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Margin" Value="0,10,0,10"/>
+        </Style>
+
+        <Style x:Key="HeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="23"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
+        <!-- Dark input box style -->
+        <Style x:Key="InputBoxStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="#4F4F4F"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="5,0,5,0"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <!-- DataGrid header and cell styles -->
+        <Style x:Key="DarkDataGridHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="0.5"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="DarkDataGridCellStyle" TargetType="DataGridCell">
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="0.5"/>
+            <Setter Property="Padding" Value="5,2"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+    </Page.Resources>
+
+    <Grid Background="#878787">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Sidebar -->
+        <local:Sidebar Grid.Column="0" Margin="0,0,10,0"/>
+
+        <!-- Main Content -->
+        <ScrollViewer Grid.Column="1" Margin="10" VerticalScrollBarVisibility="Auto">
+            <StackPanel Orientation="Vertical">
+
+                <!-- Inventory Header -->
+                <Border Style="{StaticResource HeaderBorderStyle}">
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Inventory"/>
+                </Border>
+
+                <!-- Input Section -->
+                <StackPanel Orientation="Vertical" Margin="10,0,10,0">
+                    <TextBox Style="{StaticResource InputBoxStyle}" Text="Item Group"/>
+                    <TextBox Style="{StaticResource InputBoxStyle}" Text="Item Name"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <ToggleButton Content="Low Stock" Width="120" Height="30" Background="#4F4F4F" Foreground="White"/>
+                        <Button Content="Set Min Stock" Width="120" Height="30" Background="#4F4F4F" Foreground="White" Margin="10,0,0,0"/>
+                    </StackPanel>
+
+                    <TextBox Style="{StaticResource InputBoxStyle}" Text="VAT"/>
+                </StackPanel>
+
+                <!-- Inventory Table Header -->
+                <Border Style="{StaticResource HeaderBorderStyle}">
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Stock Overview"/>
+                </Border>
+
+                <!-- Inventory Table -->
+                <Border Background="#2E2E2E" CornerRadius="5" Padding="10" Margin="0,10,0,10">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Auto"
+                  CanContentScroll="True"
+                  PanningMode="Both"
+                  Focusable="False"
+                  Height="300">
+                        <DataGrid AutoGenerateColumns="False"
+                  Background="#4F4F4F"
+                  Foreground="White"
+                  GridLinesVisibility="All"
+                  BorderBrush="Black"
+                  BorderThickness="1"
+                  HeadersVisibility="Column"
+                  CanUserAddRows="True"
+                  RowHeight="35"
+                  ColumnHeaderHeight="40"
+                  FontSize="14"
+                  HorizontalScrollBarVisibility="Hidden"
+                  VerticalScrollBarVisibility="Hidden"
+                  ColumnHeaderStyle="{StaticResource DarkDataGridHeaderStyle}"
+                  CellStyle="{StaticResource DarkDataGridCellStyle}"
+                  Width="Auto"
+                  Height="Auto">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Item Group" Binding="{Binding ItemGroup}" Width="150"/>
+                                <DataGridTextColumn Header="Item Name" Binding="{Binding ItemName}" Width="150"/>
+                                <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="150"/>
+                                <DataGridTextColumn Header="Opening Stock Quantity" Binding="{Binding OpeningStockQuantity}" Width="200"/>
+                                <DataGridTextColumn Header="Stock Received" Binding="{Binding StockReceived}" Width="150"/>
+                                <DataGridTextColumn Header="Stock Sold" Binding="{Binding StockSold}" Width="150"/>
+                                <DataGridTextColumn Header="Stock Returned" Binding="{Binding StockReturned}" Width="150"/>
+                                <DataGridTextColumn Header="Supplier Name" Binding="{Binding SupplierName}" Width="200"/>
+                                <DataGridTextColumn Header="Expiry Date" Binding="{Binding ExpiryDate}" Width="150"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </ScrollViewer>
+                </Border>
+
+                <!-- Settings -->
+                <TextBlock Text="⚙ Settings"
+                           HorizontalAlignment="Left"
+                           Margin="10,0,0,10"
+                           VerticalAlignment="Bottom"
+                           FontWeight="Bold"
+                           Foreground="White"/>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Page>
