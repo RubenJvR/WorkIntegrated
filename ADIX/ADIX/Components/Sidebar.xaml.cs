@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,73 +15,53 @@ using System.Windows.Shapes;
 
 namespace ADIX
 {
-    /// <summary>
-    /// Interaction logic for Sidebar.xaml
-    /// </summary>
     public partial class Sidebar : UserControl
     {
+        public event EventHandler<string> NavigationRequested;
 
-        private bool isOpen = true;
         public Sidebar()
         {
             InitializeComponent();
         }
 
-        private void ToggleBtn_Click(object sender, RoutedEventArgs e)
+        private void Dashboard_button_click(object sender, RoutedEventArgs e)
         {
-            SidebarColumn.Width = isOpen ? new GridLength(50) : new GridLength(200);
+            NavigationRequested?.Invoke(this, "Dashboard");
         }
 
-        private void Dashboard_Click(object sender, RoutedEventArgs e)
+        private void Pointofsale_button_click(object sender, RoutedEventArgs e)
         {
-  
-            var mainWindow =Window.GetWindow(this) as MainWindow;
-            mainWindow?.MainFrame.Navigate(new Dashboard());
+            NavigationRequested?.Invoke(this, "POS");
         }
 
-        private void Pos_Click(object sender, RoutedEventArgs e)
+        private void Inventory_button_click(object sender, RoutedEventArgs e)
         {
-
-            var mainWindow = Window.GetWindow(this) as MainWindow;
-            mainWindow?.MainFrame.Navigate(new PointOfSale());
-        }
-        private void Inventory_Click(object sender, RoutedEventArgs e)
-        {
-
-            var mainWindow = Window.GetWindow(this) as MainWindow;
-            mainWindow?.MainFrame.Navigate(new Inventory());
-        }
-        private void Product_Click(object sender, RoutedEventArgs e)
-        {
-            var mainWindow = Window.GetWindow(this) as MainWindow;
-            mainWindow?.MainFrame.Navigate(new Products());
-        }
-        private void Supplier_Click(object sender, RoutedEventArgs e)
-        {
-
-            var mainWindow = Window.GetWindow(this) as MainWindow;
-            mainWindow?.MainFrame.Navigate(new SupplierPage ());
-        }
-        private void Finance_Click(object sender, RoutedEventArgs e)
-        {
-
-            var mainWindow = Window.GetWindow(this) as MainWindow;
-            mainWindow?.MainFrame.Navigate(new Finance());
-        }
-        private void Sales_Click(object sender, RoutedEventArgs e)
-        {
-
-            var mainWindow = Window.GetWindow(this) as MainWindow;
-            mainWindow?.MainFrame.Navigate(new Sales());
-        }
-        private void Consignment_Click(object sender, RoutedEventArgs e)
-        {
-
-            var mainWindow = Window.GetWindow(this) as MainWindow;
-            mainWindow?.MainFrame.Navigate(new Consignment());
+            NavigationRequested?.Invoke(this, "Inventory");
         }
 
+        private void Products_button_click(object sender, RoutedEventArgs e)
+        {
+            NavigationRequested?.Invoke(this, "Products");
+        }
 
+        private void Supplier_button_click(object sender, RoutedEventArgs e)
+        {
+            NavigationRequested?.Invoke(this, "Suppliers");
+        }
 
+        private void Finance_button_click(object sender, RoutedEventArgs e)
+        {
+            NavigationRequested?.Invoke(this, "Finance");
+        }
+
+        private void Sales_button_click(object sender, RoutedEventArgs e)
+        {
+            NavigationRequested?.Invoke(this, "Sales");
+        }
+
+        private void Setting_button_click(object sender, RoutedEventArgs e)
+        {
+            NavigationRequested?.Invoke(this, "Settings");
+        }
     }
 }

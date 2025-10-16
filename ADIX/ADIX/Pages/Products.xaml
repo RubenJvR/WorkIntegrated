@@ -132,12 +132,14 @@
 
     <Grid Background="#878787">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="0"/>
+            <!-- Set to 0 to hide internal sidebar -->
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <!-- Sidebar -->
-        <local:Sidebar Grid.Column="0" Margin="0,0,10,209"/>
+        <!-- commented out the internal side bar and used a global side bar from main window-->
+        <!--<local:Sidebar Grid.Column="0" Margin="0,0,10,209"/>-->
 
         <!-- Main Content -->
         <Grid Grid.Column="1" Margin="10">

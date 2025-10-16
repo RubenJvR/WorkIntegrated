@@ -5,16 +5,148 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:ADIX"
       mc:Ignorable="d" 
-      d:DesignHeight="450" d:DesignWidth="800">
+      d:DesignHeight="696.331" d:DesignWidth="800"
+      Title="Dashboard"
+      Background="#878787">
+    <Page.Resources>
+        <Style x:Key="FocusVisual">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Rectangle Margin="2" StrokeDashArray="1 2" Stroke="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" SnapsToDevicePixels="true" StrokeThickness="1"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <SolidColorBrush x:Key="Button.Static.Background" Color="#FFDDDDDD"/>
+        <SolidColorBrush x:Key="Button.Static.Border" Color="#FF707070"/>
+        <SolidColorBrush x:Key="Button.MouseOver.Background" Color="#FFBEE6FD"/>
+        <SolidColorBrush x:Key="Button.MouseOver.Border" Color="#FF3C7FB1"/>
+        <SolidColorBrush x:Key="Button.Pressed.Background" Color="#FFC4E5F6"/>
+        <SolidColorBrush x:Key="Button.Pressed.Border" Color="#FF2C628B"/>
+        <SolidColorBrush x:Key="Button.Disabled.Background" Color="#FFF4F4F4"/>
+        <SolidColorBrush x:Key="Button.Disabled.Border" Color="#FFADB2B5"/>
+        <SolidColorBrush x:Key="Button.Disabled.Foreground" Color="#FF838383"/>
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
+            <Setter Property="Background" Value="{StaticResource Button.Static.Background}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Button.Static.Border}"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="border" CornerRadius="15" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="true">
+                            <ContentPresenter x:Name="contentPresenter" Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsDefaulted" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter Property="Background" TargetName="border" Value="{StaticResource Button.MouseOver.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.MouseOver.Border}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="true">
+                                <Setter Property="Background" TargetName="border" Value="{StaticResource Button.Pressed.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.Pressed.Border}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Background" TargetName="border" Value="{StaticResource Button.Disabled.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.Disabled.Border}"/>
+                                <Setter Property="TextElement.Foreground" TargetName="contentPresenter" Value="{StaticResource Button.Disabled.Foreground}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
 
     <Grid>
-        <StackPanel>
-            <TextBlock HorizontalAlignment="Center"
-                       FontSize="24"
-                       Margin="0,10,0,20">Dashboard</TextBlock>
+        <!-- Main Content -->
+        <ScrollViewer Grid.Column="1">
+            <StackPanel Margin="20">
+                <!-- Dashboard Header -->
+                <Border Background="#4AA902"  Padding="10" CornerRadius="5" Margin="0 0 0 10">
+                    <TextBlock Text="Dashboard" FontSize="20" FontWeight="Bold" TextAlignment="Center" Foreground="white"/>
+                </Border>
 
+                <!-- Total Stock / Sales / Recent Sale -->
+                <Grid Margin="0 0 0 20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-            <local:HCarousel x:Name="COne" Height="150"/>
-        </StackPanel>
+                    <!-- Left Nav -->
+                    <Button Grid.Column="0" Content="&lt;" Width="30" Height="30" Margin="5" Background="DarkGray"/>
+
+                    <!-- Cards -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Border Width="150" Height="100" Background="White" Margin="10" CornerRadius="5" BorderBrush="Gray" BorderThickness="1">
+                            <TextBlock Text="Total Stock" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                        <Border Width="150" Height="100" Background="White" Margin="10" CornerRadius="5" BorderBrush="Gray" BorderThickness="1">
+                            <TextBlock Text="Total Sales" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                        <Border Width="150" Height="100" Background="White" Margin="10" CornerRadius="5" BorderBrush="Gray" BorderThickness="1">
+                            <TextBlock Text="Recent Sale" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Right Nav -->
+                    <Button Grid.Column="2" Content=">" Width="30" Height="30" Margin="5" Background="DarkGray"/>
+                </Grid>
+
+                <!-- Inventory Summary -->
+                <Border Background="#4AA902" Padding="10" CornerRadius="5" Margin="0 0 0 10">
+                    <TextBlock Text="Inventory Summary" FontSize="16" FontWeight="Bold" Foreground="white" TextAlignment="Center"/>
+                </Border>
+
+                <!-- Inventory Alert + Sales Trend -->
+                <Grid Margin="0 0 0 20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left Nav -->
+                    <Button Grid.Column="0" Content="&lt;" Width="30" Height="30" Margin="5" Background="DarkGray"/>
+
+                    <!-- Cards -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Border Width="200" Height="120" Background="White" Margin="10" CornerRadius="5" BorderBrush="Gray" BorderThickness="1">
+                            <TextBlock Text="Inventory Alert" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                        <Border Width="200" Height="120" Background="White" Margin="10" CornerRadius="5" BorderBrush="Gray" BorderThickness="1">
+                            <TextBlock Text="Sales Trend" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Right Nav -->
+                    <Button Grid.Column="2" Content=">" Width="30" Height="30" Margin="5" />
+                </Grid>
+
+                <!-- Finance Summary -->
+                <Border Background="#4AA902" Padding="10" CornerRadius="5">
+                    <TextBlock Text="Finance Summary" Foreground="white" FontSize="16" FontWeight="Bold" TextAlignment="Center"/>
+                </Border>
+                <StackPanel Grid.Row="1" Orientation="Horizontal">
+                    <Border Width="200" Height="120" Background="White" Margin="10" CornerRadius="5" BorderBrush="Gray" BorderThickness="1">
+                        <TextBlock Text="Total Expenses this month" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    </Border>
+                    <Border Width="200" Height="120" Background="White" Margin="10" CornerRadius="5" BorderBrush="Gray" BorderThickness="1">
+                        <TextBlock Text="Biggest Expense Category" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Page>
