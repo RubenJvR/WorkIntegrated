@@ -61,7 +61,7 @@ namespace ADIX {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/ADIX;V1.0.0.0;component/pages/dashboard.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/ADIX;component/pages/dashboard.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\Pages\Dashboard.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

@@ -86,335 +86,330 @@
         <!-- Sidebar -->
         <local:Sidebar Grid.Column="0" Margin="0,0,10,0"/>
 
-        <!-- Main Content -->
-        <Grid Grid.Column="1" Margin="10">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
+        <!-- Main Content with ScrollViewer -->
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Grid Margin="10" MinHeight="700">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <!-- 0: Header -->
+                    <RowDefinition Height="10"/>
+                    <!-- 1: Spacer -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- 2: Top Info -->
+                    <RowDefinition Height="10"/>
+                    <!-- 3: Spacer -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- 4: Items Table -->
+                    <RowDefinition Height="10"/>
+                    <!-- 5: Spacer -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- 6: Footer -->
+                    <RowDefinition Height="10"/>
+                    <!-- 7: Spacer -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- 8: Thank You -->
+                    <RowDefinition Height="10"/>
+                    <!-- 9: Spacer -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- 10: Buttons -->
+                </Grid.RowDefinitions>
+
                 <!-- Header -->
-                <RowDefinition Height="10"/>
-                <!-- Spacer -->
-                <RowDefinition Height="Auto"/>
-                <!-- Top Info -->
-                <RowDefinition Height="10"/>
-                <!-- Spacer -->
-                <RowDefinition Height="*"/>
-                <!-- Items Table -->
-                <RowDefinition Height="10"/>
-                <!-- Spacer -->
-                <RowDefinition Height="Auto"/>
-                <!-- Footer -->
-                <RowDefinition Height="10"/>
-                <!-- Spacer -->
-                <RowDefinition Height="Auto"/>
-                <!-- Thank You -->
-                <RowDefinition Height="10"/>
-                <!-- Spacer -->
-                <RowDefinition Height="Auto"/>
-                <!-- Buttons -->
-            </Grid.RowDefinitions>
+                <Border Grid.Row="0" Style="{StaticResource HeaderBorderStyle}">
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Invoice"/>
+                </Border>
 
-            <!-- Header -->
-            <Border Grid.Row="0" Style="{StaticResource HeaderBorderStyle}">
-                <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Invoice"/>
-            </Border>
+                <!-- ================= TOP INFO ================= -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-            <!-- ================= TOP INFO ================= -->
-            <Grid Grid.Row="2">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="20"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+                    <!-- LEFT SIDE -->
+                    <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,10,0">
+                        <!-- Logo -->
+                        <Border Height="120" VerticalAlignment="Top" HorizontalAlignment="Left" Width="160" Margin="0,0,0,10">
+                            <Image Source="/Image/ADIX_LOGO.png" Stretch="Uniform"/>
+                        </Border>
 
-                <!-- LEFT SIDE -->
-                <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,10,0">
-                    <!-- Logo -->
-                    <Border Height="120" VerticalAlignment="Top" HorizontalAlignment="Left" Width="160" Margin="0,0,0,10">
-                        <Image Source="/Image/ADIX_LOGO.png" Stretch="Uniform"/>
-                    </Border>
+                        <Border Style="{StaticResource InputBorderStyle}" Margin="0,0,0,10" Height="110">
+                            <TextBox x:Name="CompanyInfoTextBox"
+                                Text="Company Reg: 2017/478397/17&#x0a;283 Stepping Stones Shopping Village&#x0a;Honeydew Rd. West&#x0a;NorthRiding, 2169&#x0a;info@adix.co.za&#x0a;082 440 3703"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Foreground="White"
+                                Padding="8,5"
+                                VerticalContentAlignment="Top"
+                                AcceptsReturn="True"
+                                TextWrapping="Wrap"
+                                VerticalScrollBarVisibility="Auto"
+                                IsReadOnly="True"/>
+                        </Border>
 
-                    <!-- Payment Info -->
-                    <Border Style="{StaticResource InputBorderStyle}" Margin="0,0,0,5">
-                        <TextBox Style="{StaticResource PlaceholderTextBoxStyle}" 
-                                 Tag="Payment"
-                                 Text="{Binding PaymentInfo, UpdateSourceTrigger=PropertyChanged}"/>
-                    </Border>
-
-                    <!-- Bill To -->
-                    <Border Style="{StaticResource InputBorderStyle}" Margin="0,0,0,5">
-                        <TextBox Style="{StaticResource PlaceholderTextBoxStyle}" 
-                                 Tag="Bill to"
-                                 Text="{Binding BillTo, UpdateSourceTrigger=PropertyChanged}"/>
-                    </Border>
-
-                    <!-- Customer Name -->
-                    <Border Style="{StaticResource InputBorderStyle}" Margin="0,0,0,0">
-                        <TextBox x:Name="CustomerNameTextBox"
-                                 Style="{StaticResource PlaceholderTextBoxStyle}" 
-                                 Tag="Customer Name"
-                                 Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}"/>
-                    </Border>
-                </StackPanel>
-
-                <!-- SPACER COLUMN -->
-                <Grid Grid.Column="1" Width="20"/>
-
-                <!-- RIGHT SIDE -->
-                <StackPanel Grid.Column="2" Orientation="Vertical">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Labels -->
-                        <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,10,0">
-                            <TextBlock Text="Date:" Foreground="White" Margin="0,0,0,5" VerticalAlignment="Center"/>
-                            <TextBlock Text="INV #:" Foreground="White" Margin="0,5,0,5" VerticalAlignment="Center"/>
-                            <TextBlock Text="Staff ID:" Foreground="White" Margin="0,5,0,5" VerticalAlignment="Center"/>
-                            <TextBlock Text="Address:" Foreground="White" Margin="0,5,0,0" VerticalAlignment="Top"/>
-                        </StackPanel>
-
-                        <!-- Input Fields -->
-                        <StackPanel Grid.Column="1" Orientation="Vertical">
-                            <!-- Date -->
-                            <Border Style="{StaticResource InputBorderStyle}" Margin="0,0,0,5">
-                                <TextBox Style="{StaticResource PlaceholderTextBoxStyle}" 
-                                         Text="{Binding InvoiceDate, UpdateSourceTrigger=PropertyChanged}"/>
+                        <!-- Bill To Section with Label -->
+                        <Grid Margin="0,0,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="1" Style="{StaticResource InputBorderStyle}">
+                                <TextBlock Text="{Binding BillTo, StringFormat='Bill To: {0}'}"
+                               Foreground="White"
+                               VerticalAlignment="Center"
+                               Margin="8,0"/>
                             </Border>
+                        </Grid>
+                    </StackPanel>
 
-                            <!-- Invoice Number -->
-                            <Border Style="{StaticResource InputBorderStyle}" Margin="0,5,0,5">
-                                <TextBox Style="{StaticResource PlaceholderTextBoxStyle}" 
-                                         Text="{Binding InvoiceNumber, UpdateSourceTrigger=PropertyChanged}"/>
-                            </Border>
+                    <!-- SPACER COLUMN -->
+                    <Grid Grid.Column="1" Width="20"/>
 
-                            <!-- Staff ID -->
-                            <Border Style="{StaticResource InputBorderStyle}" Margin="0,5,0,5">
-                                <TextBox Style="{StaticResource PlaceholderTextBoxStyle}" 
-                                         Text="{Binding StaffID, UpdateSourceTrigger=PropertyChanged}"/>
-                            </Border>
+                    <!-- RIGHT SIDE -->
+                    <StackPanel Grid.Column="2" Orientation="Vertical">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                            <!-- Address -->
-                            <Border Style="{StaticResource InputBorderStyle}" Margin="0,5,0,0" Height="80">
-                                <TextBox x:Name="AddressTextBox"
-                                         Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}"
-                                         Background="Transparent"
-                                         BorderThickness="0"
-                                         Foreground="White"
-                                         Padding="8,5"
-                                         VerticalContentAlignment="Top"
-                                         AcceptsReturn="True"
-                                         TextWrapping="Wrap"
-                                         VerticalScrollBarVisibility="Auto"/>
+                            
+
+                            <!-- Input Fields -->
+                            <StackPanel Grid.Column="1" Orientation="Vertical">
+                                <!-- Date -->
+                                <Border Style="{StaticResource InputBorderStyle}" Margin="0,0,0,5">
+                                    <TextBlock Text="{Binding InvoiceDate, StringFormat=' Date: {0}'}"
+                                       Foreground="White"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0"/>       
+                                </Border>
+
+                                <!-- Invoice Number -->
+                                <Border Style="{StaticResource InputBorderStyle}" Margin="0,5,0,5">
+                                    <TextBlock Text="{Binding InvoiceNumber, StringFormat='INV #: {0}'}"
+                                       Foreground="White"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0"/>
+                                </Border>
+
+                                <!-- Staff ID -->
+                                <Border Style="{StaticResource InputBorderStyle}" Margin="0,5,0,5">
+                                    <TextBlock Text="{Binding StaffID, StringFormat='Staff ID: {0}'}"
+                                       Foreground="White"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0"/>
+                                </Border>
+
+                                <!-- VAT # -->
+                                <Border Style="{StaticResource InputBorderStyle}" Margin="0,5,0,5">
+                                    <TextBlock Text="{Binding VATNumber, StringFormat='VAT #: {0}'}"
+                                       Foreground="White"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0"/>
+                                </Border>
+
+                                <!-- Payment -->
+                                <Border Style="{StaticResource InputBorderStyle}" Margin="0,5,0,0">
+                                    <TextBlock Text="{Binding Payment, StringFormat='Payment: {0}'}"
+                                       Foreground="White"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0"/>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Invoice Table -->
+                <Border Grid.Row="4" Margin="0,10,0,10" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1" Height="200">
+                    <DataGrid x:Name="ProductsGrid"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="False"
+                              Background="Transparent"
+                              Foreground="White"
+                              GridLinesVisibility="All"
+                              BorderThickness="0"
+                              HeadersVisibility="Column"
+                              CanUserAddRows="True"
+                              RowHeight="35"
+                              ColumnHeaderHeight="40"
+                              FontSize="14"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow"
+                              ItemsSource="{Binding InvoiceItems}">
+
+                        <!-- Column Header Styling -->
+                        <DataGrid.ColumnHeaderStyle>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Background" Value="#2D2D2D"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter Property="BorderBrush" Value="Black"/>
+                                <Setter Property="BorderThickness" Value="0.5"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            </Style>
+                        </DataGrid.ColumnHeaderStyle>
+
+                        <!-- Cell Styling -->
+                        <DataGrid.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderBrush" Value="Black"/>
+                                <Setter Property="BorderThickness" Value="0.5"/>
+                                <Setter Property="Padding" Value="5,2"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#2D2D2D"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.CellStyle>
+
+                        <!-- Columns -->
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="SKU #" Binding="{Binding SKU}" Width="100"/>
+                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*" MinWidth="150"/>
+                            <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="80"/>
+                            <DataGridTextColumn Header="Unit Price" Binding="{Binding UnitPrice, StringFormat=C}" Width="100"/>
+                            <DataGridTextColumn Header="Discount" Binding="{Binding Discount, StringFormat=P2}" Width="80"/>
+                            <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C}" Width="100" IsReadOnly="True"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+
+                <!-- ================= FOOTER ================= -->
+                <Grid Grid.Row="6" Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="250"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left comments -->
+                    <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,10,0">
+                        <!-- Other Comments -->
+                        
+                        <Border Style="{StaticResource InputBorderStyle}"  Height="30">
+                            <TextBox Style="{StaticResource PlaceholderTextBoxStyle}" 
+                                    Text="Other Comments"/>
+                            
+                        </Border>
+
+                        <!-- Terms and Conditions -->
+                        
+                        <Border Style="{StaticResource InputBorderStyle}" Height="80">
+                            <TextBox x:Name="TermsTextBox"
+                  Text="Please include the quote number on your POP.&#x0a;Please note that quotes are valid for 7 days only, and prices may change.&#x0a;All orders require full payment up front before being processed.&#x0a;Upon any purchase you agree to our terms and conditions."
+                  Background="Transparent"
+                  BorderThickness="0"
+                  Foreground="White"
+                  Padding="8,5"
+                  VerticalContentAlignment="Center"
+                  AcceptsReturn="True"
+                  TextWrapping="Wrap"
+                  VerticalScrollBarVisibility="Auto"
+                  IsReadOnly="True"/>
+                        </Border>
+
+                        <!-- Bank Details -->
+                       
+                        <Border Style="{StaticResource InputBorderStyle}" Margin="0,0,0,0" Height="80">
+                            <TextBox x:Name="BankDetailsTextBox"
+                 Text="Adix Shooting &amp; Tactical&#x0a;FNB Business Account&#x0a;Acc: 62737653445&#x0a;Branch: 250655"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 Foreground="White"
+                 Padding="8,5"
+                 VerticalContentAlignment="Center"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 VerticalScrollBarVisibility="Auto"
+                 IsReadOnly="True"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- SPACER -->
+                    <Grid Grid.Column="1" Width="20"/>
+
+                    <!-- Right totals -->
+                    <StackPanel Grid.Column="2" Orientation="Vertical">
+
+
+                        <Grid Margin="0,0,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="1" Style="{StaticResource InputBorderStyle}" Width="180">
+                                <TextBlock Text="{Binding SubTotal, StringFormat='Sub Total: {0:C}'}" 
+                               Foreground="White" 
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               Margin="8,0"/>
                             </Border>
-                        </StackPanel>
-                    </Grid>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="1" Style="{StaticResource InputBorderStyle}" Width="180">
+                                <TextBlock Text="{Binding TotalDiscount, StringFormat='Discount: {0:C}'}" 
+                                   Foreground="White" 
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center"
+                                   Margin="8,0"/>
+                            </Border>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="1" Style="{StaticResource InputBorderStyle}" Width="180" Background="#3A3A3A">
+                                <TextBlock Text="{Binding GrandTotal, StringFormat='Total: {0:C}'}" 
+                                   Foreground="White" 
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center"
+                                   Margin="8,0"
+                                   FontWeight="Bold"/>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Thank You Footer -->
+                <TextBlock Grid.Row="8" 
+                           Text="Thank You For Your Business!" 
+                           FontWeight="Bold" 
+                           FontSize="16"
+                           HorizontalAlignment="Center" 
+                           VerticalAlignment="Center"
+                           Margin="0,20,0,10"
+                           Foreground="White"/>
+
+                <!-- Bottom Buttons -->
+                <StackPanel Grid.Row="10" Orientation="Horizontal"
+                            HorizontalAlignment="Center" Margin="0,10,0,20">
+                    <Button Content="Back" Width="150" Height="40"
+                            Background="Green" Foreground="White" FontWeight="Bold" Margin="5"
+                            Style="{StaticResource SolidButtonStyle}"/>
+                    <Button Content="Save Invoice" Width="150" Height="40"
+                            Background="#4AA902" Foreground="White" FontWeight="Bold" Margin="5"
+                            Style="{StaticResource SolidButtonStyle}"/>
+                    <Button Content="Print Invoice" Width="150" Height="40"
+                            Background="#2D2D2D" Foreground="White" FontWeight="Bold" Margin="5"
+                            Style="{StaticResource SolidButtonStyle}"/>
                 </StackPanel>
             </Grid>
-
-            <!-- Invoice Table -->
-            <Border Grid.Row="4" Margin="0,10,0,10" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1">
-                <DataGrid x:Name="ProductsGrid"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="False"
-                          Background="Transparent"
-                          Foreground="White"
-                          GridLinesVisibility="All"
-                          BorderThickness="0"
-                          HeadersVisibility="Column"
-                          CanUserAddRows="True"
-                          RowHeight="35"
-                          ColumnHeaderHeight="40"
-                          FontSize="14"
-                          SelectionMode="Single"
-                          SelectionUnit="FullRow"
-                          ItemsSource="{Binding InvoiceItems}">
-
-                    <!-- Column Header Styling -->
-                    <DataGrid.ColumnHeaderStyle>
-                        <Style TargetType="DataGridColumnHeader">
-                            <Setter Property="Background" Value="#2D2D2D"/>
-                            <Setter Property="Foreground" Value="White"/>
-                            <Setter Property="FontWeight" Value="Bold"/>
-                            <Setter Property="BorderBrush" Value="Black"/>
-                            <Setter Property="BorderThickness" Value="0.5"/>
-                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                            <Setter Property="VerticalContentAlignment" Value="Center"/>
-                        </Style>
-                    </DataGrid.ColumnHeaderStyle>
-
-                    <!-- Cell Styling -->
-                    <DataGrid.CellStyle>
-                        <Style TargetType="DataGridCell">
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Setter Property="BorderBrush" Value="Black"/>
-                            <Setter Property="BorderThickness" Value="0.5"/>
-                            <Setter Property="Padding" Value="5,2"/>
-                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                            <Setter Property="VerticalContentAlignment" Value="Center"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="#2D2D2D"/>
-                                    <Setter Property="Foreground" Value="White"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGrid.CellStyle>
-
-                    <!-- Columns -->
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="SKU #" Binding="{Binding SKU}" Width="100"/>
-                        <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*" MinWidth="150"/>
-                        <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="80"/>
-                        <DataGridTextColumn Header="Unit Price" Binding="{Binding UnitPrice, StringFormat=C}" Width="100"/>
-                        <DataGridTextColumn Header="Discount" Binding="{Binding Discount, StringFormat=P2}" Width="80"/>
-                        <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C}" Width="100" IsReadOnly="True"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </Border>
-
-            <!-- ================= FOOTER ================= -->
-            <Grid Grid.Row="6" Margin="0,10,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="20"/>
-                    <ColumnDefinition Width="250"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Left comments -->
-                <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,10,0">
-                    <!-- Other Comments -->
-                    <TextBlock Text="Other Comments:" Foreground="White" Margin="0,0,0,5" FontWeight="Bold"/>
-                    <Border Style="{StaticResource InputBorderStyle}" Margin="0,0,0,10" Height="30">
-                        <TextBox Style="{StaticResource PlaceholderTextBoxStyle}" 
-                                 Text="{Binding OtherComments, UpdateSourceTrigger=PropertyChanged}"/>
-                    </Border>
-
-                    <!-- Terms and Conditions -->
-                    <TextBlock Text="Terms &amp; Conditions:" Foreground="White" Margin="0,0,0,5" FontWeight="Bold"/>
-                    <Border Style="{StaticResource InputBorderStyle}" Margin="0,0,0,10" Height="80">
-                        <TextBox x:Name="TermsTextBox"
-                                 Text="{Binding Terms, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Foreground="White"
-                                 Padding="8,5"
-                                 VerticalContentAlignment="Top"
-                                 AcceptsReturn="True"
-                                 TextWrapping="Wrap"
-                                 VerticalScrollBarVisibility="Auto"/>
-                    </Border>
-
-                    <!-- Bank Details -->
-                    <TextBlock Text="Bank Details:" Foreground="White" Margin="0,0,0,5" FontWeight="Bold"/>
-                    <Border Style="{StaticResource InputBorderStyle}" Margin="0,0,0,0" Height="80">
-                        <TextBox x:Name="BankDetailsTextBox"
-                                 Text="{Binding BankDetails, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Foreground="White"
-                                 Padding="8,5"
-                                 VerticalContentAlignment="Top"
-                                 AcceptsReturn="True"
-                                 TextWrapping="Wrap"
-                                 VerticalScrollBarVisibility="Auto"/>
-                    </Border>
-                </StackPanel>
-
-                <!-- SPACER -->
-                <Grid Grid.Column="1" Width="20"/>
-
-                <!-- Right totals -->
-                <StackPanel Grid.Column="2" Orientation="Vertical">
-                    <TextBlock Text="Summary:" Foreground="White" Margin="0,0,0,10" FontWeight="Bold" FontSize="16"/>
-
-                    <Grid Margin="0,0,0,5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Sub Total:" Foreground="White" VerticalAlignment="Center"/>
-                        <Border Grid.Column="1" Style="{StaticResource InputBorderStyle}" Width="120">
-                            <TextBlock Text="{Binding SubTotal, StringFormat=C}" 
-                                       Foreground="White" 
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Right"
-                                       Margin="8,0"/>
-                        </Border>
-                    </Grid>
-
-                    <Grid Margin="0,0,0,5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="VAT:" Foreground="White" VerticalAlignment="Center"/>
-                        <Border Grid.Column="1" Style="{StaticResource InputBorderStyle}" Width="120">
-                            <TextBlock Text="{Binding VAT, StringFormat=C}" 
-                                       Foreground="White" 
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Right"
-                                       Margin="8,0"/>
-                        </Border>
-                    </Grid>
-
-                    <Grid Margin="0,0,0,5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Discount:" Foreground="White" VerticalAlignment="Center"/>
-                        <Border Grid.Column="1" Style="{StaticResource InputBorderStyle}" Width="120">
-                            <TextBlock Text="{Binding TotalDiscount, StringFormat=C}" 
-                                       Foreground="White" 
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Right"
-                                       Margin="8,0"/>
-                        </Border>
-                    </Grid>
-
-                    <Grid Margin="0,0,0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Total:" Foreground="White" VerticalAlignment="Center" FontWeight="Bold"/>
-                        <Border Grid.Column="1" Style="{StaticResource InputBorderStyle}" Width="120" Background="#3A3A3A">
-                            <TextBlock Text="{Binding GrandTotal, StringFormat=C}" 
-                                       Foreground="White" 
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Right"
-                                       Margin="8,0"
-                                       FontWeight="Bold"/>
-                        </Border>
-                    </Grid>
-                </StackPanel>
-            </Grid>
-
-            <!-- Thank You Footer -->
-            <TextBlock Grid.Row="8" 
-                       Text="Thank You For Your Business!" 
-                       FontWeight="Bold" 
-                       FontSize="16"
-                       HorizontalAlignment="Center" 
-                       VerticalAlignment="Center"
-                       Margin="0,20,0,10"
-                       Foreground="White"/>
-
-            <!-- Bottom Buttons -->
-            <StackPanel Grid.Row="10" Orientation="Horizontal"
-                        HorizontalAlignment="Center" Margin="0,10,0,0">
-                <Button Content="Back" Width="150" Height="40"
-                        Background="Green" Foreground="White" FontWeight="Bold" Margin="5"
-                        Style="{StaticResource SolidButtonStyle}"/>
-                <Button Content="Save Invoice" Width="150" Height="40"
-                        Background="#4AA902" Foreground="White" FontWeight="Bold" Margin="5"
-                        Style="{StaticResource SolidButtonStyle}"/>
-                <Button Content="Print Invoice" Width="150" Height="40"
-                        Background="#2D2D2D" Foreground="White" FontWeight="Bold" Margin="5"
-                        Style="{StaticResource SolidButtonStyle}"/>
-            </StackPanel>
-        </Grid>
+        </ScrollViewer>
     </Grid>
 </Page>

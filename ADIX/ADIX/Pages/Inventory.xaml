@@ -4,18 +4,20 @@
       xmlns:local="clr-namespace:ADIX"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:sys="clr-namespace:System;assembly=mscorlib"
       mc:Ignorable="d"
       Title="Inventory"
       d:DesignHeight="700" d:DesignWidth="1000">
 
     <Page.Resources>
-        <!-- Header style -->
+        <!-- Header styles -->
         <Style x:Key="HeaderBorderStyle" TargetType="Border">
             <Setter Property="Background" Value="#4AA902"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="Height" Value="40"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="Margin" Value="0,10,0,10"/>
         </Style>
 
         <Style x:Key="HeaderTextStyle" TargetType="TextBlock">
@@ -23,37 +25,107 @@
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="FontWeight" Value="Bold"/>
         </Style>
 
-        <!-- Dark input box style -->
-        <Style x:Key="InputBoxStyle" TargetType="TextBox">
+        <!-- Rounded input border -->
+        <Style x:Key="InputBorderStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Background" Value="#4F4F4F"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Height" Value="30"/>
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="Padding" Value="5,0,5,0"/>
             <Setter Property="BorderBrush" Value="Black"/>
             <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
         </Style>
 
-        <!-- DataGrid header and cell styles -->
-        <Style x:Key="DarkDataGridHeaderStyle" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#2D2D2D"/>
+        <!-- Converters -->
+        <local:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
+        <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+
+        <!-- Rounded ComboBox with placeholder -->
+        <Style x:Key="RoundedComboBoxStyle" TargetType="ComboBox">
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Background" Value="#4F4F4F"/>
             <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="0.5"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="5,0,30,0"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <Border x:Name="Border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="6"/>
+                            <!-- Placeholder -->
+                            <TextBlock x:Name="PlaceholderText"
+                                       Text="{TemplateBinding Tag}"
+                                       Foreground="LightGray"
+                                       Margin="8,0,30,0"
+                                       VerticalAlignment="Center"
+                                       IsHitTestVisible="False"
+                                       Visibility="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource NullToVisibilityConverter}}"/>
+                            <!-- Selected item -->
+                            <ContentPresenter x:Name="ContentSite"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              VerticalAlignment="Center"
+                                              Margin="8,0,30,0"/>
+                            <!-- Toggle button arrow -->
+                            <ToggleButton x:Name="ToggleButton"
+                                          Focusable="False"
+                                          IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                          ClickMode="Press"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Center"
+                                          Width="20">
+                                <Path Fill="White" Data="M 0 0 L 4 4 L 8 0 Z" Stretch="Uniform"/>
+                            </ToggleButton>
+                            <!-- Dropdown Popup -->
+                            <Popup x:Name="PART_Popup"
+                                   Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="Fade">
+                                <Border Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="6">
+                                    <ScrollViewer Margin="0" SnapsToDevicePixels="True">
+                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
-        <Style x:Key="DarkDataGridCellStyle" TargetType="DataGridCell">
+        <!-- Rounded input style (TextBox + ComboBox) -->
+        <Style x:Key="RoundedInputStyle" TargetType="Control">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#4F4F4F"/>
             <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="0.5"/>
-            <Setter Property="Padding" Value="5,2"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="5,0,5,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Control">
+                        <Border CornerRadius="6"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Page.Resources>
 
@@ -64,83 +136,221 @@
         </Grid.ColumnDefinitions>
 
         <!-- Sidebar -->
-        <local:Sidebar Grid.Column="0" Margin="0,0,10,0"/>
+        <local:Sidebar Grid.Column="0" Margin="0,0,10,209"/>
 
         <!-- Main Content -->
-        <ScrollViewer Grid.Column="1" Margin="10" VerticalScrollBarVisibility="Auto">
-            <StackPanel Orientation="Vertical">
+        <Grid Grid.Column="1" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <!-- Header -->
+                <RowDefinition Height="10"/>
+                <RowDefinition Height="Auto"/>
+                <!-- Item Group -->
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="Auto"/>
+                <!-- Item Name -->
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="Auto"/>
+                <!-- Low Stock + Set Min Stock -->
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="Auto"/>
+                <!-- VAT -->
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="Auto"/>
+                <!-- Stock Overview Header -->
+                <RowDefinition Height="10"/>
+                <RowDefinition Height="*"/>
+                <!-- DataGrid -->
+                <RowDefinition Height="Auto"/>
+                <!-- Settings -->
+            </Grid.RowDefinitions>
 
-                <!-- Inventory Header -->
-                <Border Style="{StaticResource HeaderBorderStyle}">
-                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Inventory"/>
-                </Border>
+            <!-- Header -->
+            <Border Grid.Row="0" Style="{StaticResource HeaderBorderStyle}">
+                <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Inventory"/>
+            </Border>
 
-                <!-- Input Section -->
-                <StackPanel Orientation="Vertical" Margin="10,0,10,0">
-                    <TextBox Style="{StaticResource InputBoxStyle}" Text="Item Group"/>
-                    <TextBox Style="{StaticResource InputBoxStyle}" Text="Item Name"/>
+            <!-- Item Group-->
+            <ComboBox Grid.Row="2"
+          x:Name="ItemGroup"
+          Style="{StaticResource RoundedComboBoxStyle}"
+          Tag="Item Group"
+          SelectedIndex="-1">
+                <ComboBoxItem Content="ItemGroup 1"/>
+            </ComboBox>
 
-                    <StackPanel Orientation="Horizontal" Margin="5">
-                        <ToggleButton Content="Low Stock" Width="120" Height="30" Background="#4F4F4F" Foreground="White"/>
-                        <Button Content="Set Min Stock" Width="120" Height="30" Background="#4F4F4F" Foreground="White" Margin="10,0,0,0"/>
-                    </StackPanel>
+            <!-- Item Name-->
+            <ComboBox Grid.Row="4"
+          x:Name="ItemName"
+          Style="{StaticResource RoundedComboBoxStyle}"
+          Tag="Item Name"
+          SelectedIndex="-1">
+                <ComboBoxItem Content="ItemName 1"/>
+            </ComboBox>
 
-                    <TextBox Style="{StaticResource InputBoxStyle}" Text="VAT"/>
-                </StackPanel>
+            <!-- Low Stock + Set Min Stock -->
+            <Grid Grid.Row="6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                <!-- Inventory Table Header -->
-                <Border Style="{StaticResource HeaderBorderStyle}">
-                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Stock Overview"/>
-                </Border>
-
-                <!-- Inventory Table -->
-                <Border Background="#2E2E2E" CornerRadius="5" Padding="10" Margin="0,10,0,10">
-                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                  VerticalScrollBarVisibility="Auto"
-                  CanContentScroll="True"
-                  PanningMode="Both"
-                  Focusable="False"
-                  Height="300">
-                        <DataGrid AutoGenerateColumns="False"
+                <!-- Low Stock Toggle (same as Products page) -->
+                <ToggleButton x:Name="LowStockToggle"
+                  Grid.Column="0"
+                  Width="150"
+                  Height="30"
+                  Margin="0,0,10,0"
                   Background="#4F4F4F"
                   Foreground="White"
-                  GridLinesVisibility="All"
                   BorderBrush="Black"
                   BorderThickness="1"
-                  HeadersVisibility="Column"
-                  CanUserAddRows="True"
-                  RowHeight="35"
-                  ColumnHeaderHeight="40"
-                  FontSize="14"
-                  HorizontalScrollBarVisibility="Hidden"
-                  VerticalScrollBarVisibility="Hidden"
-                  ColumnHeaderStyle="{StaticResource DarkDataGridHeaderStyle}"
-                  CellStyle="{StaticResource DarkDataGridCellStyle}"
-                  Width="Auto"
-                  Height="Auto">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Item Group" Binding="{Binding ItemGroup}" Width="150"/>
-                                <DataGridTextColumn Header="Item Name" Binding="{Binding ItemName}" Width="150"/>
-                                <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="150"/>
-                                <DataGridTextColumn Header="Opening Stock Quantity" Binding="{Binding OpeningStockQuantity}" Width="200"/>
-                                <DataGridTextColumn Header="Stock Received" Binding="{Binding StockReceived}" Width="150"/>
-                                <DataGridTextColumn Header="Stock Sold" Binding="{Binding StockSold}" Width="150"/>
-                                <DataGridTextColumn Header="Stock Returned" Binding="{Binding StockReturned}" Width="150"/>
-                                <DataGridTextColumn Header="Supplier Name" Binding="{Binding SupplierName}" Width="200"/>
-                                <DataGridTextColumn Header="Expiry Date" Binding="{Binding ExpiryDate}" Width="150"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </ScrollViewer>
-                </Border>
+                  HorizontalContentAlignment="Center"
+                  VerticalContentAlignment="Center">
+                    <ToggleButton.Style>
+                        <Style TargetType="ToggleButton">
+                            <Setter Property="Background" Value="#4F4F4F"/>
+                            <Setter Property="BorderBrush" Value="Black"/>
+                            <Setter Property="BorderThickness" Value="1"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border CornerRadius="10"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                            <Grid>
+                                                <!-- Knob -->
+                                                <Ellipse x:Name="Knob"
+                                             Width="20" Height="20"
+                                             Fill="White"
+                                             HorizontalAlignment="Left"
+                                             Margin="4,0"/>
+                                                <!-- State text -->
+                                                <TextBlock x:Name="StateText"
+                                               Text="Low Stock"
+                                               Foreground="White"
+                                               FontWeight="Bold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
 
-                <!-- Settings -->
-                <TextBlock Text="⚙ Settings"
-                           HorizontalAlignment="Left"
-                           Margin="10,0,0,10"
-                           VerticalAlignment="Bottom"
-                           FontWeight="Bold"
-                           Foreground="White"/>
-            </StackPanel>
-        </ScrollViewer>
+                                        <!-- Triggers to move knob and change text/color -->
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
+                                                <Setter Property="Background" Value="Green"/>
+                                                <Setter TargetName="StateText" Property="Text" Value="Low Stock ON"/>
+                                            </Trigger>
+                                            <Trigger Property="IsChecked" Value="False">
+                                                <Setter TargetName="StateText" Property="Text" Value="Low Stock OFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ToggleButton.Style>
+                </ToggleButton>
+
+                <!-- Set Min Stock Button (all the way left like High Value Stock) -->
+                <Button Grid.Column="1"
+                        Content="Set Min Stock"
+                        Width="150"
+                        Height="30"
+                        Background="#4F4F4F"
+                        Foreground="White"
+                        BorderBrush="Black"
+                        BorderThickness="1"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"/>
+            </Grid>
+
+            <!-- VAT-->
+            <ComboBox Grid.Row="8"
+          x:Name="VAT"
+          Style="{StaticResource RoundedComboBoxStyle}"
+          Tag="VAT"
+          SelectedIndex="-1">
+                <ComboBoxItem Content="Standard Rate"/>
+                <ComboBoxItem Content="Reduced Rate"/>
+                <ComboBoxItem Content="Zero Rate"/>
+            </ComboBox>
+
+            <!-- Stock Overview Header -->
+            <Border Grid.Row="10" Style="{StaticResource HeaderBorderStyle}">
+                <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Stock Overview"/>
+            </Border>
+
+            <!-- Inventory Table -->
+            <ScrollViewer Grid.Row="12" Margin="0,10,0,10"
+              HorizontalScrollBarVisibility="Auto"
+              VerticalScrollBarVisibility="Auto">
+                <DataGrid x:Name="InventoryGrid"
+              AutoGenerateColumns="False"
+              IsReadOnly="False"
+              Background="#4F4F4F"
+              Foreground="White"
+              GridLinesVisibility="All"
+              BorderBrush="Black"
+              BorderThickness="1"
+              HeadersVisibility="Column"
+              CanUserAddRows="True"
+              RowHeight="35"
+              ColumnHeaderHeight="40"
+              FontSize="14"
+              Height="300"
+              SelectionMode="Single"
+              SelectionUnit="FullRow">
+
+                    <!-- Column Header Styling -->
+                    <DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="Background" Value="#2D2D2D"/>
+                            <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="BorderBrush" Value="Black"/>
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                        </Style>
+                    </DataGrid.ColumnHeaderStyle>
+
+                    <!-- Cell Styling -->
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderBrush" Value="Black"/>
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="Padding" Value="5,2"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            <Style.Triggers>
+                                <!-- Keep dark theme on selection -->
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#2D2D2D"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.CellStyle>
+
+                    <!-- Columns -->
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Item Group" Binding="{Binding ItemGroup}" Width="150"/>
+                        <DataGridTextColumn Header="Item Name" Binding="{Binding ItemName}" Width="150"/>
+                        <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="150"/>
+                        <DataGridTextColumn Header="Opening Stock Quantity" Binding="{Binding OpeningStockQuantity}" Width="200"/>
+                        <DataGridTextColumn Header="Stock Received" Binding="{Binding StockReceived}" Width="150"/>
+                        <DataGridTextColumn Header="Stock Sold" Binding="{Binding StockSold}" Width="150"/>
+                        <DataGridTextColumn Header="Stock Returned" Binding="{Binding StockReturned}" Width="150"/>
+                        <DataGridTextColumn Header="Supplier Name" Binding="{Binding SupplierName}" Width="200"/>
+                        <DataGridTextColumn Header="Expiry Date" Binding="{Binding ExpiryDate}" Width="150"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </ScrollViewer>
+
+            
+        </Grid>
     </Grid>
 </Page>
