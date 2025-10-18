@@ -21,13 +21,46 @@ namespace ADIX
         public MainWindow()
         {
             InitializeComponent();
-            Database.Initialize();
-            var mainWindow = Window.GetWindow(this) as MainWindow;
-            mainWindow?.MainFrame.Navigate(new Dashboard());
 
-
+            // Only attach the Loaded event handler
+            // Don't call Initialize() here to avoid duplicate initialization
+            this.Loaded += MainWindow_Loaded;
         }
 
+        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Initialize database and attempt sync
+                await Database.InitializeAsync();
 
+                // Navigate to main page
+                MainFrame.Navigate(new Dashboard());
+
+
+                // Show status message
+                if (Database.IsInternetAvailable())
+                {
+                    MessageBox.Show("Database initialized and synced with Azure SQL.",
+                                  "Success",
+                                  MessageBoxButton.OK,
+                                  MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show("Database initialized in offline mode. Data will sync when internet is available.",
+                                  "Offline Mode",
+                                  MessageBoxButton.OK,
+                                  MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Database initialization failed: {ex.Message}",
+                              "Error",
+                              MessageBoxButton.OK,
+                              MessageBoxImage.Error);
+            }
+        }
     }
 }
