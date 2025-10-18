@@ -7,26 +7,25 @@ using System.Windows.Input;
 using ADIX.Models;
 using ADIX.Repositories;
 
-
 namespace ADIX.ViewModels
 {
     public class PointOfSaleViewModel : INotifyPropertyChanged
     {
         private readonly POSRepository _repository;
-        private string _customerName;
-        private StaffMember _selectedStaff;
-        private string _selectedPaymentMethod;
+        private string? _customerName;
+        private StaffMember? _selectedStaff; // Now it will use Repositories.StaffMember
+        private string? _selectedPaymentMethod;
         private bool _paymentReceived;
         private decimal _vatAmount;
-        private string _address;
+        private string? _address;
         private decimal _discountPercent;
         private decimal _totalBill;
         private decimal _totalExcludingDiscount;
-        private string _currentDate;
+        private string? _currentDate;
         private int _invoiceNumber;
 
         public ObservableCollection<POSItem> CartItems { get; set; }
-        public ObservableCollection<StaffMember> StaffMembers { get; set; }
+        public ObservableCollection<StaffMember> StaffMembers { get; set; } // Repositories.StaffMember
         public ObservableCollection<string> PaymentMethods { get; set; }
 
         public ICommand CheckoutCommand { get; }
@@ -108,7 +107,7 @@ namespace ADIX.ViewModels
             }
         }
 
-        private void CartItem_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void CartItem_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(POSItem.Quantity) ||
                 e.PropertyName == nameof(POSItem.ItemDiscount))
@@ -123,19 +122,19 @@ namespace ADIX.ViewModels
             InvoiceNumber = _repository.GetNextInvoiceNumber();
         }
 
-        public string CustomerName
+        public string? CustomerName
         {
             get => _customerName;
             set { _customerName = value; OnPropertyChanged(nameof(CustomerName)); }
         }
 
-        public StaffMember SelectedStaff
+        public StaffMember? SelectedStaff
         {
             get => _selectedStaff;
             set { _selectedStaff = value; OnPropertyChanged(nameof(SelectedStaff)); }
         }
 
-        public string SelectedPaymentMethod
+        public string? SelectedPaymentMethod
         {
             get => _selectedPaymentMethod;
             set { _selectedPaymentMethod = value; OnPropertyChanged(nameof(SelectedPaymentMethod)); }
@@ -153,7 +152,7 @@ namespace ADIX.ViewModels
             set { _vatAmount = value; OnPropertyChanged(nameof(VATAmount)); }
         }
 
-        public string Address
+        public string? Address
         {
             get => _address;
             set { _address = value; OnPropertyChanged(nameof(Address)); }
@@ -182,7 +181,7 @@ namespace ADIX.ViewModels
             set { _totalExcludingDiscount = value; OnPropertyChanged(nameof(TotalExcludingDiscount)); }
         }
 
-        public string CurrentDate
+        public string? CurrentDate
         {
             get => _currentDate;
             set { _currentDate = value; OnPropertyChanged(nameof(CurrentDate)); }
@@ -210,7 +209,7 @@ namespace ADIX.ViewModels
             TotalBill = subtotal - overallDiscount;
         }
 
-        private bool CanCheckout(object parameter)
+        private bool CanCheckout(object? parameter)
         {
             return !string.IsNullOrWhiteSpace(CustomerName) &&
                    SelectedStaff != null &&
@@ -218,7 +217,7 @@ namespace ADIX.ViewModels
                    CartItems.Any(i => i.Quantity > 0);
         }
 
-        private void Checkout(object parameter)
+        private void Checkout(object? parameter)
         {
             try
             {
@@ -235,12 +234,12 @@ namespace ADIX.ViewModels
 
                 // Create invoice (type = 1 for sale)
                 int invoiceId = _repository.CreateInvoice(
-                    CustomerName,
-                    SelectedStaff.StaffID,
-                    SelectedPaymentMethod,
+                    CustomerName ?? "",
+                    SelectedStaff?.StaffID ?? 0,
+                    SelectedPaymentMethod ?? "",
                     PaymentReceived,
                     VATAmount,
-                    Address,
+                    Address ?? "",
                     1, // Type 1 = Sale
                     TotalBill
                 );
@@ -262,18 +261,18 @@ namespace ADIX.ViewModels
             }
         }
 
-        private void CreateQuote(object parameter)
+        private void CreateQuote(object? parameter)
         {
             try
             {
                 // Create quote (type = 2 for quote)
                 int quoteId = _repository.CreateInvoice(
-                    CustomerName,
-                    SelectedStaff.StaffID,
-                    SelectedPaymentMethod,
+                    CustomerName ?? "",
+                    SelectedStaff?.StaffID ?? 0,
+                    SelectedPaymentMethod ?? "",
                     false,
                     VATAmount,
-                    Address,
+                    Address ?? "",
                     2, // Type 2 = Quote
                     TotalBill
                 );
@@ -293,7 +292,7 @@ namespace ADIX.ViewModels
             }
         }
 
-        private void CancelTransaction(object parameter)
+        private void CancelTransaction(object? parameter)
         {
             var result = MessageBox.Show("Are you sure you want to cancel this transaction?",
                 "Confirm Cancel", MessageBoxButton.YesNo, MessageBoxImage.Question);
@@ -319,7 +318,7 @@ namespace ADIX.ViewModels
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName)
         {
@@ -327,26 +326,26 @@ namespace ADIX.ViewModels
         }
     }
 
-    // Simple RelayCommand implementation
+    // Simple RelayCommand implementation with nullable parameters
     public class RelayCommand : ICommand
     {
-        private readonly Action<object> _execute;
-        private readonly Func<object, bool> _canExecute;
+        private readonly Action<object?> _execute;
+        private readonly Func<object?, bool>? _canExecute;
 
-        public RelayCommand(Action<object> execute, Func<object, bool> canExecute = null)
+        public RelayCommand(Action<object?> execute, Func<object?, bool>? canExecute = null)
         {
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;
         }
 
-        public event EventHandler CanExecuteChanged
+        public event EventHandler? CanExecuteChanged
         {
             add { CommandManager.RequerySuggested += value; }
             remove { CommandManager.RequerySuggested -= value; }
         }
 
-        public bool CanExecute(object parameter) => _canExecute == null || _canExecute(parameter);
+        public bool CanExecute(object? parameter) => _canExecute == null || _canExecute(parameter);
 
-        public void Execute(object parameter) => _execute(parameter);
+        public void Execute(object? parameter) => _execute(parameter);
     }
 }

@@ -5,7 +5,7 @@ namespace ADIX.Models
     public class POSItem : INotifyPropertyChanged
     {
         private int _itemID;
-        private string _itemName;
+        private string? _itemName;
         private int _quantity;
         private int _stockControl;
         private decimal _price;
@@ -21,7 +21,7 @@ namespace ADIX.Models
             set { _itemID = value; OnPropertyChanged(nameof(ItemID)); }
         }
 
-        public string ItemName
+        public string? ItemName
         {
             get => _itemName;
             set { _itemName = value; OnPropertyChanged(nameof(ItemName)); }
@@ -98,7 +98,7 @@ namespace ADIX.Models
             TotalDiscounted = discountAmount;
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName)
         {
