@@ -1,6 +1,8 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using ADIX.Models;
 
 namespace ADIX.ViewModels
 {
@@ -16,35 +18,45 @@ namespace ADIX.ViewModels
         private string? _payment;
         private string? _otherComments;
         private decimal _subTotal;
+        private decimal _totalItemDiscounts;
+        private decimal _overallDiscountAmount;
         private decimal _totalDiscount;
         private decimal _grandTotal;
+        private decimal _overallDiscountPercent;
 
         public InvoiceViewModel()
         {
-            // Initialize with empty data
             InvoiceItems = new ObservableCollection<InvoiceItem>();
-
-            // Set default values
             InvoiceDate = DateTime.Now.ToString("yyyy-MM-dd");
             InvoiceNumber = "INV-" + DateTime.Now.ToString("yyyyMMddHHmmss");
-
-            // Subscribe to collection changes
             InvoiceItems.CollectionChanged += (s, e) => CalculateTotals();
-
-            // Calculate initial totals
             CalculateTotals();
         }
 
-        // Constructor to accept data from PointOfSale
-        public InvoiceViewModel(string customerName, string selectedStaff, string vatAmount, string paymentMethod, string customerAddress)
+        // Updated constructor to accept overall discount
+        public InvoiceViewModel(System.Collections.Generic.List<POSItem> cartItems, string customerName, string selectedStaff, string vatAmount, string paymentMethod, string customerAddress, decimal overallDiscountPercent)
         {
             InvoiceItems = new ObservableCollection<InvoiceItem>();
+
+            // Convert POS items to Invoice items
+            foreach (var cartItem in cartItems.Where(item => item.Quantity > 0))
+            {
+                InvoiceItems.Add(new InvoiceItem
+                {
+                    SKU = cartItem.ItemID.ToString(),
+                    Description = cartItem.ItemName,
+                    Quantity = cartItem.Quantity,
+                    UnitPrice = cartItem.Price,
+                    Discount = cartItem.ItemDiscount / 100m // Convert percentage to decimal
+                });
+            }
 
             BillTo = customerName;
             StaffID = selectedStaff;
             VATNumber = vatAmount;
             Payment = paymentMethod;
             CustomerAddress = customerAddress;
+            OverallDiscountPercent = overallDiscountPercent;
             InvoiceDate = DateTime.Now.ToString("yyyy-MM-dd");
             InvoiceNumber = "INV-" + DateTime.Now.ToString("yyyyMMddHHmmss");
 
@@ -117,6 +129,33 @@ namespace ADIX.ViewModels
             set { _subTotal = value; OnPropertyChanged(nameof(SubTotal)); }
         }
 
+        // New property for item-level discounts only
+        public decimal TotalItemDiscounts
+        {
+            get => _totalItemDiscounts;
+            set { _totalItemDiscounts = value; OnPropertyChanged(nameof(TotalItemDiscounts)); }
+        }
+
+        // New property for overall discount amount
+        public decimal OverallDiscountAmount
+        {
+            get => _overallDiscountAmount;
+            set { _overallDiscountAmount = value; OnPropertyChanged(nameof(OverallDiscountAmount)); }
+        }
+
+        // Overall discount percentage
+        public decimal OverallDiscountPercent
+        {
+            get => _overallDiscountPercent;
+            set
+            {
+                _overallDiscountPercent = value;
+                OnPropertyChanged(nameof(OverallDiscountPercent));
+                CalculateTotals();
+            }
+        }
+
+        // Total discount (item discounts + overall discount)
         public decimal TotalDiscount
         {
             get => _totalDiscount;
@@ -134,13 +173,26 @@ namespace ADIX.ViewModels
             if (InvoiceItems == null || !InvoiceItems.Any())
             {
                 SubTotal = 0;
+                TotalItemDiscounts = 0;
+                OverallDiscountAmount = 0;
                 TotalDiscount = 0;
                 GrandTotal = 0;
                 return;
             }
 
+            // Calculate subtotal (before any discounts)
             SubTotal = InvoiceItems.Sum(item => item.UnitPrice * item.Quantity);
-            TotalDiscount = InvoiceItems.Sum(item => (item.UnitPrice * item.Quantity) * item.Discount);
+
+            // Calculate total item-level discount amount
+            TotalItemDiscounts = InvoiceItems.Sum(item => (item.UnitPrice * item.Quantity) * item.Discount);
+
+            // Calculate overall discount amount
+            OverallDiscountAmount = SubTotal * (OverallDiscountPercent / 100m);
+
+            // Calculate total discount (item discounts + overall discount)
+            TotalDiscount = TotalItemDiscounts + OverallDiscountAmount;
+
+            // Calculate grand total after ALL discounts
             GrandTotal = SubTotal - TotalDiscount;
         }
 

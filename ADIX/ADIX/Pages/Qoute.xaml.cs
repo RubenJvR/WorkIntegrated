@@ -1,4 +1,5 @@
-﻿using ADIX.ViewModels;
+﻿using ADIX.Models;
+using ADIX.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -6,15 +7,17 @@ namespace ADIX
 {
     public partial class Qoute : Page
     {
-        public Qoute()
+        // Updated constructor to accept overall discount
+        public Qoute(System.Collections.Generic.List<POSItem> cartItems, string customerName, string selectedStaff, string vatAmount, string paymentMethod, string customerAddress, decimal overallDiscountPercent)
         {
             InitializeComponent();
-            // Default constructor with empty data
-            DataContext = new QouteViewModel();
+
+            var viewModel = new QouteViewModel(cartItems, customerName, selectedStaff, vatAmount, paymentMethod, customerAddress, overallDiscountPercent);
+            DataContext = viewModel;
         }
 
-        // Overloaded constructor to accept data from PointOfSale
-        public Qoute(string customerName, string selectedStaff, string vatAmount, string paymentMethod, string customerAddress)
+        // Overloaded constructor to accept data from PointOfSale (updated with discount)
+        public Qoute(string customerName, string selectedStaff, string vatAmount, string paymentMethod, string customerAddress, decimal overallDiscountPercent)
         {
             InitializeComponent();
 
@@ -25,15 +28,27 @@ namespace ADIX
                 VATNumber = vatAmount,
                 Payment = paymentMethod,
                 CustomerAddress = customerAddress,
+                OverallDiscountPercent = overallDiscountPercent,
                 // Set other default values
                 InvoiceDate = System.DateTime.Now.ToString("yyyy-MM-dd"),
                 InvoiceNumber = "Q-" + System.DateTime.Now.ToString("yyyyMMddHHmmss"),
-                // You can calculate these based on your business logic
-                SubTotal = 0, // Set based on your items
-                TotalDiscount = 0, // Set based on your discount logic
-                GrandTotal = 0 // Set based on your total calculation
+                // These will be calculated automatically when items are added
+                SubTotal = 0,
+                TotalItemDiscounts = 0,
+                OverallDiscountAmount = 0,
+                TotalDiscount = 0,
+                GrandTotal = 0
             };
 
+            DataContext = viewModel;
+        }
+
+        // Parameterless constructor for design time or default usage
+        public Qoute()
+        {
+            InitializeComponent();
+
+            var viewModel = new QouteViewModel();
             DataContext = viewModel;
         }
 

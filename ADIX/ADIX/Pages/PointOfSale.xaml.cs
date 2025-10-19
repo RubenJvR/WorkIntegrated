@@ -32,17 +32,21 @@ namespace ADIX
             // Store the current ViewModel before navigating away
             _storedViewModel = _viewModel;
 
-            // Get the current ViewModel data
+            // Get cart items with quantity > 0
+            var cartItems = _viewModel.GetCartItemsForExport();
+
+            // Get the current ViewModel data including overall discount
             string customerName = _viewModel.CustomerName ?? "";
             string selectedStaff = _viewModel.SelectedStaff?.Name ?? "Not Selected";
             string vatAmount = _viewModel.VATAmount.ToString("F2");
             string paymentMethod = _viewModel.SelectedPaymentMethod ?? "";
             string customerAddress = _viewModel.Address ?? "";
+            decimal overallDiscountPercent = _viewModel.DiscountPercent;
 
-            var qoutePage = new Qoute(customerName, selectedStaff, vatAmount, paymentMethod, customerAddress);
-
+            // Pass all data including overall discount to Quote page
+            var quotePage = new Qoute(cartItems, customerName, selectedStaff, vatAmount, paymentMethod, customerAddress, overallDiscountPercent);
             var mainWindow = Window.GetWindow(this) as MainWindow;
-            mainWindow?.MainFrame.Navigate(qoutePage);
+            mainWindow?.MainFrame.Navigate(quotePage);
         }
 
         private void Invoice_Click(object sender, RoutedEventArgs e)
@@ -50,15 +54,19 @@ namespace ADIX
             // Store the current ViewModel before navigating away
             _storedViewModel = _viewModel;
 
-            // Get the current ViewModel data
+            // Get cart items with quantity > 0
+            var cartItems = _viewModel.GetCartItemsForExport();
+
+            // Get the current ViewModel data including overall discount
             string customerName = _viewModel.CustomerName ?? "";
             string selectedStaff = _viewModel.SelectedStaff?.Name ?? "Not Selected";
             string vatAmount = _viewModel.VATAmount.ToString("F2");
             string paymentMethod = _viewModel.SelectedPaymentMethod ?? "";
             string customerAddress = _viewModel.Address ?? "";
+            decimal overallDiscountPercent = _viewModel.DiscountPercent;
 
-            var invoicePage = new Invoice(customerName, selectedStaff, vatAmount, paymentMethod, customerAddress);
-
+            // Pass all data including overall discount to Invoice page
+            var invoicePage = new Invoice(cartItems, customerName, selectedStaff, vatAmount, paymentMethod, customerAddress, overallDiscountPercent);
             var mainWindow = Window.GetWindow(this) as MainWindow;
             mainWindow?.MainFrame.Navigate(invoicePage);
         }

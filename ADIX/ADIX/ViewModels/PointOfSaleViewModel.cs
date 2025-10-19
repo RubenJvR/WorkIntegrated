@@ -13,7 +13,7 @@ namespace ADIX.ViewModels
     {
         private readonly POSRepository _repository;
         private string? _customerName;
-        private StaffMember? _selectedStaff; // Now it will use Repositories.StaffMember
+        private StaffMember? _selectedStaff;
         private string? _selectedPaymentMethod;
         private bool _paymentReceived;
         private decimal _vatAmount;
@@ -25,7 +25,7 @@ namespace ADIX.ViewModels
         private int _invoiceNumber;
 
         public ObservableCollection<POSItem> CartItems { get; set; }
-        public ObservableCollection<StaffMember> StaffMembers { get; set; } // Repositories.StaffMember
+        public ObservableCollection<StaffMember> StaffMembers { get; set; }
         public ObservableCollection<string> PaymentMethods { get; set; }
 
         public ICommand CheckoutCommand { get; }
@@ -51,6 +51,10 @@ namespace ADIX.ViewModels
             PaymentMethods.Add("EFT");
             PaymentMethods.Add("Credit");
             PaymentMethods.Add("Return");
+
+            // Set default values
+            _discountPercent = 0; // Explicitly set to 0
+            _vatAmount = 15; // Set a default VAT percentage (e.g., 15%)
 
             // Load data
             try
@@ -149,7 +153,20 @@ namespace ADIX.ViewModels
         public decimal VATAmount
         {
             get => _vatAmount;
-            set { _vatAmount = value; OnPropertyChanged(nameof(VATAmount)); }
+            set
+            {
+                // Ensure value is valid
+                decimal validValue = value;
+                if (validValue < 0) validValue = 0;
+                if (validValue > 30) validValue = 30; // Max 30% VAT
+
+                if (_vatAmount != validValue)
+                {
+                    _vatAmount = validValue;
+                    OnPropertyChanged(nameof(VATAmount));
+                    ValidateAndCalculateTotals();
+                }
+            }
         }
 
         public string? Address
@@ -163,9 +180,17 @@ namespace ADIX.ViewModels
             get => _discountPercent;
             set
             {
-                _discountPercent = value;
-                OnPropertyChanged(nameof(DiscountPercent));
-                CalculateTotals();
+                // Ensure value is valid
+                decimal validValue = value;
+                if (validValue < 0) validValue = 0;
+                if (validValue > 100) validValue = 100;
+
+                if (_discountPercent != validValue)
+                {
+                    _discountPercent = validValue;
+                    OnPropertyChanged(nameof(DiscountPercent));
+                    ValidateAndCalculateTotals();
+                }
             }
         }
 
@@ -195,18 +220,47 @@ namespace ADIX.ViewModels
 
         private void CalculateTotals()
         {
-            decimal subtotal = 0;
+            if (CartItems == null) return;
 
+            decimal subtotal = 0;
+            decimal totalItemDiscounts = 0;
+
+            // Calculate subtotal and individual item discounts
             foreach (var item in CartItems.Where(i => i.Quantity > 0))
             {
-                subtotal += item.DiscountedItemAmount;
+                decimal itemTotal = item.Quantity * item.Price;
+                subtotal += itemTotal;
+                totalItemDiscounts += itemTotal * (item.ItemDiscount / 100m);
             }
 
+            // Update TotalExcludingDiscount (this is the subtotal before any discounts)
             TotalExcludingDiscount = subtotal;
 
-            // Apply overall discount
-            decimal overallDiscount = subtotal * (DiscountPercent / 100);
-            TotalBill = subtotal - overallDiscount;
+            // Calculate overall discount amount
+            decimal overallDiscountAmount = subtotal * (DiscountPercent / 100m);
+
+            // Calculate total after ALL discounts (both item-level and overall)
+            decimal totalAfterAllDiscounts = subtotal - totalItemDiscounts - overallDiscountAmount;
+
+            // Apply VAT
+            decimal vatAmount = totalAfterAllDiscounts * (VATAmount / 100m);
+
+            // Final total
+            TotalBill = totalAfterAllDiscounts + vatAmount;
+
+            // Debug output (remove in production)
+            System.Diagnostics.Debug.WriteLine($"Subtotal: {subtotal}, Item Discounts: {totalItemDiscounts}, Overall Discount: {overallDiscountAmount}, VAT: {vatAmount}, Total: {TotalBill}");
+        }
+
+        private void ValidateNumericInputs()
+        {
+            // Ensure VAT is reasonable
+            if (VATAmount < 0) VATAmount = 0;
+            if (VATAmount > 30) VATAmount = 30; // Assuming max 30% VAT
+
+            // Ensure discount is reasonable
+            if (DiscountPercent < 0) DiscountPercent = 0;
+            if (DiscountPercent > 100) DiscountPercent = 100; // Max 100% discount
         }
 
         private bool CanCheckout(object? parameter)
@@ -318,6 +372,25 @@ namespace ADIX.ViewModels
             }
         }
 
+        private void ValidateAndCalculateTotals()
+        {
+            // Validate DiscountPercent
+            if (_discountPercent < 0) _discountPercent = 0;
+            if (_discountPercent > 100) _discountPercent = 100;
+
+            // Validate VATAmount
+            if (_vatAmount < 0) _vatAmount = 0;
+            if (_vatAmount > 30) _vatAmount = 30; // Assuming max 30% VAT
+
+            CalculateTotals();
+        }
+
+        // Method to get cart items for Quote/Invoice
+        public System.Collections.Generic.List<POSItem> GetCartItemsForExport()
+        {
+            return CartItems.Where(item => item.Quantity > 0).ToList();
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName)
@@ -347,5 +420,7 @@ namespace ADIX.ViewModels
         public bool CanExecute(object? parameter) => _canExecute == null || _canExecute(parameter);
 
         public void Execute(object? parameter) => _execute(parameter);
+
+
     }
 }

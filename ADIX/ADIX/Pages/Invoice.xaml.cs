@@ -1,4 +1,5 @@
-﻿using ADIX.ViewModels;
+﻿using ADIX.Models;
+using ADIX.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -6,19 +7,52 @@ namespace ADIX
 {
     public partial class Invoice : Page
     {
-        public Invoice()
+        // Updated constructor to accept overall discount
+        public Invoice(System.Collections.Generic.List<POSItem> cartItems, string customerName, string selectedStaff, string vatAmount, string paymentMethod, string customerAddress, decimal overallDiscountPercent)
         {
             InitializeComponent();
-            DataContext = new InvoiceViewModel();
+
+            var viewModel = new InvoiceViewModel(cartItems, customerName, selectedStaff, vatAmount, paymentMethod, customerAddress, overallDiscountPercent);
+            DataContext = viewModel;
+
             Loaded += OnInvoiceLoaded;
         }
 
-        // Overloaded constructor to accept data from PointOfSale
-        public Invoice(string customerName, string selectedStaff, string vatAmount, string paymentMethod, string customerAddress)
+        // Overloaded constructor to accept data from PointOfSale (updated with discount)
+        public Invoice(string customerName, string selectedStaff, string vatAmount, string paymentMethod, string customerAddress, decimal overallDiscountPercent)
         {
             InitializeComponent();
 
-            var viewModel = new InvoiceViewModel(customerName, selectedStaff, vatAmount, paymentMethod, customerAddress);
+            var viewModel = new InvoiceViewModel
+            {
+                BillTo = customerName,
+                StaffID = selectedStaff,
+                VATNumber = vatAmount,
+                Payment = paymentMethod,
+                CustomerAddress = customerAddress,
+                OverallDiscountPercent = overallDiscountPercent,
+                // Set other default values
+                InvoiceDate = System.DateTime.Now.ToString("yyyy-MM-dd"),
+                InvoiceNumber = "INV-" + System.DateTime.Now.ToString("yyyyMMddHHmmss"),
+                // These will be calculated automatically when items are added
+                SubTotal = 0,
+                TotalItemDiscounts = 0,
+                OverallDiscountAmount = 0,
+                TotalDiscount = 0,
+                GrandTotal = 0
+            };
+
+            DataContext = viewModel;
+
+            Loaded += OnInvoiceLoaded;
+        }
+
+        // Parameterless constructor for design time or default usage
+        public Invoice()
+        {
+            InitializeComponent();
+
+            var viewModel = new InvoiceViewModel();
             DataContext = viewModel;
 
             Loaded += OnInvoiceLoaded;
