@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
 D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\App.xaml
-14-1721015069
+16-2082487680
 11928065099
-28-485365682
+30-1651911665
 227-1956840700
-Components\HorizontalCarousel.xaml;Components\Sidebar.xaml;HCarousel.xaml;MainWindow.xaml;Pages\Consignment.xaml;Pages\Dashboard.xaml;Pages\Finance.xaml;Pages\Inventory.xaml;Pages\Invoice.xaml;Pages\PointOfSale.xaml;Pages\Products.xaml;Pages\Qoute.xaml;Pages\Sales.xaml;Pages\SupplierPage.xaml;
+Components\HorizontalCarousel.xaml;Components\Sidebar.xaml;HCarousel.xaml;MainWindow.xaml;Pages\Consignment.xaml;Pages\Dashboard.xaml;Pages\Finance.xaml;Pages\Inventory.xaml;Pages\Invoice.xaml;Pages\ItemGroup.xaml;Pages\MonthlyReport.xaml;Pages\PointOfSale.xaml;Pages\Products.xaml;Pages\Qoute.xaml;Pages\Sales.xaml;Pages\SupplierPage.xaml;
 
-True
+False
 

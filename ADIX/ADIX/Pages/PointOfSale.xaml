@@ -295,21 +295,21 @@
                      Style="{StaticResource RoundedCheckBoxStyle}"/>
 
             <!-- VAT TextBox -->
+            <!-- VAT # - Editable with prefix inside -->
             <Border Grid.Row="10" Style="{StaticResource InputBorderStyle}">
                 <Grid>
                     <TextBox x:Name="VATTextBox"
-                             Text="{Binding VATAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                             Background="Transparent"
-                             BorderThickness="0"
-                             Foreground="White"
-                             Padding="5,0,5,0"
-                             VerticalContentAlignment="Center"/>
-                    <TextBlock Text="VAT Amount"
-                               Foreground="LightGray"
-                               Margin="8,0,0,0"
-                               VerticalAlignment="Center"
-                               IsHitTestVisible="False"
-                               Visibility="{Binding Text, ElementName=VATTextBox, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+                 Text="{Binding VATAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 Foreground="White"
+                 Padding="55,0,5,0" 
+                        VerticalContentAlignment="Center"/>
+                        <TextBlock Text="VAT #: "
+                   Foreground="White"
+                   VerticalAlignment="Center"
+                   Margin="8,0"
+                   IsHitTestVisible="False"/>
                 </Grid>
             </Border>
 

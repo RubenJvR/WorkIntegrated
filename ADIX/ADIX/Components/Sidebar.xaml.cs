@@ -82,7 +82,16 @@ namespace ADIX
             mainWindow?.MainFrame.Navigate(new Consignment());
         }
 
+        private void ItemGroup_Click(object sender, RoutedEventArgs e)
+        {
+            var mainWindow = Window.GetWindow(this) as MainWindow;
+            mainWindow?.MainFrame.Navigate(new ItemGroup());
+        }
 
-
+        private void MonthlyReport_Click(object sender, RoutedEventArgs e)
+        {
+            var mainWindow = Window.GetWindow(this) as MainWindow;
+            mainWindow?.MainFrame.Navigate(new MonthlyReport());
+        }
     }
 }

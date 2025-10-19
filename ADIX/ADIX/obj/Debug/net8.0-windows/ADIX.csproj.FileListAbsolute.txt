@@ -410,3 +410,7 @@ D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\refi
 D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\ADIX.pdb
 D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\ADIX.genruntimeconfig.cache
 D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\ref\ADIX.dll
+D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\ItemGroup.g.cs
+D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\ItemGroup.baml
+D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\MonthlyReport.g.cs
+D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\MonthlyReport.baml

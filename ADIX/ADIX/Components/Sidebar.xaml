@@ -18,8 +18,10 @@
             <Button Content="POS" Click="Pos_Click"/>
             <Button Content="Inventory" Click="Inventory_Click"/>
             <Button Content="Products" Click="Product_Click"/>
+            <Button Content="Item Group" Click="ItemGroup_Click"/>
             <Button Content="Supplier" Click="Supplier_Click"/>
             <Button Content="Finance" Click="Finance_Click"/>
+            <Button Content="Monthly Report" Click="MonthlyReport_Click"/>
             <Button Content="Sales" Click="Sales_Click"/>
             <Button Content="Consignment" Click="Consignment_Click"/>
             
