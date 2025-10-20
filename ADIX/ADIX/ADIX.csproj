@@ -10,6 +10,15 @@
 
   <ItemGroup>
     <None Remove="Database\ADIX.sql" />
+    <None Remove="icons\dashboard_icon.png" />
+    <None Remove="icons\Finance.png" />
+    <None Remove="icons\inventory_icon.png" />
+    <None Remove="icons\loggo.png" />
+    <None Remove="icons\point-of-service.png" />
+    <None Remove="icons\products.png" />
+    <None Remove="icons\Sales.png" />
+    <None Remove="icons\settings.png" />
+    <None Remove="icons\Supplier.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -20,7 +29,27 @@
 
   <ItemGroup>
     <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" Version="2.0.0-rc6.1" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="9.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="9.0.8" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.10" />
+    <PackageReference Include="SQLitePCLRaw.core" Version="2.1.10" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.10" />
+    <PackageReference Include="SQLitePCLRaw.provider.e_sqlite3" Version="2.1.10" />
+    <PackageReference Include="WPF-UI" Version="4.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="icons\dashboard_icon.png" />
+    <Resource Include="icons\finance.png" />
+    <Resource Include="icons\inventory_icon.png" />
+    <Resource Include="icons\loggo.png" />
+    <Resource Include="icons\point-of-service.png" />
+    <Resource Include="icons\products.png" />
+    <Resource Include="icons\Sales.png" />
+    <Resource Include="icons\settings.png" />
+    <Resource Include="icons\Supplier.png" />
+    <Resource Include="Image\loggo.png" />
   </ItemGroup>
 
   <ItemGroup>

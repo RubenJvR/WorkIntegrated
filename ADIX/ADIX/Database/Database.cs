@@ -1,6 +1,4 @@
 using Microsoft.Data.Sqlite;
-using System;
-using System.IO;
 
 namespace ADIX
 {
@@ -37,6 +35,11 @@ namespace ADIX
             }
         }
 
+        internal static bool ValidateUser(string username, string password)
+        {
+            throw new NotImplementedException();
+        }
+
         private static void CreateTables(SqliteConnection connection)
         {
             string createTablesSql = @"
@@ -47,6 +50,12 @@ namespace ADIX
                     bankDetails TEXT,
                     commissionRate REAL CHECK(commissionRate >= 0 AND commissionRate <= 1)
                 );
+
+               CREATE TABLE IF NOT EXISTS USER(
+                    userId INTEGER NOT NULL PRIMARY KEY,
+                    username text not null,
+                    password text not null
+                   );
 
                 CREATE TABLE IF NOT EXISTS SUPPLIER(
                     supplierID INTEGER NOT NULL PRIMARY KEY,

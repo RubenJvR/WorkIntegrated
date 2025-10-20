@@ -5,10 +5,20 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ADIX"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="ADIX - Inventory Management" Height="700" Width="1200"
+        WindowStartupLocation="CenterScreen">
     <Grid>
-        <local:Sidebar Panel.ZIndex="100"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <!-- Sidebar always here -->
+            <ColumnDefinition Width="*"/>
+            <!-- Content goes here -->
+        </Grid.ColumnDefinitions>
 
+        <!-- Sidebar - ALWAYS VISIBLE -->
+        <local:Sidebar x:Name="SidebarControl" Grid.Column="0" Loaded="SidebarControl_Loaded"/>
+
+        <!-- Frame - Shows different pages in the RIGHT column only -->
         <Frame x:Name="MainFrame" Grid.Column="1" NavigationUIVisibility="Hidden"/>
     </Grid>
 </Window>

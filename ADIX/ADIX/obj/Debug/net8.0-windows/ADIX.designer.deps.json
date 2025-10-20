@@ -554,6 +554,25 @@
             "fileVersion": "9.0.825.36511"
           }
         }
+      },
+      "WPF-UI/4.0.3": {
+        "dependencies": {
+          "WPF-UI.Abstractions": "4.0.3"
+        },
+        "runtime": {
+          "lib/net8.0-windows7.0/Wpf.Ui.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "4.0.0.0"
+          }
+        }
+      },
+      "WPF-UI.Abstractions/4.0.3": {
+        "runtime": {
+          "lib/net8.0/Wpf.Ui.Abstractions.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "4.0.0.0"
+          }
+        }
       }
     }
   },
@@ -837,6 +856,20 @@
       "sha512": "sha512-mIQir9jBqk0V7X0Nw5hzPJZC8DuGdf+2DS3jAVsr6rq5+/VyH5rza0XGcONJUWBrZ+G6BCwNyjWYd9lncBu48A==",
       "path": "system.text.json/9.0.8",
       "hashPath": "system.text.json.9.0.8.nupkg.sha512"
+    },
+    "WPF-UI/4.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-izkG9uL33gYDkZkirpamlvk6v9ru5QL+97Dgqhr0rkGcwuJZOPd5zkhEUwlDOZ25OFX3Hbp2O/jpHILCYPNfiQ==",
+      "path": "wpf-ui/4.0.3",
+      "hashPath": "wpf-ui.4.0.3.nupkg.sha512"
+    },
+    "WPF-UI.Abstractions/4.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-HyoPrc5TmasqzYqHk3UCvYFNWfBEj8GOI3ZXpX6Cl+BghHFWR5nMzjGkwJ2341ISs5HEt4Iun6DZgrYVZpwTXQ==",
+      "path": "wpf-ui.abstractions/4.0.3",
+      "hashPath": "wpf-ui.abstractions.4.0.3.nupkg.sha512"
     }
   }
 }

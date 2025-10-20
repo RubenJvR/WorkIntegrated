@@ -31,6 +31,9 @@
     <Compile Update="Pages\Sales.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Pages\Setting.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Pages\SupplierPage.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
