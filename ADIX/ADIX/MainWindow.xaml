@@ -9,16 +9,14 @@
         WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
-            <!-- Sidebar always here -->
+            <ColumnDefinition Width="220" x:Name="SidebarColumn"/>
             <ColumnDefinition Width="*"/>
-            <!-- Content goes here -->
         </Grid.ColumnDefinitions>
 
-        <!-- Sidebar - ALWAYS VISIBLE -->
+        <!-- Sidebar -->
         <local:Sidebar x:Name="SidebarControl" Grid.Column="0" Loaded="SidebarControl_Loaded"/>
 
-        <!-- Frame - Shows different pages in the RIGHT column only -->
+        <!-- Frame - Shows different pages -->
         <Frame x:Name="MainFrame" Grid.Column="1" NavigationUIVisibility="Hidden"/>
     </Grid>
 </Window>

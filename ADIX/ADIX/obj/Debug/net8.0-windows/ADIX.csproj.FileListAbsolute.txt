@@ -602,8 +602,12 @@ D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\P
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Dashboard.g.cs
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Finance.g.cs
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Inventory.g.cs
+D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Invoice.g.cs
+D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\ItemGroup.g.cs
+D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\MonthlyReport.g.cs
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\PointOfSale.g.cs
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Products.g.cs
+D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Qoute.g.cs
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Sales.g.cs
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Setting.g.cs
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\SupplierPage.g.cs
@@ -621,8 +625,12 @@ D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\P
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Dashboard.baml
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Finance.baml
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Inventory.baml
+D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Invoice.baml
+D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\ItemGroup.baml
+D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\MonthlyReport.baml
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\PointOfSale.baml
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Products.baml
+D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Qoute.baml
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Sales.baml
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Setting.baml
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\SupplierPage.baml
@@ -638,7 +646,3 @@ D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\r
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\ADIX.pdb
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\ADIX.genruntimeconfig.cache
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\ref\ADIX.dll
-D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Invoice.g.cs
-D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Qoute.g.cs
-D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Invoice.baml
-D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Qoute.baml
