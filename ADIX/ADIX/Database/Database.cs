@@ -4,43 +4,46 @@ namespace ADIX
 {
     public static class Database
     {
-        private const string ConnectionString = "Data Source=ADIX.db";
+        private static readonly string ConnectionString = "Data Source=ADIX.db";
 
         public static void Initialize()
         {
-            try
-            {
-                using var connection = new SqliteConnection(ConnectionString);
-                connection.Open();
+            using var conn = new SqliteConnection(ConnectionString);
+            conn.Open();
 
-                // Enable foreign keys
-                using var pragmaCmd = new SqliteCommand("PRAGMA foreign_keys = ON;", connection);
-                pragmaCmd.ExecuteNonQuery();
+            var createTableCmd = conn.CreateCommand();
+            createTableCmd.CommandText =
+            @"
+            CREATE TABLE IF NOT EXISTS STAFF (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL UNIQUE,
+                passwordhash TEXT NOT NULL
+            );
 
-                // Check if database is already initialized
-                string checkQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name='SELLER'";
-                using var checkCmd = new SqliteCommand(checkQuery, connection);
-                var result = checkCmd.ExecuteScalar();
-
-                if (result == null)
-                {
-                    // Database doesn't exist, create it
-                    CreateTables(connection);
-                    InsertTestData(connection);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Database initialization failed: {ex.Message}", ex);
-            }
+            INSERT OR IGNORE INTO STAFF (username, passwordhash)
+            VALUES ('Peter', 'passwordhash6');
+            ";
+            createTableCmd.ExecuteNonQuery();
         }
 
-        internal static bool ValidateUser(string username, string password)
+        internal static bool ValidateUser(string username, string passwordhash)
         {
-            throw new NotImplementedException();
-        }
+            using var conn = new SqliteConnection(ConnectionString);
+            conn.Open();
 
-        private static void CreateTables(SqliteConnection connection)
+            string query = "SELECT COUNT(1) FROM STAFF WHERE username = @username AND passwordhash = @passwordhash";
+
+            using var cmd = new SqliteCommand(query, conn);
+            cmd.Parameters.AddWithValue("@username", username);
+            cmd.Parameters.AddWithValue("@passwordhash", passwordhash);
+
+            var result = cmd.ExecuteScalar();
+            return Convert.ToInt32(result) > 0;
+        }
+  
+
+
+private static void CreateTables(SqliteConnection connection)
         {
             string createTablesSql = @"
                 CREATE TABLE IF NOT EXISTS SELLER(
@@ -170,6 +173,8 @@ namespace ADIX
                 ('Alice Brown', '0712345678', 'alice@example.com', 100),
                 ('Bob White', '0723456789', 'bob@example.com', 50),
                 ('Charlie Green', '0734567890', 'charlie@example.com', 75);
+
+               
             ";
 
             using var cmd = new SqliteCommand(insertDataSql, connection);
