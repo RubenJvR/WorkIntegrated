@@ -59,12 +59,11 @@
 
     <Grid Background="#878787">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="0"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Sidebar -->
-        <local:Sidebar Grid.Column="0" Margin="0,0,10,0"/>
+       
 
         <!-- Main Content -->
         <ScrollViewer Grid.Column="1" Margin="10" VerticalScrollBarVisibility="Auto">
