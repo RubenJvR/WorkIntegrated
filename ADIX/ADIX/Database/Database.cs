@@ -94,15 +94,25 @@ namespace ADIX
                     salary REAL
                 );
 
-                CREATE TABLE IF NOT EXISTS INVOICEQUOTE(
-                    invoiceQuoteID INTEGER NOT NULL PRIMARY KEY,
-                    date TEXT NOT NULL,
-                    type INTEGER NOT NULL CHECK(type IN (1,2)),
-                    totalAmount REAL NOT NULL,
-                    customerID INTEGER,
-                    staffID INTEGER NOT NULL,
-                    FOREIGN KEY(customerID) REFERENCES CUSTOMER(customerID),
-                    FOREIGN KEY(staffID) REFERENCES STAFF(staffID)
+              CREATE TABLE IF NOT EXISTS INVOICEQUOTE(
+                invoiceQuoteID INTEGER NOT NULL PRIMARY KEY,
+                date TEXT NOT NULL,
+                type INTEGER NOT NULL CHECK(type IN (1,2,3)),
+                totalAmount REAL NOT NULL,
+                customerID INTEGER,
+                staffID INTEGER NOT NULL,
+                FOREIGN KEY(customerID) REFERENCES CUSTOMER(customerID),
+                FOREIGN KEY(staffID) REFERENCES STAFF(staffID)
+            );
+
+                CREATE TABLE IF NOT EXISTS INVOICEITEM(
+                    invoiceItemID INTEGER NOT NULL PRIMARY KEY,
+                    quantity INTEGER NOT NULL,
+                    priceAtSale REAL NOT NULL CHECK(priceAtSale >= 0),
+                    itemID INTEGER NOT NULL,
+                    invoiceQuoteID INTEGER NOT NULL,
+                    FOREIGN KEY(invoiceQuoteID) REFERENCES INVOICEQUOTE(invoiceQuoteID),
+                    FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
                 );
 
                 CREATE TABLE IF NOT EXISTS REPORT(
@@ -114,14 +124,14 @@ namespace ADIX
                 );
 
                 CREATE TABLE IF NOT EXISTS INVOICEITEM(
-                    invoiceItemID INTEGER NOT NULL PRIMARY KEY,
-                    quantity INTEGER NOT NULL CHECK(quantity > 0),
-                    priceAtSale REAL NOT NULL CHECK(priceAtSale >= 0),
-                    itemID INTEGER NOT NULL,
-                    invoiceQuoteID INTEGER NOT NULL,
-                    FOREIGN KEY(invoiceQuoteID) REFERENCES INVOICEQUOTE(invoiceQuoteID),
-                    FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
-                );
+                invoiceItemID INTEGER NOT NULL PRIMARY KEY,
+                quantity INTEGER NOT NULL, -- Removed CHECK constraint to allow negative values for refunds
+                priceAtSale REAL NOT NULL CHECK(priceAtSale >= 0),
+                itemID INTEGER NOT NULL,
+                invoiceQuoteID INTEGER NOT NULL,
+                FOREIGN KEY(invoiceQuoteID) REFERENCES INVOICEQUOTE(invoiceQuoteID),
+                FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
+);
 
                 CREATE INDEX IF NOT EXISTS idx_item_supplier ON ITEM(supplierID);
                 CREATE INDEX IF NOT EXISTS idx_item_seller ON ITEM(sellerID);

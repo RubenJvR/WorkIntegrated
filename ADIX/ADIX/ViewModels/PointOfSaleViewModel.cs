@@ -1,11 +1,12 @@
-﻿using System;
+﻿using ADIX.Models;
+using ADIX.Repositories;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
-using ADIX.Models;
-using ADIX.Repositories;
 
 namespace ADIX.ViewModels
 {
@@ -32,6 +33,8 @@ namespace ADIX.ViewModels
         public ICommand CancelTransactionCommand { get; }
         public ICommand CreateQuoteCommand { get; }
 
+        public ICommand RefundCommand { get; }
+
         public PointOfSaleViewModel()
         {
             _repository = new POSRepository();
@@ -45,6 +48,7 @@ namespace ADIX.ViewModels
             CheckoutCommand = new RelayCommand(Checkout, CanCheckout);
             CancelTransactionCommand = new RelayCommand(CancelTransaction);
             CreateQuoteCommand = new RelayCommand(CreateQuote, CanCheckout);
+            RefundCommand = new RelayCommand(ProcessRefund, CanProcessRefund);
 
             // Load payment methods
             PaymentMethods.Add("Cash");
@@ -54,7 +58,8 @@ namespace ADIX.ViewModels
 
             // Set default values
             _discountPercent = 0; // Explicitly set to 0
-            _vatAmount = 15; // Set a default VAT percentage (e.g., 15%)
+                               
+            _vatAmount = 15;
 
             // Load data
             try
@@ -71,6 +76,67 @@ namespace ADIX.ViewModels
 
             // Subscribe to cart item changes
             CartItems.CollectionChanged += (s, e) => CalculateTotals();
+        }
+
+        private bool CanProcessRefund(object? parameter)
+        {
+            return !string.IsNullOrWhiteSpace(CustomerName) &&
+                   SelectedStaff != null &&
+                   !string.IsNullOrWhiteSpace(SelectedPaymentMethod) &&
+                   CartItems.Any(i => i.Quantity > 0);
+        }
+
+        private void ProcessRefund(object? parameter)
+        {
+
+            if (!ValidateInputs()) return;
+
+            try
+            {
+                // Validate refund items
+                foreach (var item in CartItems.Where(i => i.Quantity > 0))
+                {
+                    if (item.Quantity < 0)
+                    {
+                        MessageBox.Show($"Invalid quantity for {item.ItemName}. Refund quantity cannot be negative.",
+                            "Refund Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                }
+
+                // Create refund invoice (type = 3 for refund)
+                int refundId = _repository.CreateInvoice(
+                    CustomerName ?? "",
+                    SelectedStaff?.StaffID ?? 0,
+                    SelectedPaymentMethod ?? "",
+                    false, // Payment not received for refunds
+                    VATAmount,
+                    Address ?? "",
+                    3, // Type 3 = Refund
+                    -TotalBill // Negative amount for refund
+                );
+
+                // Add refund items (quantities should be positive, system handles as negative)
+                var itemsToRefund = CartItems.Where(i => i.Quantity > 0).ToList();
+                _repository.AddInvoiceItems(refundId, itemsToRefund);
+
+                // Update stock levels for refund (increase stock)
+                foreach (var item in itemsToRefund)
+                {
+                    _repository.UpdateItemStock(item.ItemID, item.Quantity); // This should increase stock
+                }
+
+                MessageBox.Show($"Refund processed successfully!\nRefund #: {refundId}\nRefund Amount: R {TotalBill:F2}",
+                    "Refund Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Reset form
+                CancelTransaction(null);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error processing refund: {ex.Message}", "Refund Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void LoadStaff()
@@ -111,11 +177,28 @@ namespace ADIX.ViewModels
             }
         }
 
+        // Add item discount validation in the CartItem property changed handler
         private void CartItem_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(POSItem.Quantity) ||
                 e.PropertyName == nameof(POSItem.ItemDiscount))
             {
+                if (sender is POSItem item && e.PropertyName == nameof(POSItem.ItemDiscount))
+                {
+                    // Validate item discount
+                    if (item.ItemDiscount < 0)
+                    {
+                        MessageBox.Show($"Item discount for {item.ItemName} cannot be negative. Setting to 0%.",
+                            "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        item.ItemDiscount = 0;
+                    }
+                    else if (item.ItemDiscount > 100)
+                    {
+                        MessageBox.Show($"Item discount for {item.ItemName} cannot exceed 100%. Setting to 100%.",
+                            "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        item.ItemDiscount = 100;
+                    }
+                }
                 CalculateTotals();
             }
         }
@@ -153,20 +236,7 @@ namespace ADIX.ViewModels
         public decimal VATAmount
         {
             get => _vatAmount;
-            set
-            {
-                // Ensure value is valid
-                decimal validValue = value;
-                if (validValue < 0) validValue = 0;
-                if (validValue > 30) validValue = 30; // Max 30% VAT
-
-                if (_vatAmount != validValue)
-                {
-                    _vatAmount = validValue;
-                    OnPropertyChanged(nameof(VATAmount));
-                    ValidateAndCalculateTotals();
-                }
-            }
+            
         }
 
         public string? Address
@@ -180,10 +250,25 @@ namespace ADIX.ViewModels
             get => _discountPercent;
             set
             {
-                // Ensure value is valid
+                // Enhanced validation
                 decimal validValue = value;
-                if (validValue < 0) validValue = 0;
-                if (validValue > 100) validValue = 100;
+
+                // Validate numeric range
+                if (validValue < 0)
+                {
+                    MessageBox.Show("Discount cannot be negative. Setting to 0%.", "Validation",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    validValue = 0;
+                }
+                if (validValue > 100)
+                {
+                    MessageBox.Show("Discount cannot exceed 100%. Setting to 100%.", "Validation",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    validValue = 100;
+                }
+
+                // Validate decimal places
+                validValue = Math.Round(validValue, 2);
 
                 if (_discountPercent != validValue)
                 {
@@ -193,6 +278,8 @@ namespace ADIX.ViewModels
                 }
             }
         }
+
+
 
         public decimal TotalBill
         {
@@ -242,8 +329,8 @@ namespace ADIX.ViewModels
             // Calculate total after ALL discounts (both item-level and overall)
             decimal totalAfterAllDiscounts = subtotal - totalItemDiscounts - overallDiscountAmount;
 
-            // Apply VAT
-            decimal vatAmount = totalAfterAllDiscounts * (VATAmount / 100m);
+            // Apply fixed 15% VAT
+            decimal vatAmount = totalAfterAllDiscounts * 0.15m;
 
             // Final total
             TotalBill = totalAfterAllDiscounts + vatAmount;
@@ -252,16 +339,7 @@ namespace ADIX.ViewModels
             System.Diagnostics.Debug.WriteLine($"Subtotal: {subtotal}, Item Discounts: {totalItemDiscounts}, Overall Discount: {overallDiscountAmount}, VAT: {vatAmount}, Total: {TotalBill}");
         }
 
-        private void ValidateNumericInputs()
-        {
-            // Ensure VAT is reasonable
-            if (VATAmount < 0) VATAmount = 0;
-            if (VATAmount > 30) VATAmount = 30; // Assuming max 30% VAT
 
-            // Ensure discount is reasonable
-            if (DiscountPercent < 0) DiscountPercent = 0;
-            if (DiscountPercent > 100) DiscountPercent = 100; // Max 100% discount
-        }
 
         private bool CanCheckout(object? parameter)
         {
@@ -317,6 +395,9 @@ namespace ADIX.ViewModels
 
         private void CreateQuote(object? parameter)
         {
+
+            if (!ValidateInputs()) return;
+
             try
             {
                 // Create quote (type = 2 for quote)
@@ -357,7 +438,7 @@ namespace ADIX.ViewModels
                 SelectedStaff = null;
                 SelectedPaymentMethod = null;
                 PaymentReceived = false;
-                VATAmount = 0;
+                // VAT remains fixed at 15% - don't reset it
                 Address = string.Empty;
                 DiscountPercent = 0;
 
@@ -396,6 +477,68 @@ namespace ADIX.ViewModels
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private bool ValidateInputs()
+        {
+            StringBuilder errors = new StringBuilder();
+
+            // Customer name validation
+            if (string.IsNullOrWhiteSpace(CustomerName))
+            {
+                errors.AppendLine("• Customer name is required");
+            }
+            else if (CustomerName.Length > 100)
+            {
+                errors.AppendLine("• Customer name cannot exceed 100 characters");
+            }
+
+            // Staff validation
+            if (SelectedStaff == null)
+            {
+                errors.AppendLine("• Staff member must be selected");
+            }
+
+            // Payment method validation
+            if (string.IsNullOrWhiteSpace(SelectedPaymentMethod))
+            {
+                errors.AppendLine("• Payment method must be selected");
+            }
+
+            // Cart validation
+            if (!CartItems.Any(i => i.Quantity > 0))
+            {
+                errors.AppendLine("• At least one item with quantity > 0 is required");
+            }
+
+            // Stock validation
+            foreach (var item in CartItems.Where(i => i.Quantity > 0))
+            {
+                if (item.Quantity > item.InStock)
+                {
+                    errors.AppendLine($"• Insufficient stock for {item.ItemName}. Available: {item.InStock}");
+                }
+
+                if (item.Quantity < 0)
+                {
+                    errors.AppendLine($"• Quantity for {item.ItemName} cannot be negative");
+                }
+            }
+
+            // Address validation
+            if (!string.IsNullOrWhiteSpace(Address) && Address.Length > 500)
+            {
+                errors.AppendLine("• Address cannot exceed 500 characters");
+            }
+
+            if (errors.Length > 0)
+            {
+                MessageBox.Show($"Please fix the following errors:\n\n{errors}",
+                    "Validation Errors", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
+            return true;
         }
     }
 

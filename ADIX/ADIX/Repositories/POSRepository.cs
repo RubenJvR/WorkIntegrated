@@ -152,7 +152,11 @@ namespace ADIX.Repositories
                 using var cmd = new SqliteCommand(query, conn);
                 cmd.Parameters.AddWithValue("@date", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                 cmd.Parameters.AddWithValue("@type", type);
-                cmd.Parameters.AddWithValue("@totalAmount", (double)totalAmount);
+
+                // For refunds, store as negative amount
+                double finalAmount = (double)(type == 3 ? -Math.Abs(totalAmount) : totalAmount);
+                cmd.Parameters.AddWithValue("@totalAmount", finalAmount);
+
                 cmd.Parameters.AddWithValue("@customerID", customerId);
                 cmd.Parameters.AddWithValue("@staffID", staffId);
 
@@ -177,24 +181,38 @@ namespace ADIX.Repositories
 
                 transaction = conn.BeginTransaction();
 
+                // Get the invoice type to determine if it's a refund
+                string typeQuery = "SELECT type FROM INVOICEQUOTE WHERE invoiceQuoteID = @invoiceId";
+                using var typeCmd = new SqliteCommand(typeQuery, conn, transaction);
+                typeCmd.Parameters.AddWithValue("@invoiceId", invoiceId);
+                int invoiceType = Convert.ToInt32(typeCmd.ExecuteScalar());
+
+                bool isRefund = (invoiceType == 3);
+
                 foreach (var item in items)
                 {
                     if (item.Quantity > 0)
                     {
-                        // Add invoice item
+                        // Add invoice item - negative quantity for refunds
+                        int quantity = isRefund ? -item.Quantity : item.Quantity;
+
                         string itemQuery = @"
                             INSERT INTO INVOICEITEM (quantity, priceAtSale, itemID, invoiceQuoteID)
                             VALUES (@quantity, @priceAtSale, @itemID, @invoiceQuoteID)";
 
                         using var itemCmd = new SqliteCommand(itemQuery, conn, transaction);
-                        itemCmd.Parameters.AddWithValue("@quantity", item.Quantity);
+                        itemCmd.Parameters.AddWithValue("@quantity", quantity);
                         itemCmd.Parameters.AddWithValue("@priceAtSale", (double)item.Price);
                         itemCmd.Parameters.AddWithValue("@itemID", item.ItemID);
                         itemCmd.Parameters.AddWithValue("@invoiceQuoteID", invoiceId);
                         itemCmd.ExecuteNonQuery();
 
-                        // Update stock
-                        string stockQuery = @"
+                        // Update stock - different logic for refunds vs sales
+                        string stockQuery = isRefund ? @"
+                            UPDATE ITEM 
+                            SET stockQuantity = stockQuantity + @quantity,
+                                stockSold = stockSold - @quantity
+                            WHERE itemID = @itemID" : @"
                             UPDATE ITEM 
                             SET stockQuantity = stockQuantity - @quantity,
                                 stockSold = stockSold + @quantity
@@ -218,6 +236,121 @@ namespace ADIX.Repositories
             {
                 transaction?.Dispose();
                 conn?.Dispose();
+            }
+        }
+
+        // Method to process refund specifically
+        public void ProcessRefund(int invoiceId, List<POSItem> refundItems)
+        {
+            SqliteConnection conn = null;
+            SqliteTransaction transaction = null;
+
+            try
+            {
+                conn = new SqliteConnection(_connectionString);
+                conn.Open();
+
+                transaction = conn.BeginTransaction();
+
+                foreach (var item in refundItems)
+                {
+                    if (item.Quantity > 0)
+                    {
+                        // Add refund item (negative quantity)
+                        string itemQuery = @"
+                            INSERT INTO INVOICEITEM (quantity, priceAtSale, itemID, invoiceQuoteID)
+                            VALUES (@quantity, @priceAtSale, @itemID, @invoiceQuoteID)";
+
+                        using var itemCmd = new SqliteCommand(itemQuery, conn, transaction);
+                        itemCmd.Parameters.AddWithValue("@quantity", -item.Quantity); // Negative quantity for refund
+                        itemCmd.Parameters.AddWithValue("@priceAtSale", (double)item.Price);
+                        itemCmd.Parameters.AddWithValue("@itemID", item.ItemID);
+                        itemCmd.Parameters.AddWithValue("@invoiceQuoteID", invoiceId);
+                        itemCmd.ExecuteNonQuery();
+
+                        // Update stock (increase stock for refund)
+                        string stockQuery = @"
+                            UPDATE ITEM 
+                            SET stockQuantity = stockQuantity + @quantity,
+                                stockSold = stockSold - @quantity
+                            WHERE itemID = @itemID";
+
+                        using var stockCmd = new SqliteCommand(stockQuery, conn, transaction);
+                        stockCmd.Parameters.AddWithValue("@quantity", item.Quantity);
+                        stockCmd.Parameters.AddWithValue("@itemID", item.ItemID);
+                        stockCmd.ExecuteNonQuery();
+                    }
+                }
+
+                transaction.Commit();
+            }
+            catch (Exception ex)
+            {
+                transaction?.Rollback();
+                throw new Exception($"Error processing refund: {ex.Message}", ex);
+            }
+            finally
+            {
+                transaction?.Dispose();
+                conn?.Dispose();
+            }
+        }
+
+        // Method to update item stock (for refunds)
+        public void UpdateItemStock(int itemId, int quantity)
+        {
+            try
+            {
+                using var conn = new SqliteConnection(_connectionString);
+                conn.Open();
+
+                string query = @"
+                    UPDATE ITEM 
+                    SET stockQuantity = stockQuantity + @quantity,
+                        stockSold = stockSold - @quantity
+                    WHERE itemID = @itemID";
+
+                using var cmd = new SqliteCommand(query, conn);
+                cmd.Parameters.AddWithValue("@quantity", quantity);
+                cmd.Parameters.AddWithValue("@itemID", itemId);
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error updating item stock: {ex.Message}", ex);
+            }
+        }
+
+        // Method to find original sale for refund
+        public int? FindOriginalSale(string customerName, DateTime saleDate)
+        {
+            try
+            {
+                using var conn = new SqliteConnection(_connectionString);
+                conn.Open();
+
+                string query = @"
+                    SELECT iq.invoiceQuoteID 
+                    FROM INVOICEQUOTE iq
+                    JOIN CUSTOMER c ON iq.customerID = c.customerID
+                    WHERE c.name = @customerName 
+                    AND iq.date >= @startDate 
+                    AND iq.date <= @endDate
+                    AND iq.type = 1  -- Sale type
+                    ORDER BY iq.date DESC 
+                    LIMIT 1";
+
+                using var cmd = new SqliteCommand(query, conn);
+                cmd.Parameters.AddWithValue("@customerName", customerName);
+                cmd.Parameters.AddWithValue("@startDate", saleDate.AddDays(-7).ToString("yyyy-MM-dd HH:mm:ss"));
+                cmd.Parameters.AddWithValue("@endDate", saleDate.ToString("yyyy-MM-dd HH:mm:ss"));
+
+                var result = cmd.ExecuteScalar();
+                return result != null ? Convert.ToInt32(result) : null;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error finding original sale: {ex.Message}", ex);
             }
         }
 
