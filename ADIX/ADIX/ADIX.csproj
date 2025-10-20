@@ -10,15 +10,24 @@
 
   <ItemGroup>
     <None Remove="Database\ADIX.sql" />
+    <None Remove="icons\collapse.png" />
     <None Remove="icons\dashboard_icon.png" />
     <None Remove="icons\Finance.png" />
+    <None Remove="icons\finance_White.png" />
     <None Remove="icons\inventory_icon.png" />
+    <None Remove="icons\inventory_white.png" />
+    <None Remove="icons\itemgroup_White.png" />
     <None Remove="icons\loggo.png" />
+    <None Remove="icons\monthly-reporting.png" />
+    <None Remove="icons\point-of-sale_White.png" />
     <None Remove="icons\point-of-service.png" />
     <None Remove="icons\products.png" />
+    <None Remove="icons\products_White.png" />
     <None Remove="icons\Sales.png" />
+    <None Remove="icons\sales_2.png" />
     <None Remove="icons\settings.png" />
     <None Remove="icons\Supplier.png" />
+    <None Remove="icons\supplier_White.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -40,15 +49,35 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="icons\collapse.png" />
+    <Resource Include="icons\dashboard_White.png">
+      <CopyToOutputDirectory></CopyToOutputDirectory>
+    </Resource>
     <Resource Include="icons\dashboard_icon.png" />
     <Resource Include="icons\finance.png" />
+    <Resource Include="icons\finance_White.png" />
     <Resource Include="icons\inventory_icon.png" />
+    <Resource Include="icons\inventory_white.png">
+      <CopyToOutputDirectory></CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="icons\itemgroup_White.png">
+      <CopyToOutputDirectory></CopyToOutputDirectory>
+    </Resource>
     <Resource Include="icons\loggo.png" />
+    <Resource Include="icons\monthly-reporting.png" />
+    <Resource Include="icons\point-of-sale_White.png">
+      <CopyToOutputDirectory></CopyToOutputDirectory>
+    </Resource>
     <Resource Include="icons\point-of-service.png" />
     <Resource Include="icons\products.png" />
+    <Resource Include="icons\products_White.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="icons\Sales.png" />
+    <Resource Include="icons\sales_2.png" />
     <Resource Include="icons\settings.png" />
     <Resource Include="icons\Supplier.png" />
+    <Resource Include="icons\supplier_White.png" />
     <Resource Include="Image\loggo.png" />
   </ItemGroup>
 

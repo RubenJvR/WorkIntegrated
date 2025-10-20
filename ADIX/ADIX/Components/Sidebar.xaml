@@ -19,26 +19,31 @@
         </Style>
         <SolidColorBrush x:Key="Button.Static.Background" Color="#00FFFFFF"/>
         <SolidColorBrush x:Key="Button.Static.Border" Color="#00FFFFFF"/>
-        <SolidColorBrush x:Key="Button.MouseOver.Background" Color="#3b3b3b"/>
+        <SolidColorBrush x:Key="Button.MouseOver.Background" Color="#6E6E6E"/>
         <SolidColorBrush x:Key="Button.MouseOver.Border" Color="#FFCEAB00"/>
-        <SolidColorBrush x:Key="Button.Pressed.Background" Color="#3b3b3b"/>
+        <SolidColorBrush x:Key="Button.Pressed.Background" Color="#6E6E6E"/>
         <SolidColorBrush x:Key="Button.Pressed.Border" Color="#4AA902"/>
+        <SolidColorBrush x:Key="Button.Active.Background" Color="#6E6E6E"/>
+        <SolidColorBrush x:Key="Button.Active.Border" Color="#FFCEAB00"/>
         <SolidColorBrush x:Key="Button.Disabled.Background" Color="#FFF4F4F4"/>
         <SolidColorBrush x:Key="Button.Disabled.Border" Color="#FFADB2B5"/>
         <SolidColorBrush x:Key="Button.Disabled.Foreground" Color="#878787"/>
-        <Style TargetType="{x:Type Button}">
+
+        <Style x:Key="MenuButtonStyle" TargetType="{x:Type Button}">
             <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
             <Setter Property="Background" Value="{StaticResource Button.Static.Background}"/>
             <Setter Property="BorderBrush" Value="{StaticResource Button.Static.Border}"/>
-            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="Padding" Value="1"/>
+            <Setter Property="Padding" Value="15,0,0,0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Medium"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type Button}">
-                        <Border x:Name="border"  CornerRadius="15" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="true">
+                        <Border x:Name="border" CornerRadius="8" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="true">
                             <ContentPresenter x:Name="contentPresenter" Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -52,6 +57,10 @@
                             <Trigger Property="IsPressed" Value="true">
                                 <Setter Property="Background" TargetName="border" Value="{StaticResource Button.Pressed.Background}"/>
                                 <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.Pressed.Border}"/>
+                            </Trigger>
+                            <Trigger Property="Tag" Value="Active">
+                                <Setter Property="Background" TargetName="border" Value="{StaticResource Button.Active.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.Active.Border}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="false">
                                 <Setter Property="Background" TargetName="border" Value="{StaticResource Button.Disabled.Background}"/>
@@ -69,78 +78,86 @@
         <DockPanel>
             <StackPanel>
                 <!-- Logo -->
-                <Border Height="150"  Margin="10" CornerRadius="5">
-                    <Image Source="/Image/loggo.png" Width="200" Height="100" Stretch="Uniform"/>
+                <Border x:Name="LogoBorder" Height="120" Margin="10,10,10,10" CornerRadius="5" Visibility="Visible">
+                    <Image Source="/Image/loggo.png" Width="180" Height="90" Stretch="Uniform"/>
                 </Border>
 
+                <!-- Collapse/Expand Button - Now below logo -->
+                <Button x:Name="CollapseButton" Height="40" Margin="10,0,10,10" Style="{StaticResource MenuButtonStyle}" Click="CollapseButton_Click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image x:Name="CollapseIcon" Source="/icons/collapse.png" Width="24" Height="24" Margin="0,0,8,0"/>
+                        <TextBlock x:Name="CollapseText" Text="Collapse" Foreground="White" VerticalAlignment="Center" FontSize="14"/>
+                    </StackPanel>
+                </Button>
+
                 <!-- Menu Buttons -->
-                <Button  Margin="10" Height="40"  Click="Dashboard_button_click">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Image Source="/icons/dashboard_icon.png" Width="20" Height="20" Margin="0,0,8,0"/>
-                        <TextBlock Text="Dashboard" Foreground="white" VerticalAlignment="Center" />
+                <Button x:Name="DashboardButton" Margin="10,5" Height="45" Style="{StaticResource MenuButtonStyle}" Click="Dashboard_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Image Source="/icons/dashboard_White.png" Width="24" Height="24" Margin="0,0,12,0"/>
+                        <TextBlock x:Name="DashboardText" Text="Dashboard" Foreground="White" VerticalAlignment="Center" FontSize="14"/>
                     </StackPanel>
                 </Button>
 
-                <Button Margin="10" Height="40"  Click="Pointofsale_button_click">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Image Source="/icons/point-of-service.png" Width="20" Height="20" Margin="0,0,8,0"/>
-                        <TextBlock Text="POS" Foreground="white"  VerticalAlignment="Center" />
+                <Button x:Name="POSButton" Margin="10,5" Height="45" Style="{StaticResource MenuButtonStyle}" Click="Pointofsale_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Image Source="/icons/point-of-sale_White.png" Width="24" Height="24" Margin="0,0,12,0"/>
+                        <TextBlock x:Name="POSText" Text="POS" Foreground="White" VerticalAlignment="Center" FontSize="14"/>
                     </StackPanel>
                 </Button>
 
-                <Button   Margin="10" Height="40"  Click="Inventory_button_click" >
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Image Source="/icons/inventory_icon.png" Width="20" Height="20" Margin="0,0,8,0"/>
-                        <TextBlock Text="Inventory" Foreground="white" VerticalAlignment="Center" />
+                <Button x:Name="InventoryButton" Margin="10,5" Height="45" Style="{StaticResource MenuButtonStyle}" Click="Inventory_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Image Source="/icons/inventory_white.png" Width="24" Height="24" Margin="0,0,12,0"/>
+                        <TextBlock x:Name="InventoryText" Text="Inventory" Foreground="White" VerticalAlignment="Center" FontSize="14"/>
                     </StackPanel>
                 </Button>
 
-                <Button  Margin="10" Height="40"  Click="Products_button_click" >
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Image Source="/icons/products.png" Width="20" Height="20" Margin="0,0,8,0"/>
-                        <TextBlock Text="Products" Foreground="white"  VerticalAlignment="Center"/>
+                <Button x:Name="ProductsButton" Margin="10,5" Height="45" Style="{StaticResource MenuButtonStyle}" Click="Products_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Image Source="/icons/products_White.png" Width="24" Height="24" Margin="0,0,12,0"/>
+                        <TextBlock x:Name="ProductsText" Text="Products" Foreground="White" VerticalAlignment="Center" FontSize="14"/>
                     </StackPanel>
                 </Button>
 
-                <Button  Margin="10" Height="40"  Click="ItemGroup_button_click" >
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!-- Will Add ICON LATER -->
-                        <TextBlock Text="ItemGroup" Foreground="white"  VerticalAlignment="Center"/>
+                <Button x:Name="ItemGroupButton" Margin="10,5" Height="45" Style="{StaticResource MenuButtonStyle}" Click="ItemGroup_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Image Source="/icons/itemgroup_White.png" Width="24" Height="24" Margin="0,0,12,0"/>
+                        <TextBlock x:Name="ItemGroupText" Text="ItemGroup" Foreground="White" VerticalAlignment="Center" FontSize="14"/>
                     </StackPanel>
                 </Button>
 
-                <Button Margin="10" Height="40"  Click="Supplier_button_click">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Image Source="/icons/products.png" Width="20" Height="20" Margin="0,0,8,0"/>
-                        <TextBlock Text="Supplier" Foreground="white"  VerticalAlignment="Center"/>
+                <Button x:Name="SupplierButton" Margin="10,5" Height="45" Style="{StaticResource MenuButtonStyle}" Click="Supplier_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Image Source="/icons/supplier_White.png" Width="24" Height="24" Margin="0,0,12,0"/>
+                        <TextBlock x:Name="SupplierText" Text="Supplier" Foreground="White" VerticalAlignment="Center" FontSize="14"/>
                     </StackPanel>
                 </Button>
 
-                <Button Margin="10" Height="40"   Click="Finance_button_click">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Image Source="/icons/finance.png" Width="20" Height="20" Margin="0,0,8,0"/>
-                        <TextBlock Text="Finance" Foreground="white" VerticalAlignment="Center"/>
+                <Button x:Name="FinanceButton" Margin="10,5" Height="45" Style="{StaticResource MenuButtonStyle}" Click="Finance_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Image Source="/icons/finance_White.png" Width="24" Height="24" Margin="0,0,12,0"/>
+                        <TextBlock x:Name="FinanceText" Text="Finance" Foreground="White" VerticalAlignment="Center" FontSize="14"/>
                     </StackPanel>
                 </Button>
 
-                <Button Margin="10" Height="40"   Click="MonthlyReport_button_click">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!--WIll ADD ICON LATER-->
-                        <TextBlock Text="MonthlyReport" Foreground="white" VerticalAlignment="Center"/>
+                <Button x:Name="MonthlyReportButton" Margin="10,5" Height="45" Style="{StaticResource MenuButtonStyle}" Click="MonthlyReport_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Image Source="/icons/monthly-reporting.png" Width="24" Height="24" Margin="0,0,12,0"/>
+                        <TextBlock x:Name="MonthlyReportText" Text="MonthlyReport" Foreground="White" VerticalAlignment="Center" FontSize="14"/>
                     </StackPanel>
                 </Button>
 
-                <Button Margin="10" Height="40"  Click="Sales_button_click">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Image Source="/icons/sales.png" Width="20" Height="20" Margin="0,0,8,0"/>
-                        <TextBlock Text="Sales"  Foreground="white" VerticalAlignment="Center"/>
+                <Button x:Name="SalesButton" Margin="10,5" Height="45" Style="{StaticResource MenuButtonStyle}" Click="Sales_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Image Source="/icons/sales_2.png" Width="24" Height="24" Margin="0,0,12,0"/>
+                        <TextBlock x:Name="SalesText" Text="Sales" Foreground="White" VerticalAlignment="Center" FontSize="14"/>
                     </StackPanel>
                 </Button>
 
-                <Button  Margin="10" Height="40"  Click="Setting_button_click">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Image Source="/icons/settings.png" Width="20" Height="20" Margin="0,0,8,0"/>
-                        <TextBlock Text="Settings" Foreground="white" VerticalAlignment="Center"/>
+                <Button x:Name="SettingButton" Margin="10,5" Height="45" Style="{StaticResource MenuButtonStyle}" Click="Setting_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Image Source="/icons/settings.png" Width="24" Height="24" Margin="0,0,12,0"/>
+                        <TextBlock x:Name="SettingText" Text="Settings" Foreground="White" VerticalAlignment="Center" FontSize="14"/>
                     </StackPanel>
                 </Button>
             </StackPanel>
