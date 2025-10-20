@@ -195,8 +195,8 @@
 
 
     </Page.Resources>
-    
-    
+
+
 
     <Grid Background="#878787">
         <Grid.ColumnDefinitions>
@@ -204,8 +204,7 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Sidebar -->
-       <!--<local:Sidebar Grid.Column="0" Margin="0,0,10,209"/>-->
+        
 
         <!-- Main Content -->
         <Grid Grid.Column="1" Margin="10">
@@ -295,21 +294,21 @@
                      Style="{StaticResource RoundedCheckBoxStyle}"/>
 
             <!-- VAT TextBox -->
+            <!-- VAT # - Editable with prefix inside -->
             <Border Grid.Row="10" Style="{StaticResource InputBorderStyle}">
                 <Grid>
                     <TextBox x:Name="VATTextBox"
-                             Text="{Binding VATAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                             Background="Transparent"
-                             BorderThickness="0"
-                             Foreground="White"
-                             Padding="5,0,5,0"
-                             VerticalContentAlignment="Center"/>
-                    <TextBlock Text="VAT Amount"
-                               Foreground="LightGray"
-                               Margin="8,0,0,0"
-                               VerticalAlignment="Center"
-                               IsHitTestVisible="False"
-                               Visibility="{Binding Text, ElementName=VATTextBox, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+                 Text="{Binding VATAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 Foreground="White"
+                 Padding="55,0,5,0" 
+                        VerticalContentAlignment="Center"/>
+                    <TextBlock Text="VAT #: "
+                   Foreground="White"
+                   VerticalAlignment="Center"
+                   Margin="8,0"
+                   IsHitTestVisible="False"/>
                 </Grid>
             </Border>
 
@@ -495,22 +494,39 @@
                                    VerticalAlignment="Center"/>
                     </Border>
 
-                    <!-- Discount % (Editable) -->
-                    <Border Style="{StaticResource InputBorderStyle}">
+                    <!-- Discount % (Editable with clear label) -->
+                    <Border Style="{StaticResource InputBorderStyle}" Margin="0,0,0,5">
                         <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Label -->
+                            <TextBlock Text="Discount %:" 
+                   Foreground="White"
+                   VerticalAlignment="Center"
+                   Margin="8,0,5,0"
+                   Grid.Column="0"/>
+
+                            <!-- Input Box -->
                             <TextBox x:Name="DiscountPercentTextBox"
-                                     Text="{Binding DiscountPercent, UpdateSourceTrigger=PropertyChanged}"
-                                     Background="Transparent"
-                                     BorderThickness="0"
-                                     Foreground="White"
-                                     Padding="5,0,5,0"
-                                     VerticalContentAlignment="Center"/>
-                            <TextBlock Text="Overall Discount %"
-                                       Foreground="LightGray"
-                                       Margin="8,0,0,0"
-                                       VerticalAlignment="Center"
-                                       IsHitTestVisible="False"
-                                       Visibility="{Binding Text, ElementName=DiscountPercentTextBox, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+                 Grid.Column="1"
+                 Text="{Binding DiscountPercent, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 Foreground="White"
+                 Padding="5,0,5,0"
+                 VerticalContentAlignment="Center"
+                 TextAlignment="Right"/>
+
+                            <!-- Percentage Symbol -->
+                            <TextBlock Text="%" 
+                   Foreground="White"
+                   VerticalAlignment="Center"
+                   Margin="0,0,8,0"
+                   Grid.Column="2"/>
                         </Grid>
                     </Border>
                 </StackPanel>
@@ -560,7 +576,7 @@
             <!-- Bottom Buttons -->
             <StackPanel Grid.Row="14" Orientation="Horizontal"
                         HorizontalAlignment="Center" Margin="0,10,0,0">
-                
+
                 <Button Content="Cancel Transaction" 
                         Command="{Binding CancelTransactionCommand}"
                         Width="150" Height="40"
@@ -569,36 +585,23 @@
                         FontWeight="Bold" 
                         Margin="5"
                         Cursor="Hand"/>
-                
+
                 <Button Content="Checkout" 
-                        Command="{Binding CheckoutCommand}"
-                        Width="150" Height="40"
-                        Background="Green"
-                         Style="{StaticResource SolidButtonStyle}"
-                        Foreground="White" 
-                        FontWeight="Bold" 
-                        Margin="5"
-                        Cursor="Hand"/>
-                
-                <Button Content="Create Quote" 
-                        Command="{Binding CreateQuoteCommand}"
-                        Width="150" Height="40"
-                        Background="Green"
-                         Style="{StaticResource SolidButtonStyle}"
-                        Foreground="White" 
-                        FontWeight="Bold"
-                        Margin="5"
-                        Cursor="Hand"/>
-                
-                <Button Content="Invoice" 
-                        Command="{Binding }"
-                        Width="150" Height="40"
-                        Background="Green"
-                         Style="{StaticResource SolidButtonStyle}"
-                        Foreground="White" 
-                        FontWeight="Bold"
-                        Margin="5"
-                        Cursor="Hand"/>
+                    Width="150" 
+                    Height="40"
+                    Background="Green" 
+                    Foreground="White" 
+                    FontWeight="Bold" 
+                    Margin="5"
+                    Command="{Binding CheckoutCommand}"/>
+
+                <Button Content="Qoute" Width="150" Height="40"
+                 Background="Green" Foreground="White" FontWeight="Bold" Margin="5" Click="Quote_Click"/>
+
+                <Button Content="Invoice" Width="150" Height="40"
+                 Background="Green" Foreground="White" FontWeight="Bold" Margin="5" Click="Invoice_Click"/>
+
+
             </StackPanel>
         </Grid>
     </Grid>

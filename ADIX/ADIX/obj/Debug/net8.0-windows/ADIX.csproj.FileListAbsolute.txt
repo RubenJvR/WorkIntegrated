@@ -638,3 +638,7 @@ D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\r
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\ADIX.pdb
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\ADIX.genruntimeconfig.cache
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\ref\ADIX.dll
+D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Invoice.g.cs
+D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Qoute.g.cs
+D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Invoice.baml
+D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Qoute.baml
