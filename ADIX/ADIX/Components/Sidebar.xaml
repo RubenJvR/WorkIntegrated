@@ -64,74 +64,86 @@
             </Setter>
         </Style>
     </UserControl.Resources>
-    <DockPanel>
-        <StackPanel>
-            <!-- Logo -->
-            <Border Height="150"  Margin="10" CornerRadius="5">
-                <Image Source="/Image/loggo.png" Width="200" Height="100" Stretch="Uniform"/>
-            </Border>
 
-            <!-- Menu Buttons -->
-            <Button  Margin="10" Height="40"  Click="Dashboard_button_click">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Image Source="/icons/dashboard_icon.png" Width="20" Height="20" Margin="0,0,8,0"/>
-                    <TextBlock Text="Dashboard" Foreground="white" VerticalAlignment="Center" />
-                </StackPanel>
-            </Button>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Hidden">
+        <DockPanel>
+            <StackPanel>
+                <!-- Logo -->
+                <Border Height="150"  Margin="10" CornerRadius="5">
+                    <Image Source="/Image/loggo.png" Width="200" Height="100" Stretch="Uniform"/>
+                </Border>
 
-
-            <Button Margin="10" Height="40"  Click="Pointofsale_button_click">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Image Source="/icons/point-of-service.png" Width="20" Height="20" Margin="0,0,8,0"/>
-                    <TextBlock Text="POS" Foreground="white"  VerticalAlignment="Center" />
-                </StackPanel>
-            </Button>
-
-            <Button   Margin="10" Height="40"  Click="Inventory_button_click" >
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Image Source="/icons/inventory_icon.png" Width="20" Height="20" Margin="0,0,8,0"/>
-                    <TextBlock Text="Inventory" Foreground="white" VerticalAlignment="Center" />
-                </StackPanel>
-            </Button>
-
-
-            <Button  Margin="10" Height="40"  Click="Products_button_click" >
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Image Source="/icons/products.png" Width="20" Height="20" Margin="0,0,8,0"/>
-                    <TextBlock Text="Products" Foreground="white"  VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
-
-
-
-            <Button Margin="10" Height="40"  Click="Supplier_button_click">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Image Source="/icons/products.png" Width="20" Height="20" Margin="0,0,8,0"/>
-                    <TextBlock Text="Supplier" Foreground="white"  VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
-
-            <Button Margin="10" Height="40"   Click="Finance_button_click">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Image Source="/icons/finance.png" Width="20" Height="20" Margin="0,0,8,0"/>
-                    <TextBlock Text="Finance" Foreground="white" VerticalAlignment="Center"/>
-                </StackPanel>
+                <!-- Menu Buttons -->
+                <Button  Margin="10" Height="40"  Click="Dashboard_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image Source="/icons/dashboard_icon.png" Width="20" Height="20" Margin="0,0,8,0"/>
+                        <TextBlock Text="Dashboard" Foreground="white" VerticalAlignment="Center" />
+                    </StackPanel>
                 </Button>
 
-            <Button Margin="10" Height="40"  Click="Setting_button_click">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Image Source="/icons/sales.png" Width="20" Height="20" Margin="0,0,8,0"/>
-                    <TextBlock Text="Sales"  Foreground="white" VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
+                <Button Margin="10" Height="40"  Click="Pointofsale_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image Source="/icons/point-of-service.png" Width="20" Height="20" Margin="0,0,8,0"/>
+                        <TextBlock Text="POS" Foreground="white"  VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
 
+                <Button   Margin="10" Height="40"  Click="Inventory_button_click" >
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image Source="/icons/inventory_icon.png" Width="20" Height="20" Margin="0,0,8,0"/>
+                        <TextBlock Text="Inventory" Foreground="white" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
 
-            <Button  Margin="10" Height="40"  Click="Setting_button_click">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Image Source="/icons/settings.png" Width="20" Height="20" Margin="0,0,8,0"/>
-                    <TextBlock Text="Settings" Foreground="white" VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
-        </StackPanel>
-    </DockPanel>
+                <Button  Margin="10" Height="40"  Click="Products_button_click" >
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image Source="/icons/products.png" Width="20" Height="20" Margin="0,0,8,0"/>
+                        <TextBlock Text="Products" Foreground="white"  VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button  Margin="10" Height="40"  Click="ItemGroup_button_click" >
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <!-- Will Add ICON LATER -->
+                        <TextBlock Text="ItemGroup" Foreground="white"  VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Margin="10" Height="40"  Click="Supplier_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image Source="/icons/products.png" Width="20" Height="20" Margin="0,0,8,0"/>
+                        <TextBlock Text="Supplier" Foreground="white"  VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Margin="10" Height="40"   Click="Finance_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image Source="/icons/finance.png" Width="20" Height="20" Margin="0,0,8,0"/>
+                        <TextBlock Text="Finance" Foreground="white" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Margin="10" Height="40"   Click="MonthlyReport_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <!--WIll ADD ICON LATER-->
+                        <TextBlock Text="MonthlyReport" Foreground="white" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Margin="10" Height="40"  Click="Sales_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image Source="/icons/sales.png" Width="20" Height="20" Margin="0,0,8,0"/>
+                        <TextBlock Text="Sales"  Foreground="white" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button  Margin="10" Height="40"  Click="Setting_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image Source="/icons/settings.png" Width="20" Height="20" Margin="0,0,8,0"/>
+                        <TextBlock Text="Settings" Foreground="white" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </DockPanel>
+    </ScrollViewer>
 </UserControl>

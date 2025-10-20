@@ -63,5 +63,15 @@ namespace ADIX
         {
             NavigationRequested?.Invoke(this, "Settings");
         }
+
+        private void ItemGroup_button_click(object sender, RoutedEventArgs e)
+        {
+            NavigationRequested?.Invoke(this, "ItemGroup");
+        }
+
+        private void MonthlyReport_button_click(object sender, RoutedEventArgs e)
+        {
+            NavigationRequested?.Invoke(this, "MonthlyReport");
+        }
     }
 }

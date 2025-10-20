@@ -71,7 +71,7 @@ namespace ADIX
                 });
             }
 
-           ProductsGrid.ItemsSource = productList;
+            ProductsGrid.ItemsSource = productList;
         }
 
 

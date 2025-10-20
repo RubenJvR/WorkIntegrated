@@ -50,11 +50,17 @@ namespace ADIX
                 case "Products":
                     MainFrame.Navigate(new Products());
                     break;
+                case "ItemGroup":
+                    MainFrame.Navigate(new ItemGroup());
+                    break;
                 case "Suppliers":
                     MainFrame.Navigate(new SupplierPage());
                     break;
                 case "Finance":
                     MainFrame.Navigate(new Finance());
+                    break;
+                case "MonthlyReport":
+                    MainFrame.Navigate(new MonthlyReport());
                     break;
                 case "Sales":
                     MainFrame.Navigate(new Sales());

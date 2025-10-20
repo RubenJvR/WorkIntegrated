@@ -642,3 +642,7 @@ D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\P
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Qoute.g.cs
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Invoice.baml
 D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Qoute.baml
+D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\ItemGroup.g.cs
+D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\ItemGroup.baml
+D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\MonthlyReport.g.cs
+D:\VStudio work\Repos\Work_Integrated_ADIX3\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\MonthlyReport.baml
