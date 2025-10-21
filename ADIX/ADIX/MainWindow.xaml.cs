@@ -22,6 +22,8 @@ namespace ADIX
         {
             try
             {
+                
+
                 // Initialize database and attempt sync
                 await Database.InitializeAsync();
 
@@ -110,7 +112,7 @@ namespace ADIX
                     break;
             }
         }
-
+       
         private void SidebarControl_Loaded(object sender, RoutedEventArgs e)
         {
             // Optional: Any sidebar initialization code

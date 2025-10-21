@@ -14,7 +14,7 @@ namespace ADIX
     public static class Database
     {
         private const string SqliteConnectionString = "Data Source=ADIX.db";
-        public static string AzureSqlConnectionString { get; set; } = "";
+        public static string AzureSqlConnectionString { get; set; } = "Server=tcp:adixserver.database.windows.net,1433;Initial Catalog=ADIXDB;User ID=adixAdmin;Password=A$12fe34dc56;Encrypt=True;";
         public static DatabaseType CurrentDatabaseType { get; set; } = DatabaseType.SQLite;
 
         private static bool _syncRequired = false;
