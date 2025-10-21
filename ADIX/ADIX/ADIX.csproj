@@ -28,6 +28,7 @@
     <None Remove="icons\settings.png" />
     <None Remove="icons\Supplier.png" />
     <None Remove="icons\supplier_White.png" />
+    <None Remove="Image\ADIX_LOGO.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -79,6 +80,9 @@
     <Resource Include="icons\settings.png" />
     <Resource Include="icons\Supplier.png" />
     <Resource Include="icons\supplier_White.png" />
+    <Resource Include="Image\ADIX_LOGO.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="Image\loggo.png" />
   </ItemGroup>
 

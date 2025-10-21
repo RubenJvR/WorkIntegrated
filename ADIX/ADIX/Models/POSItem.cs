@@ -72,9 +72,17 @@ namespace ADIX.Models
             get => _itemDiscount;
             set
             {
-                _itemDiscount = value;
-                OnPropertyChanged(nameof(ItemDiscount));
-                CalculateTotals();
+                // Validate discount range (0-100)
+                decimal validDiscount = value;
+                if (validDiscount < 0) validDiscount = 0;
+                if (validDiscount > 100) validDiscount = 100;
+
+                if (_itemDiscount != validDiscount)
+                {
+                    _itemDiscount = validDiscount;
+                    OnPropertyChanged(nameof(ItemDiscount));
+                    CalculateTotals();
+                }
             }
         }
 

@@ -293,22 +293,14 @@
                       
                      Style="{StaticResource RoundedCheckBoxStyle}"/>
 
-            <!-- VAT TextBox -->
-            <!-- VAT # - Editable with prefix inside -->
+            <!-- VAT Display (ReadOnly) -->
             <Border Grid.Row="10" Style="{StaticResource InputBorderStyle}">
                 <Grid>
-                    <TextBox x:Name="VATTextBox"
-                 Text="{Binding VATAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                 Background="Transparent"
-                 BorderThickness="0"
-                 Foreground="White"
-                 Padding="55,0,5,0" 
-                        VerticalContentAlignment="Center"/>
-                    <TextBlock Text="VAT #: "
+                    <TextBlock Text="{Binding VATAmount, StringFormat='VAT: {0}%'}"
                    Foreground="White"
+                   Padding="8,0,5,0"
                    VerticalAlignment="Center"
-                   Margin="8,0"
-                   IsHitTestVisible="False"/>
+                   FontWeight="Bold"/>
                 </Grid>
             </Border>
 
@@ -437,6 +429,14 @@
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="White"/>
                                     <Setter Property="Padding" Value="5"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ItemDiscount}" Value="0">
+                                            <Setter Property="Foreground" Value="LightGray"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding ItemDiscount}" Value="100">
+                                            <Setter Property="Foreground" Value="Orange"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                             <DataGridTextColumn.EditingElementStyle>
