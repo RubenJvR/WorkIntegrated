@@ -152,13 +152,15 @@ namespace ADIX
             }
         }
 
-        private static void CreateSQLiteTables(SqliteConnection connection)
         internal static bool ValidateUser(string username, string password)
         {
             throw new NotImplementedException();
         }
 
-        private static void CreateTables(SqliteConnection connection)
+ 
+        
+
+        private static void CreateSQLiteTables(SqliteConnection connection)
         {
             string createTablesSql = @"
                 CREATE TABLE IF NOT EXISTS SELLER(
