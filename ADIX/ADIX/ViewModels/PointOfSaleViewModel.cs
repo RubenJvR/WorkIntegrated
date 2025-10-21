@@ -77,7 +77,7 @@ namespace ADIX.ViewModels
             CartItems.CollectionChanged += (s, e) => CalculateTotals();
         }
 
-        //  method to check if refund can be processed
+        // Method to check if refund can be processed
         private bool CanProcessRefund(object? parameter)
         {
             // Refund can be processed if there are items with quantity > 0
@@ -88,7 +88,7 @@ namespace ADIX.ViewModels
                    CartItems.Any(i => i.Quantity > 0);
         }
 
-        //Add refund processing method
+        // Add refund processing method
         private void ProcessRefund(object? parameter)
         {
             try
@@ -128,8 +128,8 @@ namespace ADIX.ViewModels
                 MessageBox.Show($"Refund processed successfully!\nRefund #: {refundId}\nRefund Amount: R {Math.Abs(TotalBill):F2}",
                     "Refund Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                // Reset form after refund
-                CancelTransaction(null);
+                // Reset form after refund without confirmation dialog
+                ResetTransaction();
             }
             catch (Exception ex)
             {
@@ -189,6 +189,53 @@ namespace ADIX.ViewModels
         {
             CurrentDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
             InvoiceNumber = _repository.GetNextInvoiceNumber();
+        }
+
+        // Method to reset transaction without confirmation dialog
+        private void ResetTransaction()
+        {
+            CustomerName = string.Empty;
+            SelectedStaff = null;
+            SelectedPaymentMethod = null;
+            PaymentReceived = false;
+            VATAmount = 15; // Reset to default
+            Address = string.Empty;
+            DiscountPercent = 0;
+
+            // Reset cart quantities but keep items loaded
+            foreach (var item in CartItems)
+            {
+                item.Quantity = 0;
+                item.ItemDiscount = 0;
+            }
+
+            // Refresh stock quantities to reflect changes
+            RefreshStockQuantities();
+
+            InitializeInvoice();
+        }
+
+        // Method to refresh stock quantities without resetting the cart
+        private void RefreshStockQuantities()
+        {
+            try
+            {
+                foreach (var cartItem in CartItems)
+                {
+                    var currentItem = _repository.GetItemById(cartItem.ItemID);
+                    if (currentItem != null)
+                    {
+                        // Update stock information without affecting quantity
+                        cartItem.InStock = currentItem.InStock;
+                        cartItem.StockControl = currentItem.StockControl;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error refreshing stock: {ex.Message}");
+                // Optional: Show a non-intrusive message or log the error
+            }
         }
 
         public string? CustomerName
@@ -370,8 +417,8 @@ namespace ADIX.ViewModels
                 MessageBox.Show($"Sale completed successfully!\nInvoice #: {invoiceId}\nTotal: R {TotalBill:F2}",
                     "Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                // Reset form
-                CancelTransaction(null);
+                // Reset form without confirmation dialog
+                ResetTransaction();
             }
             catch (Exception ex)
             {
@@ -402,7 +449,8 @@ namespace ADIX.ViewModels
                 MessageBox.Show($"Quote created successfully!\nQuote #: {quoteId}\nTotal: R {TotalBill:F2}",
                     "Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                CancelTransaction(null);
+                // Reset form without confirmation dialog
+                ResetTransaction();
             }
             catch (Exception ex)
             {
@@ -418,22 +466,7 @@ namespace ADIX.ViewModels
 
             if (result == MessageBoxResult.Yes)
             {
-                CustomerName = string.Empty;
-                SelectedStaff = null;
-                SelectedPaymentMethod = null;
-                PaymentReceived = false;
-                VATAmount = 0;
-                Address = string.Empty;
-                DiscountPercent = 0;
-
-                // Reset cart quantities
-                foreach (var item in CartItems)
-                {
-                    item.Quantity = 0;
-                    item.ItemDiscount = 0;
-                }
-
-                InitializeInvoice();
+                ResetTransaction();
             }
         }
 
@@ -485,7 +518,5 @@ namespace ADIX.ViewModels
         public bool CanExecute(object? parameter) => _canExecute == null || _canExecute(parameter);
 
         public void Execute(object? parameter) => _execute(parameter);
-
-
     }
 }
