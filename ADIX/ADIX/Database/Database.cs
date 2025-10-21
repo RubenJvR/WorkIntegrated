@@ -141,6 +141,27 @@ namespace ADIX
             }
         }
 
+        public static void InitializeStaffTableSQLite()
+        {
+            using var conn = new SqliteConnection(SqliteConnectionString);
+            conn.Open();
+
+            var createTableCmd = conn.CreateCommand();
+            createTableCmd.CommandText =
+            @"
+            CREATE TABLE IF NOT EXISTS STAFF (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL UNIQUE,
+                passwordhash TEXT NOT NULL
+            );
+
+            INSERT OR IGNORE INTO STAFF (username, passwordhash)
+            VALUES ('Peter', 'passwordhash6');
+            ";
+            createTableCmd.ExecuteNonQuery();
+        }
+
+
         private static void InitializeAzureSQL()
         {
             using var connection = new SqlConnection(AzureSqlConnectionString);
@@ -155,11 +176,21 @@ namespace ADIX
                 CreateAzureSQLTables(connection);
                 InsertTestDataAzureSQL(connection);
             }
-            else
-            {
-                // Run migration for existing Azure SQL databases
-                MigrateAzureSQLDatabase(connection);
-            }
+        }
+
+        internal static bool ValidateUser(string username, string passwordhash )
+        {
+            using var conn = new SqliteConnection(SqliteConnectionString);
+            conn.Open();
+
+            string query = "SELECT COUNT(1) FROM STAFF WHERE username = @username AND passwordhash = @passwordhash";
+
+            using var cmd = new SqliteCommand(query, conn);
+            cmd.Parameters.AddWithValue("@username", username);
+            cmd.Parameters.AddWithValue("@passwordhash", passwordhash);
+
+            var result = cmd.ExecuteScalar();
+            return Convert.ToInt32(result) > 0; throw new NotImplementedException();
         }
 
 
@@ -1116,13 +1147,6 @@ namespace ADIX
         }
 
 
-        public static bool ValidateUser(string username, string password)
-        {
-            // TEMPORARY: Bypass login validation
-            return true;
-
-            // Or if you want at least some basic validation:
-            // return !string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password);
-        }
+        
     }
 }
