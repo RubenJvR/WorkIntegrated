@@ -1,5 +1,7 @@
 ﻿using ADIX.Models;
 using ADIX.ViewModels;
+using ADIX.Services;
+using Microsoft.Win32;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -66,6 +68,60 @@ namespace ADIX
             {
                 // Create new instance if none exists
                 mainWindow?.MainFrame.Navigate(new PointOfSale());
+            }
+        }
+
+        private void SaveQuote_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                SaveFileDialog saveFileDialog = new SaveFileDialog
+                {
+                    Filter = "PNG Image (*.png)|*.png|PDF Document (*.pdf)|*.pdf",
+                    FileName = $"Quote_{((QouteViewModel)DataContext).InvoiceNumber}_{System.DateTime.Now:yyyyMMddHHmmss}",
+                    DefaultExt = ".png"
+                };
+
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    string filePath = saveFileDialog.FileName;
+                    string extension = System.IO.Path.GetExtension(filePath).ToLower();
+
+                    if (extension == ".png")
+                    {
+                        // Get the main content grid for saving
+                        var mainContent = MainContentGrid;
+                        PrintService.SaveAsPng(mainContent, filePath);
+                    }
+                    else if (extension == ".pdf")
+                    {
+                        MessageBox.Show("PDF export is currently not available. Please save as PNG for now.",
+                            "Export Format", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Error saving quote: {ex.Message}", "Save Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void PrintQuote_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var viewModel = (QouteViewModel)DataContext;
+                string description = $"Quote - {viewModel.InvoiceNumber} - {viewModel.BillTo}";
+
+                // Get the main content grid for printing
+                var mainContent = MainContentGrid;
+                PrintService.PrintVisual(mainContent, description);
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Error printing quote: {ex.Message}", "Print Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

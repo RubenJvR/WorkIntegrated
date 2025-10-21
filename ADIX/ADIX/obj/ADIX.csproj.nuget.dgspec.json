@@ -89,6 +89,10 @@
             "WPF-UI": {
               "target": "Package",
               "version": "[4.0.3, )"
+            },
+            "iTextSharp.LGPLv2.Core": {
+              "target": "Package",
+              "version": "[3.7.7, )"
             }
           },
           "imports": [

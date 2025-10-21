@@ -38,6 +38,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="iTextSharp.LGPLv2.Core" Version="3.7.7" />
     <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" Version="2.0.0-rc6.1" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
     <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="9.0.8" />
@@ -80,9 +81,9 @@
     <Resource Include="icons\settings.png" />
     <Resource Include="icons\Supplier.png" />
     <Resource Include="icons\supplier_White.png" />
-    <Resource Include="Image\ADIX_LOGO.png">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
+    <Content Include="Image\ADIX_LOGO.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Resource Include="Image\loggo.png" />
   </ItemGroup>
 

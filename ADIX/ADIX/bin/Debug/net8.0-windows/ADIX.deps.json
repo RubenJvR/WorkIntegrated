@@ -17,7 +17,8 @@
           "SQLitePCLRaw.core": "2.1.10",
           "SQLitePCLRaw.lib.e_sqlite3": "2.1.10",
           "SQLitePCLRaw.provider.e_sqlite3": "2.1.10",
-          "WPF-UI": "4.0.3"
+          "WPF-UI": "4.0.3",
+          "iTextSharp.LGPLv2.Core": "3.7.7"
         },
         "runtime": {
           "ADIX.dll": {}
@@ -47,6 +48,14 @@
           "lib/net8.0/Azure.Identity.dll": {
             "assemblyVersion": "1.14.2.0",
             "fileVersion": "1.1400.225.36004"
+          }
+        }
+      },
+      "BouncyCastle.Cryptography/2.6.2": {
+        "runtime": {
+          "lib/net6.0/BouncyCastle.Cryptography.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.6.2.46322"
           }
         }
       },
@@ -87,6 +96,18 @@
             "rid": "win-x86",
             "assetType": "native",
             "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "iTextSharp.LGPLv2.Core/3.7.7": {
+        "dependencies": {
+          "BouncyCastle.Cryptography": "2.6.2",
+          "SkiaSharp": "3.119.0"
+        },
+        "runtime": {
+          "lib/net8.0/iTextSharp.LGPLv2.Core.dll": {
+            "assemblyVersion": "3.7.7.0",
+            "fileVersion": "3.7.7.0"
           }
         }
       },
@@ -924,6 +945,13 @@
       "path": "azure.identity/1.14.2",
       "hashPath": "azure.identity.1.14.2.nupkg.sha512"
     },
+    "BouncyCastle.Cryptography/2.6.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-7oWOcvnntmMKNzDLsdxAYqApt+AjpRpP2CShjMfIa3umZ42UQMvH0tl1qAliYPNYO6vTdcGMqnRrCPmsfzTI1w==",
+      "path": "bouncycastle.cryptography/2.6.2",
+      "hashPath": "bouncycastle.cryptography.2.6.2.nupkg.sha512"
+    },
     "HarfBuzzSharp/8.3.1.1": {
       "type": "package",
       "serviceable": true,
@@ -944,6 +972,13 @@
       "sha512": "sha512-UsJtQsfAJoFDZrXc4hCUfRPMqccfKZ0iumJ/upcUjz/cmsTgVFGNEL5yaJWmkqsuFYdMWbj/En5/kS4PFl9hBA==",
       "path": "harfbuzzsharp.nativeassets.win32/8.3.1.1",
       "hashPath": "harfbuzzsharp.nativeassets.win32.8.3.1.1.nupkg.sha512"
+    },
+    "iTextSharp.LGPLv2.Core/3.7.7": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-lmLlUZHBGPVsnd0jZd3zkiGMKESy3CX+q9RMJWMl4vWSWwqI2V85h5ATHJNGRD5Ke85L2aUW55JypSJWls5PpQ==",
+      "path": "itextsharp.lgplv2.core/3.7.7",
+      "hashPath": "itextsharp.lgplv2.core.3.7.7.nupkg.sha512"
     },
     "LiveChartsCore/2.0.0-rc6.1": {
       "type": "package",
