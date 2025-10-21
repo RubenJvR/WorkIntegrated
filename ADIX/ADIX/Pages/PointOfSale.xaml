@@ -586,6 +586,16 @@
                         Margin="5"
                         Cursor="Hand"/>
 
+                <!--  Refund Button -->
+                <Button Content="Refund" 
+            Command="{Binding RefundCommand}"
+            Width="150" Height="40"
+            Background="Orange" 
+            Foreground="White" 
+            FontWeight="Bold" 
+            Margin="5"
+            Cursor="Hand"/>
+
                 <Button Content="Checkout" 
                     Width="150" 
                     Height="40"

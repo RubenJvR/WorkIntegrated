@@ -289,6 +289,127 @@ namespace ADIX.Repositories
             }
         }
 
+
+        /// <summary>
+        /// Create a refund invoice
+        /// </summary>
+        public int CreateRefund(string customerName, int staffId, decimal vatAmount, string address, decimal totalAmount)
+        {
+            try
+            {
+                using var conn = new SqliteConnection(_connectionString);
+                conn.Open();
+
+                // Create or get customer
+                int customerId = GetOrCreateCustomer(conn, customerName, address);
+
+                // Create refund invoice with type = 1 (same as sale, but we'll handle negative quantities in sync)
+                // Total amount is stored as positive, but quantities will be negative
+                string query = @"
+                INSERT INTO INVOICEQUOTE (date, type, totalAmount, customerID, staffID, synced)
+                VALUES (@date, @type, @totalAmount, @customerID, @staffID, 0);
+                SELECT last_insert_rowid();";
+
+                using var cmd = new SqliteCommand(query, conn);
+                cmd.Parameters.AddWithValue("@date", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                cmd.Parameters.AddWithValue("@type", 1); // Type 1 = Sale/Refund (distinguished by negative quantities)
+                cmd.Parameters.AddWithValue("@totalAmount", (double)Math.Abs(totalAmount)); // Store as positive
+                cmd.Parameters.AddWithValue("@customerID", customerId);
+                cmd.Parameters.AddWithValue("@staffID", staffId);
+
+                var result = cmd.ExecuteScalar();
+                return Convert.ToInt32(result);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error creating refund: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Add refund items to invoice (with negative quantities)
+        /// </summary>
+        public void AddRefundItems(int refundId, List<POSItem> items)
+        {
+            SqliteConnection conn = null;
+            SqliteTransaction transaction = null;
+
+            try
+            {
+                conn = new SqliteConnection(_connectionString);
+                conn.Open();
+
+                transaction = conn.BeginTransaction();
+
+                foreach (var item in items)
+                {
+                    if (item.Quantity > 0)
+                    {
+                        // Use negative quantity for refunds (this is the proper way)
+                        string itemQuery = @"
+                    INSERT INTO INVOICEITEM (quantity, priceAtSale, itemID, invoiceQuoteID, synced)
+                    VALUES (@quantity, @priceAtSale, @itemID, @invoiceQuoteID, 0)";
+
+                        using var itemCmd = new SqliteCommand(itemQuery, conn, transaction);
+                        itemCmd.Parameters.AddWithValue("@quantity", -item.Quantity); // Negative for refund
+                        itemCmd.Parameters.AddWithValue("@priceAtSale", (double)item.Price);
+                        itemCmd.Parameters.AddWithValue("@itemID", item.ItemID);
+                        itemCmd.Parameters.AddWithValue("@invoiceQuoteID", refundId);
+                        itemCmd.ExecuteNonQuery();
+
+                        // Update stock locally (add back to stock for refund)
+                        string stockQuery = @"
+                    UPDATE ITEM 
+                    SET stockQuantity = stockQuantity + @quantity,
+                        stockSold = stockSold - @quantity,
+                        lastModified = CURRENT_TIMESTAMP
+                    WHERE itemID = @itemID";
+
+                        using var stockCmd = new SqliteCommand(stockQuery, conn, transaction);
+                        stockCmd.Parameters.AddWithValue("@quantity", item.Quantity); // Positive quantity for stock adjustment
+                        stockCmd.Parameters.AddWithValue("@itemID", item.ItemID);
+                        stockCmd.ExecuteNonQuery();
+
+                        Console.WriteLine($"[REFUND] Processed refund for item {item.ItemID}: {item.Quantity} units");
+                    }
+                }
+
+                transaction.Commit();
+
+                // Mark that sync is required
+                Database.MarkSyncRequired();
+
+                // Try to sync immediately if online
+                if (Database.IsInternetAvailable())
+                {
+                    System.Threading.Tasks.Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await Database.CheckAndSyncAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Background sync failed: {ex.Message}");
+                        }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                transaction?.Rollback();
+                throw new Exception($"Error adding refund items: {ex.Message}", ex);
+            }
+            finally
+            {
+                transaction?.Dispose();
+                conn?.Dispose();
+            }
+        }
+
+
+
+
         // Test connection method
         public bool TestConnection()
         {
@@ -352,6 +473,7 @@ namespace ADIX.Repositories
 
             return await Database.CheckAndSyncAsync();
         }
+
     }
 
     public class StaffMember

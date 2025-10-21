@@ -14,7 +14,7 @@ namespace ADIX
     public static class Database
     {
         private const string SqliteConnectionString = "Data Source=ADIX.db";
-        public static string AzureSqlConnectionString { get; set; } = "";
+        public static string AzureSqlConnectionString { get; set; } = "Server=tcp:adixserver.database.windows.net,1433;Initial Catalog=ADIXDB;User ID=adixAdmin;Password=A$12fe34dc56;Encrypt=True;";
         public static DatabaseType CurrentDatabaseType { get; set; } = DatabaseType.SQLite;
 
         private static bool _syncRequired = false;
@@ -134,6 +134,11 @@ namespace ADIX
                 CreateSQLiteTables(connection);
                 InsertTestDataSQLite(connection);
             }
+            else
+            {
+                // Run migration for existing databases
+                MigrateDatabase(connection);
+            }
         }
 
         public static void InitializeStaffTableSQLite()
@@ -188,120 +193,121 @@ namespace ADIX
             return Convert.ToInt32(result) > 0; throw new NotImplementedException();
         }
 
- 
-        
+
+
 
         private static void CreateSQLiteTables(SqliteConnection connection)
         {
             string createTablesSql = @"
-                CREATE TABLE IF NOT EXISTS SELLER(
-                    sellerID INTEGER NOT NULL PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    contactInfo TEXT,
-                    bankDetails TEXT,
-                    commissionRate REAL CHECK(commissionRate >= 0 AND commissionRate <= 1),
-                    lastModified TEXT DEFAULT CURRENT_TIMESTAMP
-                );
+        CREATE TABLE IF NOT EXISTS SELLER(
+            sellerID INTEGER NOT NULL PRIMARY KEY,
+            name TEXT NOT NULL,
+            contactInfo TEXT,
+            bankDetails TEXT,
+            commissionRate REAL CHECK(commissionRate >= 0 AND commissionRate <= 1),
+            lastModified TEXT DEFAULT CURRENT_TIMESTAMP
+        );
 
-               CREATE TABLE IF NOT EXISTS USER(
-                    userId INTEGER NOT NULL PRIMARY KEY,
-                    username text not null,
-                    password text not null
-                   );
+        CREATE TABLE IF NOT EXISTS USER(
+            userId INTEGER NOT NULL PRIMARY KEY,
+            username text not null,
+            password text not null
+        );
 
-                CREATE TABLE IF NOT EXISTS SUPPLIER(
-                    supplierID INTEGER NOT NULL PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    contactInfo TEXT,
-                    address TEXT,
-                    lastModified TEXT DEFAULT CURRENT_TIMESTAMP
-                );
+        CREATE TABLE IF NOT EXISTS SUPPLIER(
+            supplierID INTEGER NOT NULL PRIMARY KEY,
+            name TEXT NOT NULL,
+            contactInfo TEXT,
+            address TEXT,
+            lastModified TEXT DEFAULT CURRENT_TIMESTAMP
+        );
 
-                CREATE TABLE IF NOT EXISTS ITEM(
-                    itemID INTEGER NOT NULL PRIMARY KEY,
-                    description TEXT NOT NULL,
-                    retailPrice REAL NOT NULL CHECK(retailPrice >= 0),
-                    costPrice REAL NOT NULL CHECK(costPrice >= 0),
-                    stockQuantity INTEGER NOT NULL DEFAULT 0 CHECK(stockQuantity >= 0),
-                    stockSold INTEGER NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
-                    supplierID INTEGER,
-                    sellerID INTEGER,
-                    lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
-                    FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
-                );
+        CREATE TABLE IF NOT EXISTS ITEM(
+            itemID INTEGER NOT NULL PRIMARY KEY,
+            description TEXT NOT NULL,
+            retailPrice REAL NOT NULL CHECK(retailPrice >= 0),
+            costPrice REAL NOT NULL CHECK(costPrice >= 0),
+            stockQuantity INTEGER NOT NULL DEFAULT 0 CHECK(stockQuantity >= 0),
+            stockSold INTEGER NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
+            supplierID INTEGER,
+            sellerID INTEGER,
+            lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
+            FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
+        );
 
-                CREATE TABLE IF NOT EXISTS CUSTOMER(
-                    customerID INTEGER NOT NULL PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    phone TEXT,
-                    email TEXT,
-                    credit REAL DEFAULT 0,
-                    lastModified TEXT DEFAULT CURRENT_TIMESTAMP
-                );
+        CREATE TABLE IF NOT EXISTS CUSTOMER(
+            customerID INTEGER NOT NULL PRIMARY KEY,
+            name TEXT NOT NULL,
+            phone TEXT,
+            email TEXT,
+            credit REAL DEFAULT 0,
+            lastModified TEXT DEFAULT CURRENT_TIMESTAMP
+        );
 
-                CREATE TABLE IF NOT EXISTS STAFF(
-                    staffID INTEGER NOT NULL PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    Role TEXT,
-                    userName TEXT UNIQUE,
-                    passwordHash TEXT,
-                    salary REAL,
-                    lastModified TEXT DEFAULT CURRENT_TIMESTAMP
-                );
+        CREATE TABLE IF NOT EXISTS STAFF(
+            staffID INTEGER NOT NULL PRIMARY KEY,
+            name TEXT NOT NULL,
+            Role TEXT,
+            userName TEXT UNIQUE,
+            passwordHash TEXT,
+            salary REAL,
+            lastModified TEXT DEFAULT CURRENT_TIMESTAMP
+        );
 
-                CREATE TABLE IF NOT EXISTS INVOICEQUOTE(
-                    invoiceQuoteID INTEGER NOT NULL PRIMARY KEY,
-                    date TEXT NOT NULL,
-                    type INTEGER NOT NULL CHECK(type IN (1,2)),
-                    totalAmount REAL NOT NULL,
-                    customerID INTEGER,
-                    staffID INTEGER NOT NULL,
-                    synced INTEGER DEFAULT 0,
-                    lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(customerID) REFERENCES CUSTOMER(customerID),
-                    FOREIGN KEY(staffID) REFERENCES STAFF(staffID)
-                );
+        CREATE TABLE IF NOT EXISTS INVOICEQUOTE(
+            invoiceQuoteID INTEGER NOT NULL PRIMARY KEY,
+            date TEXT NOT NULL,
+            type INTEGER NOT NULL CHECK(type IN (1,2)),
+            totalAmount REAL NOT NULL,
+            customerID INTEGER,
+            staffID INTEGER NOT NULL,
+            synced INTEGER DEFAULT 0,
+            lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(customerID) REFERENCES CUSTOMER(customerID),
+            FOREIGN KEY(staffID) REFERENCES STAFF(staffID)
+        );
 
-                CREATE TABLE IF NOT EXISTS REPORT(
-                    reportID INTEGER NOT NULL PRIMARY KEY,
-                    reportType INTEGER,
-                    date TEXT,
-                    staffID INTEGER,
-                    lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(staffID) REFERENCES STAFF(staffID)
-                );
+        CREATE TABLE IF NOT EXISTS REPORT(
+            reportID INTEGER NOT NULL PRIMARY KEY,
+            reportType INTEGER,
+            date TEXT,
+            staffID INTEGER,
+            lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(staffID) REFERENCES STAFF(staffID)
+        );
 
-                CREATE TABLE IF NOT EXISTS INVOICEITEM(
-                    invoiceItemID INTEGER NOT NULL PRIMARY KEY,
-                    quantity INTEGER NOT NULL CHECK(quantity > 0),
-                    priceAtSale REAL NOT NULL CHECK(priceAtSale >= 0),
-                    itemID INTEGER NOT NULL,
-                    invoiceQuoteID INTEGER NOT NULL,
-                    synced INTEGER DEFAULT 0,
-                    lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(invoiceQuoteID) REFERENCES INVOICEQUOTE(invoiceQuoteID),
-                    FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
-                );
+        -- FIXED: No CHECK constraint on quantity to allow negative values for refunds
+        CREATE TABLE IF NOT EXISTS INVOICEITEM(
+            invoiceItemID INTEGER NOT NULL PRIMARY KEY,
+            quantity INTEGER NOT NULL,
+            priceAtSale REAL NOT NULL CHECK(priceAtSale >= 0),
+            itemID INTEGER NOT NULL,
+            invoiceQuoteID INTEGER NOT NULL,
+            synced INTEGER DEFAULT 0,
+            lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(invoiceQuoteID) REFERENCES INVOICEQUOTE(invoiceQuoteID),
+            FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
+        );
 
-                CREATE TABLE IF NOT EXISTS SYNC_LOG(
-                    syncLogID INTEGER PRIMARY KEY AUTOINCREMENT,
-                    tableName TEXT NOT NULL,
-                    recordID INTEGER NOT NULL,
-                    operation TEXT NOT NULL,
-                    syncedToAzure INTEGER DEFAULT 0,
-                    timestamp TEXT DEFAULT CURRENT_TIMESTAMP
-                );
+        CREATE TABLE IF NOT EXISTS SYNC_LOG(
+            syncLogID INTEGER PRIMARY KEY AUTOINCREMENT,
+            tableName TEXT NOT NULL,
+            recordID INTEGER NOT NULL,
+            operation TEXT NOT NULL,
+            syncedToAzure INTEGER DEFAULT 0,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+        );
 
-                CREATE INDEX IF NOT EXISTS idx_item_supplier ON ITEM(supplierID);
-                CREATE INDEX IF NOT EXISTS idx_item_seller ON ITEM(sellerID);
-                CREATE INDEX IF NOT EXISTS idx_invoice_customer ON INVOICEQUOTE(customerID);
-                CREATE INDEX IF NOT EXISTS idx_invoice_staff ON INVOICEQUOTE(staffID);
-                CREATE INDEX IF NOT EXISTS idx_invoice_date ON INVOICEQUOTE(date);
-                CREATE INDEX IF NOT EXISTS idx_invoiceitem_invoice ON INVOICEITEM(invoiceQuoteID);
-                CREATE INDEX IF NOT EXISTS idx_invoiceitem_item ON INVOICEITEM(itemID);
-                CREATE INDEX IF NOT EXISTS idx_sync_log_synced ON SYNC_LOG(syncedToAzure);
-            ";
+        CREATE INDEX IF NOT EXISTS idx_item_supplier ON ITEM(supplierID);
+        CREATE INDEX IF NOT EXISTS idx_item_seller ON ITEM(sellerID);
+        CREATE INDEX IF NOT EXISTS idx_invoice_customer ON INVOICEQUOTE(customerID);
+        CREATE INDEX IF NOT EXISTS idx_invoice_staff ON INVOICEQUOTE(staffID);
+        CREATE INDEX IF NOT EXISTS idx_invoice_date ON INVOICEQUOTE(date);
+        CREATE INDEX IF NOT EXISTS idx_invoiceitem_invoice ON INVOICEITEM(invoiceQuoteID);
+        CREATE INDEX IF NOT EXISTS idx_invoiceitem_item ON INVOICEITEM(itemID);
+        CREATE INDEX IF NOT EXISTS idx_sync_log_synced ON SYNC_LOG(syncedToAzure);
+    ";
 
             using var cmd = new SqliteCommand(createTablesSql, connection);
             cmd.ExecuteNonQuery();
@@ -310,99 +316,213 @@ namespace ADIX
         private static void CreateAzureSQLTables(SqlConnection connection)
         {
             string createTablesSql = @"
-                CREATE TABLE SELLER(
-                    sellerID INT NOT NULL PRIMARY KEY,
-                    name NVARCHAR(255) NOT NULL,
-                    contactInfo NVARCHAR(255),
-                    bankDetails NVARCHAR(255),
-                    commissionRate FLOAT CHECK(commissionRate >= 0 AND commissionRate <= 1),
-                    lastModified DATETIME DEFAULT GETUTCDATE()
-                );
+        CREATE TABLE SELLER(
+            sellerID INT NOT NULL PRIMARY KEY,
+            name NVARCHAR(255) NOT NULL,
+            contactInfo NVARCHAR(255),
+            bankDetails NVARCHAR(255),
+            commissionRate FLOAT CHECK(commissionRate >= 0 AND commissionRate <= 1),
+            lastModified DATETIME DEFAULT GETUTCDATE()
+        );
 
-                CREATE TABLE SUPPLIER(
-                    supplierID INT NOT NULL PRIMARY KEY,
-                    name NVARCHAR(255) NOT NULL,
-                    contactInfo NVARCHAR(255),
-                    address NVARCHAR(500),
-                    lastModified DATETIME DEFAULT GETUTCDATE()
-                );
+        CREATE TABLE SUPPLIER(
+            supplierID INT NOT NULL PRIMARY KEY,
+            name NVARCHAR(255) NOT NULL,
+            contactInfo NVARCHAR(255),
+            address NVARCHAR(500),
+            lastModified DATETIME DEFAULT GETUTCDATE()
+        );
 
-                CREATE TABLE ITEM(
-                    itemID INT NOT NULL PRIMARY KEY,
-                    description NVARCHAR(500) NOT NULL,
-                    retailPrice FLOAT NOT NULL CHECK(retailPrice >= 0),
-                    costPrice FLOAT NOT NULL CHECK(costPrice >= 0),
-                    stockQuantity INT NOT NULL DEFAULT 0 CHECK(stockQuantity >= 0),
-                    stockSold INT NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
-                    supplierID INT,
-                    sellerID INT,
-                    lastModified DATETIME DEFAULT GETUTCDATE(),
-                    FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
-                    FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
-                );
+        CREATE TABLE ITEM(
+            itemID INT NOT NULL PRIMARY KEY,
+            description NVARCHAR(500) NOT NULL,
+            retailPrice FLOAT NOT NULL CHECK(retailPrice >= 0),
+            costPrice FLOAT NOT NULL CHECK(costPrice >= 0),
+            stockQuantity INT NOT NULL DEFAULT 0 CHECK(stockQuantity >= 0),
+            stockSold INT NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
+            supplierID INT,
+            sellerID INT,
+            lastModified DATETIME DEFAULT GETUTCDATE(),
+            FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
+            FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
+        );
 
-                CREATE TABLE CUSTOMER(
-                    customerID INT NOT NULL PRIMARY KEY,
-                    name NVARCHAR(255) NOT NULL,
-                    phone NVARCHAR(50),
-                    email NVARCHAR(255),
-                    credit FLOAT DEFAULT 0,
-                    lastModified DATETIME DEFAULT GETUTCDATE()
-                );
+        CREATE TABLE CUSTOMER(
+            customerID INT NOT NULL PRIMARY KEY,
+            name NVARCHAR(255) NOT NULL,
+            phone NVARCHAR(50),
+            email NVARCHAR(255),
+            credit FLOAT DEFAULT 0,
+            lastModified DATETIME DEFAULT GETUTCDATE()
+        );
 
-                CREATE TABLE STAFF(
-                    staffID INT NOT NULL PRIMARY KEY,
-                    name NVARCHAR(255) NOT NULL,
-                    Role NVARCHAR(100),
-                    userName NVARCHAR(100) UNIQUE,
-                    passwordHash NVARCHAR(255),
-                    salary FLOAT,
-                    lastModified DATETIME DEFAULT GETUTCDATE()
-                );
+        CREATE TABLE STAFF(
+            staffID INT NOT NULL PRIMARY KEY,
+            name NVARCHAR(255) NOT NULL,
+            Role NVARCHAR(100),
+            userName NVARCHAR(100) UNIQUE,
+            passwordHash NVARCHAR(255),
+            salary FLOAT,
+            lastModified DATETIME DEFAULT GETUTCDATE()
+        );
 
-                CREATE TABLE INVOICEQUOTE(
-                    invoiceQuoteID INT NOT NULL PRIMARY KEY,
-                    date DATETIME NOT NULL,
-                    type INT NOT NULL CHECK(type IN (1,2)),
-                    totalAmount FLOAT NOT NULL,
-                    customerID INT,
-                    staffID INT NOT NULL,
-                    lastModified DATETIME DEFAULT GETUTCDATE(),
-                    FOREIGN KEY(customerID) REFERENCES CUSTOMER(customerID),
-                    FOREIGN KEY(staffID) REFERENCES STAFF(staffID)
-                );
+        CREATE TABLE INVOICEQUOTE(
+            invoiceQuoteID INT NOT NULL PRIMARY KEY,
+            date DATETIME NOT NULL,
+            type INT NOT NULL CHECK(type IN (1,2)),
+            totalAmount FLOAT NOT NULL,
+            customerID INT,
+            staffID INT NOT NULL,
+            lastModified DATETIME DEFAULT GETUTCDATE(),
+            FOREIGN KEY(customerID) REFERENCES CUSTOMER(customerID),
+            FOREIGN KEY(staffID) REFERENCES STAFF(staffID)
+        );
 
-                CREATE TABLE REPORT(
-                    reportID INT NOT NULL PRIMARY KEY,
-                    reportType INT,
-                    date DATETIME,
-                    staffID INT,
-                    lastModified DATETIME DEFAULT GETUTCDATE(),
-                    FOREIGN KEY(staffID) REFERENCES STAFF(staffID)
-                );
+        CREATE TABLE REPORT(
+            reportID INT NOT NULL PRIMARY KEY,
+            reportType INT,
+            date DATETIME,
+            staffID INT,
+            lastModified DATETIME DEFAULT GETUTCDATE(),
+            FOREIGN KEY(staffID) REFERENCES STAFF(staffID)
+        );
 
-                CREATE TABLE INVOICEITEM(
-                    invoiceItemID INT NOT NULL PRIMARY KEY,
-                    quantity INT NOT NULL CHECK(quantity > 0),
-                    priceAtSale FLOAT NOT NULL CHECK(priceAtSale >= 0),
-                    itemID INT NOT NULL,
-                    invoiceQuoteID INT NOT NULL,
-                    lastModified DATETIME DEFAULT GETUTCDATE(),
-                    FOREIGN KEY(invoiceQuoteID) REFERENCES INVOICEQUOTE(invoiceQuoteID),
-                    FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
-                );
+       
+        CREATE TABLE INVOICEITEM(
+            invoiceItemID INT NOT NULL PRIMARY KEY,
+            quantity INT NOT NULL,
+            priceAtSale FLOAT NOT NULL CHECK(priceAtSale >= 0),
+            itemID INT NOT NULL,
+            invoiceQuoteID INT NOT NULL,
+            lastModified DATETIME DEFAULT GETUTCDATE(),
+            FOREIGN KEY(invoiceQuoteID) REFERENCES INVOICEQUOTE(invoiceQuoteID),
+            FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
+        );
 
-                CREATE INDEX idx_item_supplier ON ITEM(supplierID);
-                CREATE INDEX idx_item_seller ON ITEM(sellerID);
-                CREATE INDEX idx_invoice_customer ON INVOICEQUOTE(customerID);
-                CREATE INDEX idx_invoice_staff ON INVOICEQUOTE(staffID);
-                CREATE INDEX idx_invoice_date ON INVOICEQUOTE(date);
-                CREATE INDEX idx_invoiceitem_invoice ON INVOICEITEM(invoiceQuoteID);
-                CREATE INDEX idx_invoiceitem_item ON INVOICEITEM(itemID);
-            ";
+        CREATE INDEX idx_item_supplier ON ITEM(supplierID);
+        CREATE INDEX idx_item_seller ON ITEM(sellerID);
+        CREATE INDEX idx_invoice_customer ON INVOICEQUOTE(customerID);
+        CREATE INDEX idx_invoice_staff ON INVOICEQUOTE(staffID);
+        CREATE INDEX idx_invoice_date ON INVOICEQUOTE(date);
+        CREATE INDEX idx_invoiceitem_invoice ON INVOICEITEM(invoiceQuoteID);
+        CREATE INDEX idx_invoiceitem_item ON INVOICEITEM(itemID);
+    ";
 
             using var cmd = new SqlCommand(createTablesSql, connection);
             cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Migrate existing database to remove CHECK constraint from INVOICEITEM.quantity
+        /// </summary>
+        private static void MigrateDatabase(SqliteConnection connection)
+        {
+            try
+            {
+                // Check if we need to migrate (look for the old constraint)
+                string checkConstraintSql = @"
+            SELECT sql FROM sqlite_master 
+            WHERE type='table' AND name='INVOICEITEM' 
+            AND sql LIKE '%CHECK(quantity > 0)%'";
+
+                using var checkCmd = new SqliteCommand(checkConstraintSql, connection);
+                var result = checkCmd.ExecuteScalar()?.ToString();
+
+                if (!string.IsNullOrEmpty(result))
+                {
+                    Console.WriteLine("Migrating INVOICEITEM table to remove CHECK constraint...");
+
+                    // Create temporary table without constraint
+                    string createTempTable = @"
+                CREATE TABLE INVOICEITEM_TEMP(
+                    invoiceItemID INTEGER NOT NULL PRIMARY KEY,
+                    quantity INTEGER NOT NULL,
+                    priceAtSale REAL NOT NULL CHECK(priceAtSale >= 0),
+                    itemID INTEGER NOT NULL,
+                    invoiceQuoteID INTEGER NOT NULL,
+                    synced INTEGER DEFAULT 0,
+                    lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(invoiceQuoteID) REFERENCES INVOICEQUOTE(invoiceQuoteID),
+                    FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
+                )";
+
+                    using var createCmd = new SqliteCommand(createTempTable, connection);
+                    createCmd.ExecuteNonQuery();
+
+                    // Copy data
+                    string copyData = "INSERT INTO INVOICEITEM_TEMP SELECT * FROM INVOICEITEM";
+                    using var copyCmd = new SqliteCommand(copyData, connection);
+                    copyCmd.ExecuteNonQuery();
+
+                    // Drop old table
+                    string dropOld = "DROP TABLE INVOICEITEM";
+                    using var dropCmd = new SqliteCommand(dropOld, connection);
+                    dropCmd.ExecuteNonQuery();
+
+                    // Rename temp table
+                    string renameTable = "ALTER TABLE INVOICEITEM_TEMP RENAME TO INVOICEITEM";
+                    using var renameCmd = new SqliteCommand(renameTable, connection);
+                    renameCmd.ExecuteNonQuery();
+
+                    // Recreate indexes
+                    string createIndex1 = "CREATE INDEX idx_invoiceitem_invoice ON INVOICEITEM(invoiceQuoteID)";
+                    string createIndex2 = "CREATE INDEX idx_invoiceitem_item ON INVOICEITEM(itemID)";
+
+                    using var idx1Cmd = new SqliteCommand(createIndex1, connection);
+                    idx1Cmd.ExecuteNonQuery();
+
+                    using var idx2Cmd = new SqliteCommand(createIndex2, connection);
+                    idx2Cmd.ExecuteNonQuery();
+
+                    Console.WriteLine("Database migration completed successfully.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Database migration failed: {ex.Message}");
+                throw;
+            }
+        }
+
+
+        /// <summary>
+        /// Migrate Azure SQL database to remove CHECK constraint from INVOICEITEM.quantity
+        /// </summary>
+        private static void MigrateAzureSQLDatabase(SqlConnection connection)
+        {
+            try
+            {
+                // Check if the constraint exists
+                string checkConstraintSql = @"
+            SELECT name 
+            FROM sys.check_constraints 
+            WHERE name = 'CK__INVOICEIT__quant__4E53A1AA' 
+               OR OBJECT_DEFINITION(parent_object_id) LIKE '%quantity%> 0%'";
+
+                using var checkCmd = new SqlCommand(checkConstraintSql, connection);
+                var constraintName = checkCmd.ExecuteScalar()?.ToString();
+
+                if (!string.IsNullOrEmpty(constraintName))
+                {
+                    Console.WriteLine($"Migrating Azure SQL INVOICEITEM table - dropping constraint: {constraintName}");
+
+                    // Drop the constraint
+                    string dropConstraintSql = $"ALTER TABLE INVOICEITEM DROP CONSTRAINT {constraintName}";
+                    using var dropCmd = new SqlCommand(dropConstraintSql, connection);
+                    dropCmd.ExecuteNonQuery();
+
+                    Console.WriteLine("Azure SQL database migration completed successfully.");
+                }
+                else
+                {
+                    Console.WriteLine("No CHECK constraint found on INVOICEITEM.quantity - Azure SQL schema is already correct.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Azure SQL database migration failed: {ex.Message}");
+                // Don't throw - we want to continue even if migration fails
+            }
         }
 
         private static void InsertTestDataSQLite(SqliteConnection connection)
@@ -724,16 +844,23 @@ namespace ADIX
                 if (!exists)
                 {
                     var insertSql = @"INSERT INTO INVOICEITEM (invoiceItemID, quantity, priceAtSale, itemID, invoiceQuoteID) 
-                                     VALUES (@id, @qty, @price, @itemID, @invoiceID)";
+                             VALUES (@id, @qty, @price, @itemID, @invoiceID)";
                     using var insertCmd = new SqlCommand(insertSql, azureConn, transaction);
                     insertCmd.Parameters.AddWithValue("@id", item["invoiceItemID"]);
-                    insertCmd.Parameters.AddWithValue("@qty", item["quantity"]);
+                    insertCmd.Parameters.AddWithValue("@qty", item["quantity"]); // Can be negative for refunds
                     insertCmd.Parameters.AddWithValue("@price", item["priceAtSale"]);
                     insertCmd.Parameters.AddWithValue("@itemID", item["itemID"]);
                     insertCmd.Parameters.AddWithValue("@invoiceID", item["invoiceQuoteID"]);
-                    insertCmd.ExecuteNonQuery();
 
-                    Console.WriteLine($"[INVOICEITEM] Synced item {item["invoiceItemID"]} to Azure");
+                    try
+                    {
+                        insertCmd.ExecuteNonQuery();
+                        Console.WriteLine($"[INVOICEITEM] Synced item {item["invoiceItemID"]} to Azure (Quantity: {item["quantity"]})");
+                    }
+                    catch (SqlException ex) when (ex.Message.Contains("CHECK constraint"))
+                    {
+                        throw new Exception($"Azure SQL still has CHECK constraint on quantity. Please run migration: {ex.Message}", ex);
+                    }
 
                     // Mark as synced locally
                     using var updateCmd = new SqliteCommand("UPDATE INVOICEITEM SET synced = 1 WHERE invoiceItemID = @id", sqliteConn);
@@ -1017,6 +1144,16 @@ namespace ADIX
 
             MarkSyncRequired();
             Console.WriteLine($"Processed sale for invoice {invoiceID}");
+        }
+
+
+        public static bool ValidateUser(string username, string password)
+        {
+            // TEMPORARY: Bypass login validation
+            return true;
+
+            // Or if you want at least some basic validation:
+            // return !string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password);
         }
     }
 }
