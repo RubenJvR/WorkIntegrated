@@ -174,7 +174,7 @@
             <ComboBox Grid.Row="2"
           x:Name="ItemGroup"
           Style="{StaticResource RoundedComboBoxStyle}"
-          Tag=" Item Group"
+          Tag=" Filter by Item Group"
           SelectedIndex="-1">
                 <ComboBoxItem Content="ItemGroup 1"/>
             </ComboBox>
@@ -183,7 +183,7 @@
             <ComboBox Grid.Row="4"
           x:Name="ItemName"
           Style="{StaticResource RoundedComboBoxStyle}"
-          Tag="Item Name"
+          Tag="Filter Item Name"
           SelectedIndex="-1">
                 <ComboBoxItem Content="ItemName 1"/>
             </ComboBox>
@@ -267,24 +267,15 @@
                         VerticalAlignment="Center"/>
             </Grid>
 
-            <!-- VAT-->
-            <ComboBox Grid.Row="8"
-          x:Name="VAT"
-          Style="{StaticResource RoundedComboBoxStyle}"
-          Tag="VAT"
-          SelectedIndex="-1">
-                <ComboBoxItem Content="Standard Rate"/>
-                <ComboBoxItem Content="Reduced Rate"/>
-                <ComboBoxItem Content="Zero Rate"/>
-            </ComboBox>
+          
 
             <!-- Stock Overview Header -->
-            <Border Grid.Row="10" Style="{StaticResource HeaderBorderStyle}">
+            <Border Grid.Row="8" Style="{StaticResource HeaderBorderStyle}">
                 <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Stock Overview"/>
             </Border>
 
             <!-- Inventory Table -->
-            <ScrollViewer Grid.Row="12" Margin="0,0,0,10"
+            <ScrollViewer Grid.Row="10" Margin="0,20,0,0"
               HorizontalScrollBarVisibility="Auto"
               VerticalScrollBarVisibility="Auto">
                 <DataGrid x:Name="InventoryGrid"
