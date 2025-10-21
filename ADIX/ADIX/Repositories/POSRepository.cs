@@ -143,10 +143,10 @@ namespace ADIX.Repositories
                 // Create or get customer
                 int customerId = GetOrCreateCustomer(conn, customerName, address);
 
-                // Create invoice
+                // Create invoice with synced = 0 (not synced yet)
                 string query = @"
-                    INSERT INTO INVOICEQUOTE (date, type, totalAmount, customerID, staffID)
-                    VALUES (@date, @type, @totalAmount, @customerID, @staffID);
+                    INSERT INTO INVOICEQUOTE (date, type, totalAmount, customerID, staffID, synced)
+                    VALUES (@date, @type, @totalAmount, @customerID, @staffID, 0);
                     SELECT last_insert_rowid();";
 
                 using var cmd = new SqliteCommand(query, conn);
@@ -181,10 +181,10 @@ namespace ADIX.Repositories
                 {
                     if (item.Quantity > 0)
                     {
-                        // Add invoice item
+                        // Add invoice item with synced = 0
                         string itemQuery = @"
-                            INSERT INTO INVOICEITEM (quantity, priceAtSale, itemID, invoiceQuoteID)
-                            VALUES (@quantity, @priceAtSale, @itemID, @invoiceQuoteID)";
+                            INSERT INTO INVOICEITEM (quantity, priceAtSale, itemID, invoiceQuoteID, synced)
+                            VALUES (@quantity, @priceAtSale, @itemID, @invoiceQuoteID, 0)";
 
                         using var itemCmd = new SqliteCommand(itemQuery, conn, transaction);
                         itemCmd.Parameters.AddWithValue("@quantity", item.Quantity);
@@ -193,11 +193,12 @@ namespace ADIX.Repositories
                         itemCmd.Parameters.AddWithValue("@invoiceQuoteID", invoiceId);
                         itemCmd.ExecuteNonQuery();
 
-                        // Update stock
+                        // Update stock locally (immediate feedback for user)
                         string stockQuery = @"
                             UPDATE ITEM 
                             SET stockQuantity = stockQuantity - @quantity,
-                                stockSold = stockSold + @quantity
+                                stockSold = stockSold + @quantity,
+                                lastModified = CURRENT_TIMESTAMP
                             WHERE itemID = @itemID";
 
                         using var stockCmd = new SqliteCommand(stockQuery, conn, transaction);
@@ -208,6 +209,25 @@ namespace ADIX.Repositories
                 }
 
                 transaction.Commit();
+
+                // Mark that sync is required
+                Database.MarkSyncRequired();
+
+                // Try to sync immediately if online
+                if (Database.IsInternetAvailable())
+                {
+                    System.Threading.Tasks.Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await Database.CheckAndSyncAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Background sync failed: {ex.Message}");
+                        }
+                    });
+                }
             }
             catch (Exception ex)
             {
@@ -239,10 +259,10 @@ namespace ADIX.Repositories
                 return Convert.ToInt32(result);
             }
 
-            // Create new customer
+            // Create new customer with lastModified
             string insertQuery = @"
-                INSERT INTO CUSTOMER (name, phone, email, credit)
-                VALUES (@name, '', '', 0);
+                INSERT INTO CUSTOMER (name, phone, email, credit, lastModified)
+                VALUES (@name, '', '', 0, CURRENT_TIMESTAMP);
                 SELECT last_insert_rowid();";
 
             using var insertCmd = new SqliteCommand(insertQuery, conn);
@@ -283,6 +303,55 @@ namespace ADIX.Repositories
                 return false;
             }
         }
+
+        /// <summary>
+        /// Get sync status for display
+        /// </summary>
+        public SyncStatus GetSyncStatus()
+        {
+            try
+            {
+                using var conn = new SqliteConnection(_connectionString);
+                conn.Open();
+
+                // Count unsynced invoices
+                string unsyncedQuery = "SELECT COUNT(*) FROM INVOICEQUOTE WHERE synced = 0";
+                using var cmd = new SqliteCommand(unsyncedQuery, conn);
+                int unsyncedCount = Convert.ToInt32(cmd.ExecuteScalar());
+
+                return new SyncStatus
+                {
+                    HasUnsyncedData = unsyncedCount > 0,
+                    UnsyncedInvoiceCount = unsyncedCount,
+                    IsOnline = Database.IsInternetAvailable(),
+                    LastSyncTime = Database.GetLastSyncTime()
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting sync status: {ex.Message}");
+                return new SyncStatus
+                {
+                    HasUnsyncedData = false,
+                    UnsyncedInvoiceCount = 0,
+                    IsOnline = false,
+                    LastSyncTime = DateTime.MinValue
+                };
+            }
+        }
+
+        /// <summary>
+        /// Force a manual sync
+        /// </summary>
+        public async System.Threading.Tasks.Task<bool> ForceSyncAsync()
+        {
+            if (!Database.IsInternetAvailable())
+            {
+                throw new Exception("No internet connection available.");
+            }
+
+            return await Database.CheckAndSyncAsync();
+        }
     }
 
     public class StaffMember
@@ -293,6 +362,28 @@ namespace ADIX.Repositories
         public override string ToString()
         {
             return Name;
+        }
+    }
+
+    public class SyncStatus
+    {
+        public bool HasUnsyncedData { get; set; }
+        public int UnsyncedInvoiceCount { get; set; }
+        public bool IsOnline { get; set; }
+        public DateTime LastSyncTime { get; set; }
+
+        public string StatusMessage
+        {
+            get
+            {
+                if (!IsOnline)
+                    return $"Offline - {UnsyncedInvoiceCount} invoices waiting to sync";
+                if (HasUnsyncedData)
+                    return $"Online - Syncing {UnsyncedInvoiceCount} invoices...";
+                if (LastSyncTime != DateTime.MinValue)
+                    return $"Synced - Last sync: {LastSyncTime:HH:mm:ss}";
+                return "Ready";
+            }
         }
     }
 }
