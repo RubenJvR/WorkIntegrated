@@ -1,32 +1,39 @@
-﻿using Microsoft.Data.Sqlite;
-using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using WorkIntegrated;
+﻿using System.Windows;
+using ADIX.Pages;
 
 namespace ADIX
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         public MainWindow()
         {
             InitializeComponent();
+            Database.Initialize();
+
+            // Subscribe to navigation events
+            SidebarControl.NavigationRequested += Sidebar_NavigationRequested;
+            SidebarControl.CollapseToggled += Sidebar_CollapseToggled;
 
             // Only attach the Loaded event handler
             // Don't call Initialize() here to avoid duplicate initialization
             this.Loaded += MainWindow_Loaded;
+        private void Sidebar_NavigationRequested(object sender, string pageName)
+        {
+            NavigateToPage(pageName);
         }
 
+        private void Sidebar_CollapseToggled(object sender, bool isCollapsed)
+        {
+            // Adjust sidebar width when collapsed/expanded
+            if (isCollapsed)
+            {
+                SidebarColumn.Width = new GridLength(80); // Slightly wider for icons
+            }
+            else
+            {
+                SidebarColumn.Width = new GridLength(220); // Expanded width
+            }
+        }
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             try
@@ -34,6 +41,50 @@ namespace ADIX
                 // Initialize database and attempt sync
                 await Database.InitializeAsync();
 
+        private void NavigateToPage(string pageName)
+        {
+            // Update active button in sidebar
+            SidebarControl.SetActivePage(pageName);
+
+            switch (pageName)
+            {
+                case "Dashboard":
+                    MainFrame.Navigate(new Dashboard());
+                    break;
+                case "POS":
+                    MainFrame.Navigate(new PointOfSale());
+                    break;
+                case "Inventory":
+                    MainFrame.Navigate(new Inventory());
+                    break;
+                case "Products":
+                    MainFrame.Navigate(new Products());
+                    break;
+                case "ItemGroup":
+                    MainFrame.Navigate(new ItemGroup());
+                    break;
+                case "Suppliers":
+                    MainFrame.Navigate(new SupplierPage());
+                    break;
+                case "Finance":
+                    MainFrame.Navigate(new Finance());
+                    break;
+                case "MonthlyReport":
+                    MainFrame.Navigate(new MonthlyReport());
+                    break;
+                case "Sales":
+                    MainFrame.Navigate(new Sales());
+                    break;
+                case "Settings":
+                    MainFrame.Navigate(new Setting());
+                    break;
+            }
+        }
+
+        private void SidebarControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Optional: Any sidebar initialization code
+        }
                 // Navigate to main page
                 MainFrame.Navigate(new Dashboard());
 

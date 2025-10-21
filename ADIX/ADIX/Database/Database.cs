@@ -153,6 +153,12 @@ namespace ADIX
         }
 
         private static void CreateSQLiteTables(SqliteConnection connection)
+        internal static bool ValidateUser(string username, string password)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static void CreateTables(SqliteConnection connection)
         {
             string createTablesSql = @"
                 CREATE TABLE IF NOT EXISTS SELLER(
@@ -163,6 +169,12 @@ namespace ADIX
                     commissionRate REAL CHECK(commissionRate >= 0 AND commissionRate <= 1),
                     lastModified TEXT DEFAULT CURRENT_TIMESTAMP
                 );
+
+               CREATE TABLE IF NOT EXISTS USER(
+                    userId INTEGER NOT NULL PRIMARY KEY,
+                    username text not null,
+                    password text not null
+                   );
 
                 CREATE TABLE IF NOT EXISTS SUPPLIER(
                     supplierID INTEGER NOT NULL PRIMARY KEY,

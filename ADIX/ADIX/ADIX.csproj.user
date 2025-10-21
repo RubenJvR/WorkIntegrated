@@ -22,13 +22,28 @@
     <Compile Update="Pages\Inventory.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Pages\Invoice.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Pages\ItemGroup.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Pages\MonthlyReport.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Pages\PointOfSale.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Pages\Products.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Pages\Qoute.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Pages\Sales.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Pages\Setting.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Pages\SupplierPage.xaml.cs">

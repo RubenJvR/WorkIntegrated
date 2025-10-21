@@ -1,0 +1,346 @@
+﻿<Page x:Class="ADIX.MonthlyReport"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:sys="clr-namespace:System;assembly=mscorlib"
+      xmlns:local="clr-namespace:ADIX"
+      mc:Ignorable="d" 
+      d:DesignHeight="750" d:DesignWidth="1000"
+      Title="Monthly Report">
+
+    <Page.Resources>
+        <!-- Reuse styles from Sales page -->
+        <Style x:Key="HeaderBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="#4AA902"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style x:Key="HeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="23"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="InputBorderStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Background" Value="#4F4F4F"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style x:Key="RoundedComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#4F4F4F"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="5,0,30,0"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <Border x:Name="Border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="6"/>
+                            <TextBlock x:Name="PlaceholderText"
+                                       Text="{TemplateBinding Tag}"
+                                       Foreground="LightGray"
+                                       Margin="8,0,30,0"
+                                       VerticalAlignment="Center"
+                                       IsHitTestVisible="False"/>
+                            <ContentPresenter x:Name="ContentSite"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              VerticalAlignment="Center"
+                                              Margin="8,0,30,0"/>
+                            <ToggleButton x:Name="ToggleButton"
+                                          Focusable="False"
+                                          IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                          ClickMode="Press"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Center"
+                                          Width="20">
+                                <Path Fill="White" Data="M 0 0 L 4 4 L 8 0 Z" Stretch="Uniform"/>
+                            </ToggleButton>
+                            <Popup x:Name="PART_Popup"
+                                   Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="Fade">
+                                <Border Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="6">
+                                    <ScrollViewer Margin="0" SnapsToDevicePixels="True">
+                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Summary Border Style -->
+        <Style x:Key="SummaryBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="#4F4F4F"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="Margin" Value="5"/>
+        </Style>
+
+        <!-- Summary Text Style -->
+        <Style x:Key="SummaryTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="0,2"/>
+        </Style>
+
+        <!-- Summary Header Style -->
+        <Style x:Key="SummaryHeaderStyle" TargetType="TextBlock" BasedOn="{StaticResource SummaryTextStyle}">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Foreground" Value="#4AA902"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+
+        <!-- Supplier Button Style -->
+        <Style x:Key="SupplierButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="180"/>
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="Background" Value="#4F4F4F"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="5,2"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+    </Page.Resources>
+
+    <Grid Background="#878787">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+       
+
+        <!-- Main Content -->
+        <Grid Grid.Column="1" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <!-- Header -->
+                <RowDefinition Height="10"/>
+                <!-- Spacer -->
+                <RowDefinition Height="Auto"/>
+                <!-- Month Selector -->
+                <RowDefinition Height="8"/>
+                <!-- Spacer -->
+                <RowDefinition Height="Auto"/>
+                <!-- Report Table Header -->
+                <RowDefinition Height="*"/>
+                <!-- DataGrid -->
+                <RowDefinition Height="15"/>
+                <!-- Spacer -->
+                <RowDefinition Height="Auto"/>
+                <!-- Summary Section -->
+                <RowDefinition Height="15"/>
+                <!-- Spacer -->
+                <RowDefinition Height="Auto"/>
+                <!-- Supplier Stock Section -->
+                <RowDefinition Height="10"/>
+                <!-- Spacer -->
+                <RowDefinition Height="Auto"/>
+                <!-- Action Buttons -->
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Border Grid.Row="0" Style="{StaticResource HeaderBorderStyle}">
+                <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Monthly Report"/>
+            </Border>
+
+            <!-- Month Selector -->
+            <StackPanel Grid.Row="2" Orientation="Vertical">
+                <ComboBox x:Name="MonthSelector"
+                          Style="{StaticResource RoundedComboBoxStyle}"
+                          Tag="Select Month"
+                          SelectedIndex="-1">
+                    <ComboBoxItem Content="January"/>
+                    <ComboBoxItem Content="February"/>
+                    <ComboBoxItem Content="March"/>
+                    <ComboBoxItem Content="April"/>
+                    <ComboBoxItem Content="May"/>
+                    <ComboBoxItem Content="June"/>
+                    <ComboBoxItem Content="July"/>
+                    <ComboBoxItem Content="August"/>
+                    <ComboBoxItem Content="September"/>
+                    <ComboBoxItem Content="October"/>
+                    <ComboBoxItem Content="November"/>
+                    <ComboBoxItem Content="December"/>
+                </ComboBox>
+
+                <!-- Year Selector -->
+                <ComboBox x:Name="YearSelector"
+                          Style="{StaticResource RoundedComboBoxStyle}"
+                          Tag="Select Year"
+                          SelectedIndex="-1"
+                          Margin="0,5,0,0">
+                    <!-- Years will be populated in code-behind -->
+                </ComboBox>
+            </StackPanel>
+
+            <!-- Report Table Header -->
+            <Border Grid.Row="4" Style="{StaticResource HeaderBorderStyle}">
+                <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Monthly Transactions"/>
+            </Border>
+
+            <!-- Monthly Transactions Table -->
+            <ScrollViewer Grid.Row="5" Margin="0,10,0,10"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto">
+                <DataGrid x:Name="MonthlyReportGrid"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          Background="#4F4F4F"
+                          Foreground="White"
+                          GridLinesVisibility="All"
+                          BorderBrush="Black"
+                          BorderThickness="1"
+                          HeadersVisibility="Column"
+                          RowHeight="35"
+                          ColumnHeaderHeight="40"
+                          FontSize="14">
+                    <DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="Background" Value="#2D2D2D"/>
+                            <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="BorderBrush" Value="Black"/>
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                        </Style>
+                    </DataGrid.ColumnHeaderStyle>
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderBrush" Value="Black"/>
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="Padding" Value="5,2"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                        </Style>
+                    </DataGrid.CellStyle>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="100"/>
+                        <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" Width="150"/>
+                        <DataGridTextColumn Header="Sales Staff" Binding="{Binding SalesStaff}" Width="120"/>
+                        <DataGridTextColumn Header="Paid" Binding="{Binding Paid, StringFormat={}{0:C}}" Width="100"/>
+                        <DataGridTextColumn Header="Purchase Amount" Binding="{Binding PurchaseAmount, StringFormat={}{0:C}}" Width="130"/>
+                        <DataGridTextColumn Header="Payment Method" Binding="{Binding PaymentMethod}" Width="120"/>
+                        <DataGridTextColumn Header="Invoice Number" Binding="{Binding InvoiceNumber}" Width="120"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </ScrollViewer>
+
+            <!-- Summary Section -->
+            <Grid Grid.Row="7">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Monthly Turnover -->
+                <Border Grid.Column="0" Style="{StaticResource SummaryBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="Monthly Turnover"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CardAmount, StringFormat='Card: {0:C}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CashAmount, StringFormat='Cash: {0:C}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding EFTAmount, StringFormat='EFT: {0:C}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding ReturnAmount, StringFormat='Return: {0:C}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CreditAmount, StringFormat='Credit: {0:C}'}"/>
+                        <Border Background="#2D2D2D" Height="1" Margin="0,5,0,5"/>
+                        <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="{Binding TotalTurnover, StringFormat='Total: {0:C}'}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Monthly Expenses -->
+                <Border Grid.Column="1" Style="{StaticResource SummaryBorderStyle}" Margin="10,0,10,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="Monthly Expenses"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding RentExpense, StringFormat='Rent: {0:C}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding UtilitiesExpense, StringFormat='Utilities: {0:C}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding SalaryExpense, StringFormat='Salaries: {0:C}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding OtherExpense, StringFormat='Other: {0:C}'}"/>
+                        <Border Background="#2D2D2D" Height="1" Margin="0,5,0,5"/>
+                        <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="{Binding TotalExpenses, StringFormat='Total: {0:C}'}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Profit & Cost Summary -->
+                <Border Grid.Column="2" Style="{StaticResource SummaryBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="Profit &amp; Cost"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding MonthlyCostOfBusiness, StringFormat='Cost of Business: {0:C}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding GrossProfit, StringFormat='Gross Profit: {0:C}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding NetProfit, StringFormat='Net Profit: {0:C}'}"/>
+                        <Border Background="#2D2D2D" Height="1" Margin="0,5,0,5"/>
+                        <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="{Binding ProfitMargin, StringFormat='Profit Margin: {0}%'}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Supplier Stock Section -->
+            <Border Grid.Row="9" Style="{StaticResource SummaryBorderStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="Supplier Stock Reports"/>
+                    <TextBlock Style="{StaticResource SummaryTextStyle}" Text="Save individual supplier stock reports:"/>
+
+                    <!-- Dynamic Supplier Buttons -->
+                    <ItemsControl x:Name="SupplierButtonsContainer" Margin="0,5,0,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Content="{Binding DisplayName}" 
+                                        Style="{StaticResource SupplierButtonStyle}"
+                                        Command="{Binding SaveCommand}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Action Buttons -->
+            <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button Content="Generate Report" 
+                        Width="150" Height="40"
+                        Background="#4F4F4F" Foreground="White" FontWeight="Bold" Margin="5"/>
+                <Button Content="Save Full Month Stock Report" 
+                        Width="200" Height="40"
+                        Background="#4AA902" Foreground="White" FontWeight="Bold" Margin="5"
+                        ToolTip="Only click at the end of the month"/>
+                <Button Content="Export as PDF" 
+                        Width="150" Height="40"
+                        Background="#4F4F4F" Foreground="White" FontWeight="Bold" Margin="5"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Page>
