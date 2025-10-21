@@ -22,7 +22,7 @@ namespace ADIX
         {
             try
             {
-                DropAzureTables();
+                
 
                 // Initialize database and attempt sync
                 await Database.InitializeAsync();
@@ -112,34 +112,7 @@ namespace ADIX
                     break;
             }
         }
-        private void DropAzureTables()
-        {
-            try
-            {
-                using var connection = new Microsoft.Data.SqlClient.SqlConnection(Database.AzureSqlConnectionString);
-                connection.Open();
-
-                string dropTablesSql = @"
-            DROP TABLE IF EXISTS INVOICEITEM;
-            DROP TABLE IF EXISTS INVOICEQUOTE;
-            DROP TABLE IF EXISTS REPORT;
-            DROP TABLE IF EXISTS ITEM;
-            DROP TABLE IF EXISTS CUSTOMER;
-            DROP TABLE IF EXISTS STAFF;
-            DROP TABLE IF EXISTS SUPPLIER;
-            DROP TABLE IF EXISTS SELLER;
-        ";
-
-                using var cmd = new Microsoft.Data.SqlClient.SqlCommand(dropTablesSql, connection);
-                cmd.ExecuteNonQuery();
-
-                Console.WriteLine("Azure SQL tables dropped successfully.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error dropping Azure SQL tables: {ex.Message}");
-            }
-        }
+       
         private void SidebarControl_Loaded(object sender, RoutedEventArgs e)
         {
             // Optional: Any sidebar initialization code
