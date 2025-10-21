@@ -1147,13 +1147,6 @@ namespace ADIX
         }
 
 
-        public static bool ValidateUser(string username, string password)
-        {
-            // TEMPORARY: Bypass login validation
-            return true;
-
-            // Or if you want at least some basic validation:
-            // return !string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password);
-        }
+        
     }
 }
