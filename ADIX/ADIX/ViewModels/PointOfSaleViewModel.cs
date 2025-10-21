@@ -11,6 +11,9 @@ namespace ADIX.ViewModels
 {
     public class PointOfSaleViewModel : INotifyPropertyChanged
     {
+        // Refund command
+        public ICommand RefundCommand { get; }
+
         private readonly POSRepository _repository;
         private string? _customerName;
         private StaffMember? _selectedStaff;
@@ -45,6 +48,7 @@ namespace ADIX.ViewModels
             CheckoutCommand = new RelayCommand(Checkout, CanCheckout);
             CancelTransactionCommand = new RelayCommand(CancelTransaction);
             CreateQuoteCommand = new RelayCommand(CreateQuote, CanCheckout);
+            RefundCommand = new RelayCommand(ProcessRefund, CanProcessRefund);
 
             // Load payment methods
             PaymentMethods.Add("Cash");
@@ -71,6 +75,67 @@ namespace ADIX.ViewModels
 
             // Subscribe to cart item changes
             CartItems.CollectionChanged += (s, e) => CalculateTotals();
+        }
+
+        //  method to check if refund can be processed
+        private bool CanProcessRefund(object? parameter)
+        {
+            // Refund can be processed if there are items with quantity > 0
+            // and payment method is set to "Return"
+            return !string.IsNullOrWhiteSpace(CustomerName) &&
+                   SelectedStaff != null &&
+                   SelectedPaymentMethod == "Return" &&
+                   CartItems.Any(i => i.Quantity > 0);
+        }
+
+        //Add refund processing method
+        private void ProcessRefund(object? parameter)
+        {
+            try
+            {
+                // Validate that we're in refund mode
+                if (SelectedPaymentMethod != "Return")
+                {
+                    MessageBox.Show("Please set Payment Method to 'Return' for refund processing.",
+                        "Refund Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Validate quantities (for refund, quantities should be positive but we'll treat them as returns)
+                foreach (var item in CartItems.Where(i => i.Quantity > 0))
+                {
+                    if (item.Quantity <= 0)
+                    {
+                        MessageBox.Show($"Invalid quantity for {item.ItemName}. Refund quantity must be positive.",
+                            "Refund Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                }
+
+                // Create refund invoice (type = 1 for sale/refund, but with negative amounts handled in sync)
+                int refundId = _repository.CreateRefund(
+                    CustomerName ?? "",
+                    SelectedStaff?.StaffID ?? 0,
+                    VATAmount,
+                    Address ?? "",
+                    TotalBill
+                );
+
+                // Add refund items to invoice
+                var itemsToRefund = CartItems.Where(i => i.Quantity > 0).ToList();
+                _repository.AddRefundItems(refundId, itemsToRefund);
+
+                MessageBox.Show($"Refund processed successfully!\nRefund #: {refundId}\nRefund Amount: R {Math.Abs(TotalBill):F2}",
+                    "Refund Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Reset form after refund
+                CancelTransaction(null);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error processing refund: {ex.Message}", "Refund Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void LoadStaff()
