@@ -977,3 +977,6 @@ D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\obj\Debug\net8.0-windows\ref\ADIX.dll
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\BouncyCastle.Cryptography.dll
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\iTextSharp.LGPLv2.Core.dll
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\Image\ADIX_LOGO.png
+C:\Will\WorkIntegrated\ADIX\ADIX\bin\Debug\net8.0-windows\Image\ADIX_LOGO.png
+C:\Will\WorkIntegrated\ADIX\ADIX\bin\Debug\net8.0-windows\BouncyCastle.Cryptography.dll
+C:\Will\WorkIntegrated\ADIX\ADIX\bin\Debug\net8.0-windows\iTextSharp.LGPLv2.Core.dll
