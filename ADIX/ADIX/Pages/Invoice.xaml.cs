@@ -95,14 +95,14 @@ namespace ADIX
 
                     if (extension == ".png")
                     {
-                        // Get the main content grid for saving
+                        // Get the main content grid for saving - now uses optimized print version
                         var mainContent = MainContentGrid;
                         PrintService.SaveAsPng(mainContent, filePath);
                     }
                     else if (extension == ".pdf")
                     {
-                        // For PDF, you might want to use a library like iTextSharp or PDFSharp
-                        // For now, we'll save as PNG and suggest PDF as future enhancement
+                        // For PDF, use the same optimized version as print
+                        // You can implement PDF export here using the same CreatePrintFriendlyElement logic
                         MessageBox.Show("PDF export is currently not available. Please save as PNG for now.",
                             "Export Format", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
@@ -122,7 +122,7 @@ namespace ADIX
                 var viewModel = (InvoiceViewModel)DataContext;
                 string description = $"Invoice - {viewModel.InvoiceNumber} - {viewModel.BillTo}";
 
-                // Get the main content grid for printing
+                // Get the main content grid for printing - now uses optimized version
                 var mainContent = MainContentGrid;
                 PrintService.PrintVisual(mainContent, description);
             }

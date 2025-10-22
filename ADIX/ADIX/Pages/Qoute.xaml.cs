@@ -89,7 +89,7 @@ namespace ADIX
 
                     if (extension == ".png")
                     {
-                        // Get the main content grid for saving
+                        // Get the main content grid for saving - now uses optimized print version
                         var mainContent = MainContentGrid;
                         PrintService.SaveAsPng(mainContent, filePath);
                     }
@@ -114,7 +114,7 @@ namespace ADIX
                 var viewModel = (QouteViewModel)DataContext;
                 string description = $"Quote - {viewModel.InvoiceNumber} - {viewModel.BillTo}";
 
-                // Get the main content grid for printing
+                // Get the main content grid for printing - now uses optimized version
                 var mainContent = MainContentGrid;
                 PrintService.PrintVisual(mainContent, description);
             }

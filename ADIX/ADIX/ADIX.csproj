@@ -84,7 +84,9 @@
     <Content Include="Image\ADIX_LOGO.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Resource Include="Image\loggo.png" />
+    <Content Include="Image\loggo.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
