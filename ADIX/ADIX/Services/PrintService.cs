@@ -215,6 +215,13 @@ namespace ADIX.Services
                 copyBorder.HorizontalAlignment = originalBorder.HorizontalAlignment;
                 copyBorder.VerticalAlignment = originalBorder.VerticalAlignment;
 
+                // Apply green styling for specific sections
+                if (IsHeadingBorder(originalBorder) || IsSectionBorder(originalBorder))
+                {
+                    copyBorder.Background = new SolidColorBrush(Color.FromRgb(0, 128, 0)); // Green background
+                    copyBorder.BorderBrush = Brushes.Black; // Black border
+                }
+
                 if (originalBorder.Child != null)
                 {
                     var childCopy = CreateVisualCopy(originalBorder.Child as UIElement);
@@ -226,14 +233,14 @@ namespace ADIX.Services
             }
             else if (original is TextBlock originalTextBlock)
             {
-                return new TextBlock
+                TextBlock copyTextBlock = new TextBlock
                 {
                     Text = originalTextBlock.Text,
                     FontSize = originalTextBlock.FontSize,
                     FontWeight = originalTextBlock.FontWeight,
                     FontFamily = originalTextBlock.FontFamily,
                     Foreground = Brushes.Black, // Force black text
-                    Background = Brushes.White, // Force white background
+                    Background = Brushes.Transparent, // Allow parent background to show through
                     HorizontalAlignment = originalTextBlock.HorizontalAlignment,
                     VerticalAlignment = originalTextBlock.VerticalAlignment,
                     TextAlignment = originalTextBlock.TextAlignment,
@@ -241,6 +248,15 @@ namespace ADIX.Services
                     Margin = originalTextBlock.Margin,
                     Padding = originalTextBlock.Padding
                 };
+
+                // Apply white text for green backgrounds
+                if (IsHeadingText(originalTextBlock) || IsSectionText(originalTextBlock))
+                {
+                    copyTextBlock.Foreground = Brushes.White; // White text on green background
+                    copyTextBlock.FontWeight = FontWeights.Bold;
+                }
+
+                return copyTextBlock;
             }
             else if (original is DataGrid originalDataGrid)
             {
@@ -253,7 +269,7 @@ namespace ADIX.Services
                 copyStackPanel.Margin = originalStackPanel.Margin;
                 copyStackPanel.HorizontalAlignment = originalStackPanel.HorizontalAlignment;
                 copyStackPanel.VerticalAlignment = originalStackPanel.VerticalAlignment;
-                copyStackPanel.Background = Brushes.White; // Force white background
+                copyStackPanel.Background = Brushes.Transparent; // Allow parent background
 
                 foreach (UIElement child in originalStackPanel.Children)
                 {
@@ -267,7 +283,7 @@ namespace ADIX.Services
             else if (original is Grid originalGrid)
             {
                 Grid copyGrid = new Grid();
-                copyGrid.Background = Brushes.White; // Force white background
+                copyGrid.Background = Brushes.Transparent; // Allow parent background
                 copyGrid.Margin = originalGrid.Margin;
 
                 // Copy column definitions
@@ -307,7 +323,7 @@ namespace ADIX.Services
                     FontSize = originalTextBox.FontSize,
                     FontFamily = originalTextBox.FontFamily,
                     Foreground = Brushes.Black, // Force black text
-                    Background = Brushes.White, // Force white background
+                    Background = Brushes.Transparent, // Allow parent background
                     TextWrapping = TextWrapping.Wrap,
                     Margin = originalTextBox.Margin,
                     Padding = originalTextBox.Padding,
@@ -323,8 +339,78 @@ namespace ADIX.Services
                     return CreateVisualCopy(content);
                 }
             }
+            else if (original is Image originalImage)
+            {
+                // Handle Image elements (logo) - FIXED: Use the original image directly
+                return CreateImageCopy(originalImage);
+            }
 
             return null;
+        }
+
+        private static Image CreateImageCopy(Image originalImage)
+        {
+            Image copyImage = new Image();
+
+            // Copy all properties from original image
+            copyImage.Source = originalImage.Source; // Use same source
+            copyImage.Width = originalImage.Width;
+            copyImage.Height = originalImage.Height;
+            copyImage.Stretch = originalImage.Stretch;
+            copyImage.StretchDirection = originalImage.StretchDirection;
+            copyImage.Margin = originalImage.Margin;
+            copyImage.HorizontalAlignment = originalImage.HorizontalAlignment;
+            copyImage.VerticalAlignment = originalImage.VerticalAlignment;
+            copyImage.Opacity = originalImage.Opacity;
+
+            // Ensure the image is visible
+            copyImage.Visibility = Visibility.Visible;
+
+            return copyImage;
+        }
+
+        private static bool IsHeadingBorder(Border border)
+        {
+            // Check if this is a heading border (both Quote and Invoice) by examining visual tree
+            if (border.Child is TextBlock textBlock)
+            {
+                return IsHeadingText(textBlock);
+            }
+            return false;
+        }
+
+        private static bool IsSectionBorder(Border border)
+        {
+            // Check if this border contains section headers like "Bill to", "Payment", etc.
+            if (border.Child is TextBlock textBlock)
+            {
+                return IsSectionText(textBlock);
+            }
+            return false;
+        }
+
+        private static bool IsHeadingText(TextBlock textBlock)
+        {
+            // Identify heading by text content and/or styling (both Quote and Invoice)
+            string text = textBlock.Text ?? "";
+            return text.Contains("Quote", StringComparison.OrdinalIgnoreCase) ||
+                   text.Contains("Quotation", StringComparison.OrdinalIgnoreCase) ||
+                   text.Contains("Invoice", StringComparison.OrdinalIgnoreCase) ||
+                   (textBlock.FontWeight == FontWeights.Bold &&
+                    textBlock.FontSize > 14); // Likely a heading
+        }
+
+        private static bool IsSectionText(TextBlock textBlock)
+        {
+            // Identify section headers that should be green
+            string text = textBlock.Text ?? "";
+            return text.Contains("Bill to", StringComparison.OrdinalIgnoreCase) ||
+                   text.Contains("Payment", StringComparison.OrdinalIgnoreCase) ||
+                   text.Contains("Comments", StringComparison.OrdinalIgnoreCase) ||
+                   text.Contains("Total", StringComparison.OrdinalIgnoreCase) ||
+                   text.Contains("Subtotal", StringComparison.OrdinalIgnoreCase) ||
+                   text.Contains("Balance Due", StringComparison.OrdinalIgnoreCase) ||
+                   text.Contains("Amount Due", StringComparison.OrdinalIgnoreCase);
         }
 
         private static DataGrid CreatePrintStyledDataGrid(DataGrid original)
@@ -390,10 +476,10 @@ namespace ADIX.Services
             // Adjust column widths if there are specific columns that were getting cut
             AdjustColumnWidths(printGrid);
 
-            // Header style - ensure black text and visible background
+            // Header style - ensure green background with white text and black borders
             printGrid.ColumnHeaderStyle = new Style(typeof(DataGridColumnHeader));
-            printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.LightGray));
-            printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.Black));
+            printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(0, 128, 0)))); // Green
+            printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.White)); // White text for green background
             printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.Bold));
             printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BorderBrushProperty, Brushes.Black));
             printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
