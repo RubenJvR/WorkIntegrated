@@ -1,13 +1,10 @@
 ﻿using System;
 using System.IO;
-using System.Printing;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Xps;
 
 namespace ADIX.Services
 {
@@ -17,21 +14,24 @@ namespace ADIX.Services
         {
             try
             {
-                // Create print-optimized version that preserves XAML appearance
+                // Create print-optimized version
                 FrameworkElement printElement = CreatePrintFriendlyElement(element);
 
-                // Use fixed A4 dimensions for consistent layout
+                // Use fixed A4 dimensions
                 double totalWidth = 794; // A4 width in pixels at 96 DPI
                 double totalHeight = 1122; // A4 height in pixels at 96 DPI
 
-                // Ensure the element is properly measured and arranged
+                // Calculate required height for content
+                totalHeight = CalculateRequiredHeight(printElement, totalWidth);
+
+                // Ensure proper layout
                 printElement.Measure(new Size(totalWidth, totalHeight));
                 printElement.Arrange(new Rect(0, 0, totalWidth, totalHeight));
 
-                // Wait for layout to complete
-                printElement.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+                // Force layout completion
+                printElement.UpdateLayout();
 
-                // Create render bitmap with fixed dimensions
+                // Create render bitmap
                 RenderTargetBitmap renderBitmap = new RenderTargetBitmap(
                     (int)totalWidth,
                     (int)totalHeight,
@@ -39,11 +39,10 @@ namespace ADIX.Services
 
                 renderBitmap.Render(printElement);
 
-                // Create PNG encoder
+                // Save as PNG
                 PngBitmapEncoder encoder = new PngBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
 
-                // Save to file
                 using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
                 {
                     encoder.Save(fileStream);
@@ -67,15 +66,14 @@ namespace ADIX.Services
 
                 if (printDialog.ShowDialog() == true)
                 {
-                    // Use print-friendly version instead of original element
                     FrameworkElement printElement = CreatePrintFriendlyElement(element);
 
-                    // Use A4 dimensions for printing
-                    double printableWidth = 794;
-                    double printableHeight = 1122;
+                    double printableWidth = printDialog.PrintableAreaWidth;
+                    double printableHeight = printDialog.PrintableAreaHeight;
 
                     printElement.Measure(new Size(printableWidth, printableHeight));
                     printElement.Arrange(new Rect(0, 0, printableWidth, printableHeight));
+                    printElement.UpdateLayout();
 
                     printDialog.PrintVisual(printElement, description);
 
@@ -90,77 +88,115 @@ namespace ADIX.Services
             }
         }
 
+        private static double CalculateRequiredHeight(FrameworkElement element, double width)
+        {
+            double baseHeight = 1122; // A4 base height
+
+            // Find DataGrid and calculate required height
+            var dataGrid = FindDataGrid(element);
+            if (dataGrid != null && dataGrid.Items.Count > 0)
+            {
+                // More accurate height calculation
+                double headerHeight = dataGrid.ColumnHeaderHeight;
+                double rowHeight = dataGrid.RowHeight > 0 ? dataGrid.RowHeight : 22; // Default row height
+                double borderHeight = dataGrid.BorderThickness.Top + dataGrid.BorderThickness.Bottom;
+                double marginHeight = dataGrid.Margin.Top + dataGrid.Margin.Bottom;
+
+                // Calculate total DataGrid height
+                double dataGridHeight = headerHeight + (dataGrid.Items.Count * rowHeight) +
+                                      borderHeight + marginHeight + 10; // +10 for padding
+
+                // Adjust total height if needed
+                if (dataGridHeight > 400) // If DataGrid is larger than typical A4 section
+                {
+                    baseHeight = Math.Max(baseHeight, 800 + dataGridHeight);
+                }
+            }
+
+            return Math.Max(baseHeight, 1122);
+        }
+
         private static FrameworkElement CreatePrintFriendlyElement(FrameworkElement originalElement)
         {
-            // Create a deep copy of the main content grid but remove buttons
             if (originalElement is Grid mainGrid)
             {
                 return CreatePrintOptimizedVersion(mainGrid);
             }
-
-            // Fallback: create a simple white background version
             return CreateFallbackPrintVersion(originalElement);
         }
 
         private static FrameworkElement CreatePrintOptimizedVersion(Grid originalGrid)
         {
-            // Create a new grid that preserves the XAML structure but removes buttons
             Grid printGrid = new Grid();
             printGrid.Background = Brushes.White;
-            printGrid.Width = 794; // A4 width in pixels at 96 DPI
+            printGrid.Width = 794;
 
-            // Copy the row definitions from original grid
+            // Copy row definitions
             foreach (var rowDef in originalGrid.RowDefinitions)
             {
-                printGrid.RowDefinitions.Add(new RowDefinition { Height = rowDef.Height });
+                var newRowDef = new RowDefinition();
+
+                // For DataGrid rows, set to Auto to accommodate content
+                if (IsDataGridRow(originalGrid, printGrid.RowDefinitions.Count))
+                {
+                    newRowDef.Height = GridLength.Auto;
+                }
+                else
+                {
+                    newRowDef.Height = rowDef.Height;
+                }
+
+                printGrid.RowDefinitions.Add(newRowDef);
             }
 
-            // Copy all child elements except buttons and the button row
-            for (int i = 0; i < originalGrid.Children.Count; i++)
+            // Copy column definitions
+            foreach (var colDef in originalGrid.ColumnDefinitions)
             {
-                var child = originalGrid.Children[i];
+                printGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = colDef.Width });
+            }
 
-                // Skip buttons and the button container (row 10)
+            // Copy non-button elements
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(originalGrid); i++)
+            {
+                var child = VisualTreeHelper.GetChild(originalGrid, i) as UIElement;
+                if (child == null) continue;
+
+                // Skip buttons and button containers
                 if (child is Button || IsButtonContainer(child, originalGrid))
                     continue;
 
-                // Create a visual copy of the element
                 FrameworkElement copy = CreateVisualCopy(child);
                 if (copy != null)
                 {
-                    // Copy row and column positions
-                    int row = Grid.GetRow(child);
-                    int column = Grid.GetColumn(child);
-                    int rowSpan = Grid.GetRowSpan(child);
-                    int columnSpan = Grid.GetColumnSpan(child);
-
-                    Grid.SetRow(copy, row);
-                    Grid.SetColumn(copy, column);
-                    Grid.SetRowSpan(copy, rowSpan);
-                    Grid.SetColumnSpan(copy, columnSpan);
+                    // Copy layout properties
+                    Grid.SetRow(copy, Grid.GetRow(child));
+                    Grid.SetColumn(copy, Grid.GetColumn(child));
+                    Grid.SetRowSpan(copy, Grid.GetRowSpan(child));
+                    Grid.SetColumnSpan(copy, Grid.GetColumnSpan(child));
 
                     printGrid.Children.Add(copy);
                 }
             }
 
-            // Remove the button row definition and adjust the "Thank You" row
+            // Remove button row if it exists
             if (printGrid.RowDefinitions.Count > 10)
             {
-                // Move the "Thank You" section to be the last element
-                AdjustThankYouSection(printGrid);
-
-                // Remove the button row (row 10)
                 printGrid.RowDefinitions.RemoveAt(10);
             }
 
             return printGrid;
         }
 
-        private static bool IsButtonContainer(UIElement element, Grid parentGrid)
+        private static bool IsDataGridRow(Grid grid, int rowIndex)
         {
-            // Check if this element is in the button row (row 10)
-            int row = Grid.GetRow(element);
-            return row == 10;
+            foreach (UIElement child in grid.Children)
+            {
+                if (Grid.GetRow(child) == rowIndex && child is DataGrid)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private static FrameworkElement CreateVisualCopy(UIElement original)
@@ -168,7 +204,7 @@ namespace ADIX.Services
             if (original is Border originalBorder)
             {
                 Border copyBorder = new Border();
-                copyBorder.Background = Brushes.White; // Use white background for print
+                copyBorder.Background = Brushes.White; // Force white background
                 copyBorder.BorderBrush = originalBorder.BorderBrush;
                 copyBorder.BorderThickness = originalBorder.BorderThickness;
                 copyBorder.CornerRadius = originalBorder.CornerRadius;
@@ -181,7 +217,7 @@ namespace ADIX.Services
 
                 if (originalBorder.Child != null)
                 {
-                    var childCopy = CreateVisualCopy(originalBorder.Child);
+                    var childCopy = CreateVisualCopy(originalBorder.Child as UIElement);
                     if (childCopy != null)
                         copyBorder.Child = childCopy;
                 }
@@ -190,20 +226,21 @@ namespace ADIX.Services
             }
             else if (original is TextBlock originalTextBlock)
             {
-                TextBlock copyTextBlock = new TextBlock();
-                copyTextBlock.Text = originalTextBlock.Text;
-                copyTextBlock.FontSize = originalTextBlock.FontSize;
-                copyTextBlock.FontWeight = originalTextBlock.FontWeight;
-                copyTextBlock.Foreground = Brushes.Black; // Use black for print
-                copyTextBlock.Background = Brushes.Transparent;
-                copyTextBlock.HorizontalAlignment = originalTextBlock.HorizontalAlignment;
-                copyTextBlock.VerticalAlignment = originalTextBlock.VerticalAlignment;
-                copyTextBlock.TextAlignment = originalTextBlock.TextAlignment;
-                copyTextBlock.TextWrapping = originalTextBlock.TextWrapping;
-                copyTextBlock.Margin = originalTextBlock.Margin;
-                copyTextBlock.Padding = originalTextBlock.Padding;
-
-                return copyTextBlock;
+                return new TextBlock
+                {
+                    Text = originalTextBlock.Text,
+                    FontSize = originalTextBlock.FontSize,
+                    FontWeight = originalTextBlock.FontWeight,
+                    FontFamily = originalTextBlock.FontFamily,
+                    Foreground = Brushes.Black, // Force black text
+                    Background = Brushes.White, // Force white background
+                    HorizontalAlignment = originalTextBlock.HorizontalAlignment,
+                    VerticalAlignment = originalTextBlock.VerticalAlignment,
+                    TextAlignment = originalTextBlock.TextAlignment,
+                    TextWrapping = originalTextBlock.TextWrapping,
+                    Margin = originalTextBlock.Margin,
+                    Padding = originalTextBlock.Padding
+                };
             }
             else if (original is DataGrid originalDataGrid)
             {
@@ -216,29 +253,22 @@ namespace ADIX.Services
                 copyStackPanel.Margin = originalStackPanel.Margin;
                 copyStackPanel.HorizontalAlignment = originalStackPanel.HorizontalAlignment;
                 copyStackPanel.VerticalAlignment = originalStackPanel.VerticalAlignment;
-                copyStackPanel.Background = Brushes.Transparent;
+                copyStackPanel.Background = Brushes.White; // Force white background
 
-                foreach (var child in originalStackPanel.Children)
+                foreach (UIElement child in originalStackPanel.Children)
                 {
-                    var childCopy = CreateVisualCopy(child as UIElement);
+                    var childCopy = CreateVisualCopy(child);
                     if (childCopy != null)
                         copyStackPanel.Children.Add(childCopy);
                 }
 
                 return copyStackPanel;
             }
-            else if (original is ScrollViewer)
-            {
-                // Skip scroll viewer for print
-                return null;
-            }
             else if (original is Grid originalGrid)
             {
                 Grid copyGrid = new Grid();
-                copyGrid.Background = Brushes.Transparent;
+                copyGrid.Background = Brushes.White; // Force white background
                 copyGrid.Margin = originalGrid.Margin;
-                copyGrid.Width = originalGrid.Width;
-                copyGrid.Height = originalGrid.Height;
 
                 // Copy column definitions
                 foreach (var colDef in originalGrid.ColumnDefinitions)
@@ -253,97 +283,85 @@ namespace ADIX.Services
                 }
 
                 // Copy children
-                foreach (var child in originalGrid.Children)
+                foreach (UIElement child in originalGrid.Children)
                 {
-                    var childCopy = CreateVisualCopy(child as UIElement);
+                    var childCopy = CreateVisualCopy(child);
                     if (childCopy != null)
                     {
-                        int row = Grid.GetRow(child as UIElement);
-                        int column = Grid.GetColumn(child as UIElement);
-                        int rowSpan = Grid.GetRowSpan(child as UIElement);
-                        int columnSpan = Grid.GetColumnSpan(child as UIElement);
-
-                        Grid.SetRow(childCopy, row);
-                        Grid.SetColumn(childCopy, column);
-                        Grid.SetRowSpan(childCopy, rowSpan);
-                        Grid.SetColumnSpan(childCopy, columnSpan);
-
+                        Grid.SetRow(childCopy, Grid.GetRow(child));
+                        Grid.SetColumn(childCopy, Grid.GetColumn(child));
+                        Grid.SetRowSpan(childCopy, Grid.GetRowSpan(child));
+                        Grid.SetColumnSpan(childCopy, Grid.GetColumnSpan(child));
                         copyGrid.Children.Add(childCopy);
                     }
                 }
 
                 return copyGrid;
             }
-            else if (original is Image originalImage)
-            {
-                Image copyImage = new Image();
-                copyImage.Source = originalImage.Source;
-                copyImage.Stretch = originalImage.Stretch;
-                copyImage.Width = originalImage.Width;
-                copyImage.Height = originalImage.Height;
-                copyImage.Margin = originalImage.Margin;
-                copyImage.HorizontalAlignment = originalImage.HorizontalAlignment;
-                copyImage.VerticalAlignment = originalImage.VerticalAlignment;
-
-                return copyImage;
-            }
             else if (original is TextBox originalTextBox)
             {
                 // Convert TextBox to TextBlock for print
-                TextBlock textBlock = new TextBlock();
-                textBlock.Text = originalTextBox.Text;
-                textBlock.FontSize = originalTextBox.FontSize;
-                textBlock.Foreground = Brushes.Black; // Use black for print
-                textBlock.Background = Brushes.Transparent;
-                textBlock.TextWrapping = originalTextBox.TextWrapping;
-                textBlock.Margin = originalTextBox.Margin;
-                textBlock.Padding = originalTextBox.Padding;
-                textBlock.HorizontalAlignment = originalTextBox.HorizontalAlignment;
-                textBlock.VerticalAlignment = originalTextBox.VerticalAlignment;
-
-                return textBlock;
+                return new TextBlock
+                {
+                    Text = originalTextBox.Text,
+                    FontSize = originalTextBox.FontSize,
+                    FontFamily = originalTextBox.FontFamily,
+                    Foreground = Brushes.Black, // Force black text
+                    Background = Brushes.White, // Force white background
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin = originalTextBox.Margin,
+                    Padding = originalTextBox.Padding,
+                    HorizontalAlignment = originalTextBox.HorizontalAlignment,
+                    VerticalAlignment = originalTextBox.VerticalAlignment
+                };
+            }
+            else if (original is ScrollViewer originalScrollViewer)
+            {
+                // Remove scroll viewer and show content directly for printing
+                if (originalScrollViewer.Content is UIElement content)
+                {
+                    return CreateVisualCopy(content);
+                }
             }
 
             return null;
         }
 
-        private static void AdjustThankYouSection(Grid printGrid)
-        {
-            // Find and adjust the "Thank You" text block to be more prominent
-            foreach (var child in printGrid.Children)
-            {
-                if (child is TextBlock textBlock && textBlock.Text == "Thank You For Your Business!")
-                {
-                    textBlock.Foreground = Brushes.Black;
-                    textBlock.FontSize = 18;
-                    textBlock.FontWeight = FontWeights.Bold;
-                    textBlock.Margin = new Thickness(0, 30, 0, 40);
-                    break;
-                }
-            }
-        }
-
         private static DataGrid CreatePrintStyledDataGrid(DataGrid original)
         {
             DataGrid printGrid = new DataGrid();
-            printGrid.Width = original.Width;
-            printGrid.Height = original.Height;
+
+            // Basic properties - ensure everything is visible
             printGrid.Background = Brushes.White;
             printGrid.Foreground = Brushes.Black;
-            printGrid.FontSize = original.FontSize;
-            printGrid.HeadersVisibility = original.HeadersVisibility;
-            printGrid.IsReadOnly = true;
-            printGrid.AutoGenerateColumns = original.AutoGenerateColumns;
             printGrid.BorderBrush = Brushes.Black;
-            printGrid.BorderThickness = original.BorderThickness;
-            printGrid.Margin = original.Margin;
-            printGrid.ItemsSource = original.ItemsSource;
-            printGrid.RowHeight = original.RowHeight;
-            printGrid.ColumnHeaderHeight = original.ColumnHeaderHeight;
-            printGrid.AlternatingRowBackground = Brushes.LightGray;
+            printGrid.BorderThickness = new Thickness(1);
+            printGrid.Margin = new Thickness(5); // Reduced margin to prevent cutting
+            printGrid.Padding = new Thickness(2);
 
-            // Copy columns
+            // Layout properties - ensure full width and auto height
+            printGrid.Width = 780; // Slightly less than A4 width to prevent cutting
+            printGrid.HorizontalAlignment = HorizontalAlignment.Left;
+            printGrid.VerticalAlignment = VerticalAlignment.Top;
+            printGrid.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+            printGrid.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
+
+            // Data properties
+            printGrid.ItemsSource = original.ItemsSource;
+            printGrid.IsReadOnly = true;
+            printGrid.AutoGenerateColumns = false; // Use explicit columns to prevent cutting
+            printGrid.HeadersVisibility = DataGridHeadersVisibility.All;
+
+            // Row properties
+            printGrid.RowHeight = 25;
+            printGrid.ColumnHeaderHeight = 30;
+            printGrid.AlternatingRowBackground = new SolidColorBrush(Color.FromArgb(20, 0, 0, 0)); // Light gray alternating
+
+            // Clear and copy columns with proper widths to prevent cutting
             printGrid.Columns.Clear();
+
+            // Define column widths as percentages of total width to prevent cutting
+            double totalWidth = 750; // Available width for columns
             foreach (var column in original.Columns)
             {
                 if (column is DataGridTextColumn textColumn)
@@ -352,46 +370,116 @@ namespace ADIX.Services
                     {
                         Header = textColumn.Header,
                         Binding = textColumn.Binding,
-                        Width = textColumn.Width
+                        Width = new DataGridLength(120, DataGridLengthUnitType.Pixel) // Fixed width for all columns
                     };
 
-                    // Style for black text
+                    // Style for cell content - ensure black text and white background
                     var elementStyle = new Style(typeof(TextBlock));
                     elementStyle.Setters.Add(new Setter(TextBlock.ForegroundProperty, Brushes.Black));
-                    elementStyle.Setters.Add(new Setter(TextBlock.PaddingProperty, new Thickness(5)));
+                    elementStyle.Setters.Add(new Setter(TextBlock.BackgroundProperty, Brushes.White));
+                    elementStyle.Setters.Add(new Setter(TextBlock.PaddingProperty, new Thickness(4)));
+                    elementStyle.Setters.Add(new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Left));
+                    elementStyle.Setters.Add(new Setter(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center));
+                    elementStyle.Setters.Add(new Setter(TextBlock.TextWrappingProperty, TextWrapping.NoWrap));
                     newColumn.ElementStyle = elementStyle;
 
                     printGrid.Columns.Add(newColumn);
                 }
             }
 
-            // Style headers for print
+            // Adjust column widths if there are specific columns that were getting cut
+            AdjustColumnWidths(printGrid);
+
+            // Header style - ensure black text and visible background
             printGrid.ColumnHeaderStyle = new Style(typeof(DataGridColumnHeader));
             printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.LightGray));
             printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.Black));
             printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.Bold));
             printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BorderBrushProperty, Brushes.Black));
             printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
-            printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(5)));
+            printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(4)));
             printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center));
             printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
 
-            // Style cells for print
+            // Cell style - ensure visible borders and black text
             printGrid.CellStyle = new Style(typeof(DataGridCell));
             printGrid.CellStyle.Setters.Add(new Setter(Control.BorderBrushProperty, Brushes.Black));
             printGrid.CellStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0.5)));
-            printGrid.CellStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(5, 2, 5, 2)));
-            printGrid.CellStyle.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center));
-            printGrid.CellStyle.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
-            printGrid.CellStyle.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.Black));
+            printGrid.CellStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(2)));
             printGrid.CellStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.White));
+            printGrid.CellStyle.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.Black));
+            printGrid.CellStyle.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
+            printGrid.CellStyle.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
 
-            // Style rows for print
+            // Row style
             printGrid.RowStyle = new Style(typeof(DataGridRow));
             printGrid.RowStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.White));
             printGrid.RowStyle.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.Black));
+            printGrid.RowStyle.Setters.Add(new Setter(FrameworkElement.HeightProperty, printGrid.RowHeight));
 
             return printGrid;
+        }
+
+        private static void AdjustColumnWidths(DataGrid dataGrid)
+        {
+            // Adjust specific columns that were getting cut off
+            foreach (var column in dataGrid.Columns)
+            {
+                var header = column.Header?.ToString() ?? "";
+
+                // Set appropriate widths for commonly cut columns
+                if (header.Contains("Unit Price", StringComparison.OrdinalIgnoreCase) ||
+                    header.Contains("Price", StringComparison.OrdinalIgnoreCase))
+                {
+                    column.Width = new DataGridLength(80, DataGridLengthUnitType.Pixel);
+                }
+                else if (header.Contains("Item", StringComparison.OrdinalIgnoreCase) &&
+                        !header.Contains("Description", StringComparison.OrdinalIgnoreCase))
+                {
+                    column.Width = new DataGridLength(80, DataGridLengthUnitType.Pixel);
+                }
+                else if (header.Contains("Disc", StringComparison.OrdinalIgnoreCase) ||
+                        header.Contains("Discount", StringComparison.OrdinalIgnoreCase))
+                {
+                    column.Width = new DataGridLength(70, DataGridLengthUnitType.Pixel);
+                }
+                else if (header.Contains("Amount", StringComparison.OrdinalIgnoreCase) ||
+                        header.Contains("Total", StringComparison.OrdinalIgnoreCase))
+                {
+                    column.Width = new DataGridLength(80, DataGridLengthUnitType.Pixel);
+                }
+                else if (header.Contains("Description", StringComparison.OrdinalIgnoreCase))
+                {
+                    column.Width = new DataGridLength(150, DataGridLengthUnitType.Pixel);
+                }
+                else
+                {
+                    column.Width = new DataGridLength(100, DataGridLengthUnitType.Pixel);
+                }
+            }
+        }
+
+        private static DataGrid FindDataGrid(DependencyObject parent)
+        {
+            if (parent == null) return null;
+
+            if (parent is DataGrid dataGrid)
+                return dataGrid;
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                var result = FindDataGrid(child);
+                if (result != null)
+                    return result;
+            }
+            return null;
+        }
+
+        private static bool IsButtonContainer(UIElement element, Grid parentGrid)
+        {
+            int row = Grid.GetRow(element);
+            return row == 10; // Assuming row 10 is the button row
         }
 
         private static FrameworkElement CreateFallbackPrintVersion(FrameworkElement originalElement)
