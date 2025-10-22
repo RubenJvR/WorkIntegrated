@@ -417,6 +417,9 @@
 
                 <Button Content="Edit Product" Width="150" Height="40"
                         Background="#4F4F4F" Foreground="White" Margin="5"/>
+                <Button Content="Import" Width="150" Height="40"
+                        Background="Blue" Foreground="White" Margin="5"
+                        Click="ImportCSV_Click"/>
 
             </StackPanel>
         </Grid>
