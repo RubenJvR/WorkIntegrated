@@ -386,3 +386,26 @@ NuGetPackages/
 
 # Ignore generated helper files
 gitfiles.txt
+
+# .NET 8 specific
+*.runtimeconfig.json
+*.runtimeconfig.dev.json
+*.dll
+*.exe
+*.so
+*.dylib
+*.a
+
+# ASP.NET Core generated files
+**/Pages/*.g.cs
+**/Pages/*.g.i.cs
+**/Razor/Pages/*.g.cs
+**/Razor/Pages/*.g.i.cs
+
+# More specific .NET ignores
+**/net8.0-*/
+**/net8.0-windows/**
+
+# Ensure all obj and bin directories are ignored (reinforce existing patterns)
+**/[Oo]bj/
+**/[Bb]in/

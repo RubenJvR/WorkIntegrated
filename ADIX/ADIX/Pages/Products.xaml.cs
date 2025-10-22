@@ -1,32 +1,20 @@
 ﻿using Microsoft.Data.Sqlite;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using WorkIntegrated;
-
+using System.Globalization;
 namespace ADIX
 {
-    /// <summary>
-    /// Interaction logic for Products.xaml
-    /// </summary>
     public partial class Products : Page
     {
         public Products()
         {
             InitializeComponent();
-            Database.Initialize();
-            InsertSampleItem();
             LoadItem();
         }
 
@@ -42,20 +30,13 @@ namespace ADIX
             public int SellerID { get; set; }
         }
 
-
         private void LoadItem()
         {
             var productList = new List<Product>();
-
             using var conn = new SqliteConnection("Data Source=ADIX.db");
             conn.Open();
-
-            using var cmd = new SqliteCommand(
-                "SELECT itemID, description, retailPrice, costPrice, stockQuantity, stockSold, supplierID, sellerID FROM ITEM",
-                conn);
-
+            using var cmd = new SqliteCommand("SELECT itemID, description, retailPrice, costPrice, stockQuantity, stockSold, supplierID, sellerID FROM ITEM", conn);
             using var reader = cmd.ExecuteReader();
-
             while (reader.Read())
             {
                 productList.Add(new Product
@@ -70,50 +51,154 @@ namespace ADIX
                     SellerID = Convert.ToInt32(reader["sellerID"])
                 });
             }
-
             ProductsGrid.ItemsSource = productList;
         }
 
-
-        private void InsertSampleItem()
+        private void ImportCSV_Click(object sender, EventArgs e)
         {
+            try
+            {
+                var openFileDialog = new OpenFileDialog
+                {
+                    Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+                    Title = "Select CSV File to Import"
+                };
+
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    var filePath = openFileDialog.FileName;
+                    var products = ParseCSV(filePath);
+
+                    if (products.Count == 0)
+                    {
+                        MessageBox.Show("No valid products found in CSV file.", "Import Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    var result = MessageBox.Show($"Found {products.Count} products to import.\n\nDo you want to proceed?", "Confirm Import", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        int imported = ImportProductsToDatabase(products);
+                        MessageBox.Show($"Successfully imported {imported} products!\n\n" + (Database.IsInternetAvailable() ? "Syncing to cloud..." : "Offline - will sync when online"), "Import Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                        LoadItem();
+                        if (Database.IsInternetAvailable())
+                        {
+                            System.Threading.Tasks.Task.Run(async () => { await Database.CheckAndSyncAsync(); });
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error importing CSV: {ex.Message}", "Import Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private List<Product> ParseCSV(string filePath)
+        {
+            var parsedList = new List<Product>();
+            var lines = File.ReadAllLines(filePath);
+            if (lines.Length == 0) return parsedList;
+
+            bool hasHeader = lines[0].ToLower().Contains("description") || lines[0].ToLower().Contains("Products");
+            int startLine = hasHeader ? 1 : 0;
+
+            for (int i = startLine; i < lines.Length; i++)
+            {
+                try
+                {
+                    var values = lines[i].Split(',').Select(v => v.Trim('"', ' ')).ToArray();
+                    if (values.Length < 6)
+                    {
+                        Console.WriteLine($"Skipping line {i + 1}: Not Enough columns");
+                        continue;
+                    }
+
+                    var product = new Product
+                    {
+                        Description = values[0].Trim().Trim('"'),
+                        RetailPrice = ParseDecimal(values[1]),
+                        CostPrice = ParseDecimal(values[2]),
+                        StockQuantity = ParseInt(values[3]),
+                        StockSold = 0,
+                        SupplierID = values.Length > 4 ? ParseInt(values[4]) : 1,
+                        SellerID = values.Length > 5 ? ParseInt(values[5]) : 1
+                    };
+
+                    if (!string.IsNullOrWhiteSpace(product.Description) && product.RetailPrice > 0)
+                    {
+                        parsedList.Add(product);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error parsing line {i + 1}: {ex.Message}");
+                }
+            }
+            return parsedList;
+        }
+
+        private decimal ParseDecimal(string value)
+        {
+            value = value.Trim().Trim('"');
+
+            if (decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal result))
+                return result;
+
+            return 0;
+        }
+
+        private int ParseInt(string value)
+        {
+            value = value.Trim().Trim('"');
+            if (int.TryParse(value, out int result)) return result;
+            return 0;
+        }
+
+        private int ImportProductsToDatabase(List<Product> products)
+        {
+            int importedCount = 0;
             using var conn = new SqliteConnection("Data Source=ADIX.db");
             conn.Open();
-
             using var transaction = conn.BeginTransaction();
 
-            // Insert supplier
-            using (var cmd = conn.CreateCommand())
+            try
             {
-                cmd.Transaction = transaction;
-                cmd.CommandText = @"
-                INSERT OR IGNORE INTO SUPPLIER (supplierID, name, contactInfo, address)
-                VALUES (1, 'ABC Supplies', '123-456-7890', '123 Main St');";
-                cmd.ExecuteNonQuery();
-            }
+                foreach (var product in products)
+                {
+                    var checkCmd = new SqliteCommand("SELECT COUNT(*) FROM ITEM WHERE description = @desc", conn, transaction);
+                    checkCmd.Parameters.AddWithValue("@desc", product.Description);
+                    var exists = Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
 
-            // Insert seller
-            using (var cmd = conn.CreateCommand())
+                    if (exists)
+                    {
+                        Console.WriteLine($"Product '{product.Description}' already exists, skipping...");
+                        continue;
+                    }
+
+                    var insertCmd = new SqliteCommand(@"INSERT INTO ITEM (description, retailPrice, costPrice, stockQuantity, stockSold, supplierID, sellerID, lastModified)
+                        VALUES (@desc, @retail, @cost, @qty, @sold, @supplier, @seller, CURRENT_TIMESTAMP)", conn, transaction);
+
+                    insertCmd.Parameters.AddWithValue("@desc", product.Description);
+                    insertCmd.Parameters.AddWithValue("@retail", (double)product.RetailPrice);
+                    insertCmd.Parameters.AddWithValue("@cost", (double)product.CostPrice);
+                    insertCmd.Parameters.AddWithValue("@qty", product.StockQuantity);
+                    insertCmd.Parameters.AddWithValue("@sold", product.StockSold);
+                    insertCmd.Parameters.AddWithValue("@supplier", product.SupplierID);
+                    insertCmd.Parameters.AddWithValue("@seller", product.SellerID);
+                    insertCmd.ExecuteNonQuery();
+                    importedCount++;
+                }
+                transaction.Commit();
+                Database.MarkSyncRequired();
+            }
+            catch (Exception ex)
             {
-                cmd.Transaction = transaction;
-                cmd.CommandText = @"
-                INSERT OR IGNORE INTO SELLER (sellerID, name, contactInfo, bankDetails, commissionRate)
-                VALUES (1, 'John Doe', 'john@example.com', 'Bank XYZ 12345', 0.1);";
-                cmd.ExecuteNonQuery();
+                transaction.Rollback();
+                throw new Exception($"Database error during import: {ex.Message}", ex);
             }
-
-            // Insert item
-            using (var cmd = conn.CreateCommand())
-            {
-                cmd.Transaction = transaction;
-                cmd.CommandText = @"
-                INSERT OR IGNORE INTO ITEM (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, supplierID, sellerID)
-                VALUES (1, 'Bow', 3000, 15.00, 50, 0, 1, 1);";
-                cmd.ExecuteNonQuery();
-            }
-
-            transaction.Commit();
-            conn.Close();
+            return importedCount;
         }
     }
 }
