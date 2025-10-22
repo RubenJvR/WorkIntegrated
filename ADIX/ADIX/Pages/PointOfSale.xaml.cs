@@ -7,31 +7,18 @@ namespace ADIX
     public partial class PointOfSale : Page
     {
         private PointOfSaleViewModel _viewModel;
-        private static PointOfSaleViewModel? _storedViewModel;
 
         public PointOfSale()
         {
             InitializeComponent();
 
-            // Use stored ViewModel if available, otherwise create new one
-            if (_storedViewModel != null)
-            {
-                _viewModel = _storedViewModel;
-                _storedViewModel = null; // Clear after use
-            }
-            else
-            {
-                _viewModel = new PointOfSaleViewModel();
-            }
-
+            // Always use the singleton ViewModel
+            _viewModel = ViewModelManager.PointOfSaleViewModel;
             DataContext = _viewModel;
         }
 
         private void Quote_Click(object sender, RoutedEventArgs e)
         {
-            // Store the current ViewModel before navigating away
-            _storedViewModel = _viewModel;
-
             // Get cart items with quantity > 0
             var cartItems = _viewModel.GetCartItemsForExport();
 
@@ -51,9 +38,6 @@ namespace ADIX
 
         private void Invoice_Click(object sender, RoutedEventArgs e)
         {
-            // Store the current ViewModel before navigating away
-            _storedViewModel = _viewModel;
-
             // Get cart items with quantity > 0
             var cartItems = _viewModel.GetCartItemsForExport();
 
@@ -70,5 +54,7 @@ namespace ADIX
             var mainWindow = Window.GetWindow(this) as MainWindow;
             mainWindow?.MainFrame.Navigate(invoicePage);
         }
+
+       
     }
 }

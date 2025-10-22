@@ -53,12 +53,13 @@ namespace ADIX.ViewModels
             // Load payment methods
             PaymentMethods.Add("Cash");
             PaymentMethods.Add("EFT");
-            PaymentMethods.Add("Credit");
+            PaymentMethods.Add("Credit Card"); // Updated for card payments
+            PaymentMethods.Add("Debit Card");  // Added for card payments
             PaymentMethods.Add("Return");
 
             // Set default values
             _discountPercent = 0; // Explicitly set to 0
-            _vatAmount = 15; // Set a default VAT percentage (e.g., 15%)
+            _vatAmount = 15m; // Fixed 15% VAT for South Africa
 
             // Load data
             try
@@ -192,13 +193,15 @@ namespace ADIX.ViewModels
         }
 
         // Method to reset transaction without confirmation dialog
+      
         private void ResetTransaction()
         {
+            // Only reset the transaction-specific data, not the entire cart
             CustomerName = string.Empty;
             SelectedStaff = null;
             SelectedPaymentMethod = null;
             PaymentReceived = false;
-            VATAmount = 15; // Reset to default
+            // VATAmount = 15; // Don't reset VAT - it's fixed now
             Address = string.Empty;
             DiscountPercent = 0;
 
@@ -265,20 +268,37 @@ namespace ADIX.ViewModels
         public decimal VATAmount
         {
             get => _vatAmount;
-            set
+            private set
             {
-                // Ensure value is valid
-                decimal validValue = value;
-                if (validValue < 0) validValue = 0;
-                if (validValue > 30) validValue = 30; // Max 30% VAT
+                _vatAmount = 15m; // Always 15% for South Africa
+                OnPropertyChanged(nameof(VATAmount));
+                CalculateTotals();
+            }
+        }
 
-                if (_vatAmount != validValue)
+        private const decimal MAX_TOTAL_DISCOUNT_PERCENT = 50m; // Maximum 50% total discount allowed
+
+        private bool ValidateDiscounts()
+        {
+            decimal totalEffectiveDiscount = 0;
+
+            foreach (var item in CartItems.Where(i => i.Quantity > 0))
+            {
+                // Calculate effective discount for this item
+                decimal itemDiscountPercent = item.ItemDiscount + (DiscountPercent * (1 - item.ItemDiscount / 100m));
+                totalEffectiveDiscount = Math.Max(totalEffectiveDiscount, itemDiscountPercent);
+
+                // Check if any single item has excessive discount
+                if (itemDiscountPercent > MAX_TOTAL_DISCOUNT_PERCENT)
                 {
-                    _vatAmount = validValue;
-                    OnPropertyChanged(nameof(VATAmount));
-                    ValidateAndCalculateTotals();
+                    MessageBox.Show($"Discount for {item.ItemName} exceeds maximum allowed ({MAX_TOTAL_DISCOUNT_PERCENT}%).\n" +
+                                  $"Item Discount: {item.ItemDiscount}% + Overall Discount: {DiscountPercent}% = {itemDiscountPercent:F1}% total",
+                                  "Excessive Discount", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
                 }
             }
+
+            return true;
         }
 
         public string? Address
@@ -342,26 +362,31 @@ namespace ADIX.ViewModels
             {
                 decimal itemTotal = item.Quantity * item.Price;
                 subtotal += itemTotal;
-                totalItemDiscounts += itemTotal * (item.ItemDiscount / 100m);
+
+                // Apply item-level discount first
+                decimal itemDiscountAmount = itemTotal * (item.ItemDiscount / 100m);
+                totalItemDiscounts += itemDiscountAmount;
             }
 
-            // Update TotalExcludingDiscount (this is the subtotal before any discounts)
+            // Total excluding discount should be just the subtotal
             TotalExcludingDiscount = subtotal;
 
-            // Calculate overall discount amount
-            decimal overallDiscountAmount = subtotal * (DiscountPercent / 100m);
+            // Calculate overall discount amount (applied after item discounts)
+            decimal amountAfterItemDiscounts = subtotal - totalItemDiscounts;
+            decimal overallDiscountAmount = amountAfterItemDiscounts * (DiscountPercent / 100m);
 
-            // Calculate total after ALL discounts (both item-level and overall)
-            decimal totalAfterAllDiscounts = subtotal - totalItemDiscounts - overallDiscountAmount;
+            // Calculate total after ALL discounts
+            decimal totalAfterAllDiscounts = amountAfterItemDiscounts - overallDiscountAmount;
 
-            // Apply VAT
+            // Apply VAT to the discounted amount
             decimal vatAmount = totalAfterAllDiscounts * (VATAmount / 100m);
 
             // Final total
             TotalBill = totalAfterAllDiscounts + vatAmount;
 
-            // Debug output (remove in production)
-            System.Diagnostics.Debug.WriteLine($"Subtotal: {subtotal}, Item Discounts: {totalItemDiscounts}, Overall Discount: {overallDiscountAmount}, VAT: {vatAmount}, Total: {TotalBill}");
+            // Debug output
+            System.Diagnostics.Debug.WriteLine($"Subtotal: {subtotal}, Item Discounts: {totalItemDiscounts}, " +
+                                             $"Overall Discount: {overallDiscountAmount}, VAT: {vatAmount}, Total: {TotalBill}");
         }
 
         private void ValidateNumericInputs()
@@ -387,6 +412,10 @@ namespace ADIX.ViewModels
         {
             try
             {
+                // Validate discounts before processing
+                if (!ValidateDiscounts())
+                    return;
+
                 // Validate stock
                 foreach (var item in CartItems.Where(i => i.Quantity > 0))
                 {
@@ -398,6 +427,7 @@ namespace ADIX.ViewModels
                     }
                 }
 
+                
                 // Create invoice (type = 1 for sale)
                 int invoiceId = _repository.CreateInvoice(
                     CustomerName ?? "",
@@ -495,6 +525,8 @@ namespace ADIX.ViewModels
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+
     }
 
     // Simple RelayCommand implementation with nullable parameters

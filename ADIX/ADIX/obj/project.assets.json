@@ -39,6 +39,19 @@
           }
         }
       },
+      "BouncyCastle.Cryptography/2.6.2": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/BouncyCastle.Cryptography.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/BouncyCastle.Cryptography.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "HarfBuzzSharp/8.3.1.1": {
         "type": "package",
         "dependencies": {
@@ -91,6 +104,23 @@
           "runtimes/win-x86/native/libHarfBuzzSharp.dll": {
             "assetType": "native",
             "rid": "win-x86"
+          }
+        }
+      },
+      "iTextSharp.LGPLv2.Core/3.7.7": {
+        "type": "package",
+        "dependencies": {
+          "BouncyCastle.Cryptography": "2.6.2",
+          "SkiaSharp": "3.119.0"
+        },
+        "compile": {
+          "lib/net8.0/iTextSharp.LGPLv2.Core.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/iTextSharp.LGPLv2.Core.dll": {
+            "related": ".xml"
           }
         }
       },
@@ -1276,6 +1306,26 @@
         "lib/netstandard2.0/Azure.Identity.xml"
       ]
     },
+    "BouncyCastle.Cryptography/2.6.2": {
+      "sha512": "7oWOcvnntmMKNzDLsdxAYqApt+AjpRpP2CShjMfIa3umZ42UQMvH0tl1qAliYPNYO6vTdcGMqnRrCPmsfzTI1w==",
+      "type": "package",
+      "path": "bouncycastle.cryptography/2.6.2",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.md",
+        "README.md",
+        "bouncycastle.cryptography.2.6.2.nupkg.sha512",
+        "bouncycastle.cryptography.nuspec",
+        "lib/net461/BouncyCastle.Cryptography.dll",
+        "lib/net461/BouncyCastle.Cryptography.xml",
+        "lib/net6.0/BouncyCastle.Cryptography.dll",
+        "lib/net6.0/BouncyCastle.Cryptography.xml",
+        "lib/netstandard2.0/BouncyCastle.Cryptography.dll",
+        "lib/netstandard2.0/BouncyCastle.Cryptography.xml",
+        "packageIcon.png"
+      ]
+    },
     "HarfBuzzSharp/8.3.1.1": {
       "sha512": "tLZN66oe/uiRPTZfrCU4i8ScVGwqHNh5MHrXj0yVf4l7Mz0FhTGnQ71RGySROTmdognAs0JtluHkL41pIabWuQ==",
       "type": "package",
@@ -1363,6 +1413,30 @@
         "runtimes/win-arm64/native/libHarfBuzzSharp.dll",
         "runtimes/win-x64/native/libHarfBuzzSharp.dll",
         "runtimes/win-x86/native/libHarfBuzzSharp.dll"
+      ]
+    },
+    "iTextSharp.LGPLv2.Core/3.7.7": {
+      "sha512": "lmLlUZHBGPVsnd0jZd3zkiGMKESy3CX+q9RMJWMl4vWSWwqI2V85h5ATHJNGRD5Ke85L2aUW55JypSJWls5PpQ==",
+      "type": "package",
+      "path": "itextsharp.lgplv2.core/3.7.7",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "itextsharp.lgplv2.core.3.7.7.nupkg.sha512",
+        "itextsharp.lgplv2.core.nuspec",
+        "lib/net462/iTextSharp.LGPLv2.Core.dll",
+        "lib/net462/iTextSharp.LGPLv2.Core.xml",
+        "lib/net6.0/iTextSharp.LGPLv2.Core.dll",
+        "lib/net6.0/iTextSharp.LGPLv2.Core.xml",
+        "lib/net7.0/iTextSharp.LGPLv2.Core.dll",
+        "lib/net7.0/iTextSharp.LGPLv2.Core.xml",
+        "lib/net8.0/iTextSharp.LGPLv2.Core.dll",
+        "lib/net8.0/iTextSharp.LGPLv2.Core.xml",
+        "lib/net9.0/iTextSharp.LGPLv2.Core.dll",
+        "lib/net9.0/iTextSharp.LGPLv2.Core.xml",
+        "lib/netstandard2.0/iTextSharp.LGPLv2.Core.dll",
+        "lib/netstandard2.0/iTextSharp.LGPLv2.Core.xml"
       ]
     },
     "LiveChartsCore/2.0.0-rc6.1": {
@@ -3007,27 +3081,28 @@
       "SQLitePCLRaw.core >= 2.1.10",
       "SQLitePCLRaw.lib.e_sqlite3 >= 2.1.10",
       "SQLitePCLRaw.provider.e_sqlite3 >= 2.1.10",
-      "WPF-UI >= 4.0.3"
+      "WPF-UI >= 4.0.3",
+      "iTextSharp.LGPLv2.Core >= 3.7.7"
     ]
   },
   "packageFolders": {
-    "C:\\Users\\explo.BEN-PC\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\NuGetPackages": {},
+    "D:\\Program fike (SDK tools)\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Will\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
+      "projectUniqueName": "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\ADIX\\ADIX.csproj",
       "projectName": "ADIX",
-      "projectPath": "C:\\Will\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
-      "packagesPath": "C:\\Users\\explo.BEN-PC\\.nuget\\packages\\",
-      "outputPath": "C:\\Will\\WorkIntegrated\\ADIX\\ADIX\\obj\\",
+      "projectPath": "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\ADIX\\ADIX.csproj",
+      "packagesPath": "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\NuGetPackages",
+      "outputPath": "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\ADIX\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        "D:\\Program fike (SDK tools)\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\explo.BEN-PC\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\kagis\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -3053,7 +3128,8 @@
         "enableAudit": "true",
         "auditLevel": "low",
         "auditMode": "direct"
-      }
+      },
+      "SdkAnalysisLevel": "9.0.300"
     },
     "frameworks": {
       "net8.0-windows7.0": {
@@ -3098,6 +3174,10 @@
           "WPF-UI": {
             "target": "Package",
             "version": "[4.0.3, )"
+          },
+          "iTextSharp.LGPLv2.Core": {
+            "target": "Package",
+            "version": "[3.7.7, )"
           }
         },
         "imports": [
@@ -3119,7 +3199,7 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "c:\\program files\\dotnet\\sdk\\8.0.205/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
       }
     }
   },

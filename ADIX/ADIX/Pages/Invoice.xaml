@@ -87,7 +87,7 @@
 
         <!-- Main Content with ScrollViewer -->
         <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <Grid Margin="10" MinHeight="700">
+            <Grid x:Name="MainContentGrid" Margin="10" MinHeight="700">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <!-- 0: Header -->
@@ -518,11 +518,11 @@
 
                     <Button Content="Save Invoice" Width="150" Height="40"
                             Background="#4AA902" Foreground="White" FontWeight="Bold" Margin="5"
-                            Style="{StaticResource SolidButtonStyle}"/>
+                            Style="{StaticResource SolidButtonStyle}"   Click="SaveInvoice_Click"/>
 
-                    <Button Content="Print Invoice" Width="150" Height="40"
+                    <Button Content="Print Invoice" Width="150" Height="40" 
                             Background="#2D2D2D" Foreground="White" FontWeight="Bold" Margin="5"
-                            Style="{StaticResource SolidButtonStyle}"/>
+                            Style="{StaticResource SolidButtonStyle}" Click="PrintInvoice_Click"/>
                 </StackPanel>
             </Grid>
         </ScrollViewer>
