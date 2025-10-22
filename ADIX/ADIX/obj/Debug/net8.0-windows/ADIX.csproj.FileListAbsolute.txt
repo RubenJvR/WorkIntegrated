@@ -810,15 +810,21 @@ C:\Will\WorkIntegrated\ADIX\ADIX\obj\Debug\net8.0-windows\refint\ADIX.dll
 C:\Will\WorkIntegrated\ADIX\ADIX\obj\Debug\net8.0-windows\ADIX.pdb
 C:\Will\WorkIntegrated\ADIX\ADIX\obj\Debug\net8.0-windows\ADIX.genruntimeconfig.cache
 C:\Will\WorkIntegrated\ADIX\ADIX\obj\Debug\net8.0-windows\ref\ADIX.dll
+C:\Will\WorkIntegrated\ADIX\ADIX\bin\Debug\net8.0-windows\Image\ADIX_LOGO.png
+C:\Will\WorkIntegrated\ADIX\ADIX\bin\Debug\net8.0-windows\BouncyCastle.Cryptography.dll
+C:\Will\WorkIntegrated\ADIX\ADIX\bin\Debug\net8.0-windows\iTextSharp.LGPLv2.Core.dll
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\ADIX.exe
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\Database\ADIX.sql
+D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\Image\ADIX_LOGO.png
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\ADIX.deps.json
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\ADIX.runtimeconfig.json
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\ADIX.dll
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\ADIX.pdb
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\Azure.Core.dll
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\Azure.Identity.dll
+D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\BouncyCastle.Cryptography.dll
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\HarfBuzzSharp.dll
+D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\iTextSharp.LGPLv2.Core.dll
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\LiveChartsCore.dll
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\LiveChartsCore.SkiaSharpView.dll
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\LiveChartsCore.SkiaSharpView.WPF.dll
@@ -974,9 +980,3 @@ D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\obj\Debug\net8.0-windows\refint\ADIX.dll
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\obj\Debug\net8.0-windows\ADIX.pdb
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\obj\Debug\net8.0-windows\ADIX.genruntimeconfig.cache
 D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\obj\Debug\net8.0-windows\ref\ADIX.dll
-D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\BouncyCastle.Cryptography.dll
-D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\iTextSharp.LGPLv2.Core.dll
-D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\bin\Debug\net8.0-windows\Image\ADIX_LOGO.png
-C:\Will\WorkIntegrated\ADIX\ADIX\bin\Debug\net8.0-windows\Image\ADIX_LOGO.png
-C:\Will\WorkIntegrated\ADIX\ADIX\bin\Debug\net8.0-windows\BouncyCastle.Cryptography.dll
-C:\Will\WorkIntegrated\ADIX\ADIX\bin\Debug\net8.0-windows\iTextSharp.LGPLv2.Core.dll

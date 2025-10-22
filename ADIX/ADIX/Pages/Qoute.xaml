@@ -130,7 +130,7 @@
                     <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,10,0">
                         <!-- Logo -->
                         <Border Height="120" VerticalAlignment="Top" HorizontalAlignment="Left" Width="160" Margin="0,0,0,10">
-                            <Image Source="/Image/ADIX_LOGO.png" Stretch="Uniform"/>
+                            <Image Source="/Image/loggo.png" Stretch="Uniform"/>
                         </Border>
 
                         <Border Style="{StaticResource InputBorderStyle}" Margin="0,0,0,10" Height="110">
