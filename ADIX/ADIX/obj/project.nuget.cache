@@ -1,12 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "ILggPpGOnQ8=",
+  "dgSpecHash": "iAwbniFmwds=",
   "success": true,
   "projectFilePath": "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\ADIX\\ADIX.csproj",
   "expectedPackageFiles": [
     "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\NuGetPackages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\NuGetPackages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",
     "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\NuGetPackages\\bouncycastle.cryptography\\2.6.2\\bouncycastle.cryptography.2.6.2.nupkg.sha512",
+    "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\NuGetPackages\\dotnetprojects.wpftoolkit.datavisualization\\6.1.94\\dotnetprojects.wpftoolkit.datavisualization.6.1.94.nupkg.sha512",
     "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\NuGetPackages\\harfbuzzsharp\\8.3.1.1\\harfbuzzsharp.8.3.1.1.nupkg.sha512",
     "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\NuGetPackages\\harfbuzzsharp.nativeassets.macos\\8.3.1.1\\harfbuzzsharp.nativeassets.macos.8.3.1.1.nupkg.sha512",
     "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\NuGetPackages\\harfbuzzsharp.nativeassets.win32\\8.3.1.1\\harfbuzzsharp.nativeassets.win32.8.3.1.1.nupkg.sha512",
