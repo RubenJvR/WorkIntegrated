@@ -57,7 +57,31 @@ namespace ADIX.Repositories
 
             return items;
         }
-
+        public void RefreshItemsFromSync()
+        {
+            try
+            {
+                // This will force a sync and reload items
+                if (Database.IsInternetAvailable())
+                {
+                    System.Threading.Tasks.Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await Database.CheckAndSyncAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Background sync failed: {ex.Message}");
+                        }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error refreshing items from sync: {ex.Message}");
+            }
+        }
         public POSItem GetItemById(int itemId)
         {
             try

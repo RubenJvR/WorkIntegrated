@@ -22,17 +22,14 @@ namespace ADIX
         {
             try
             {
-
-            
-                // Initialize database and attempt sync
+                // Initialize database
                 await Database.InitializeAsync();
 
-                // Navigate to main page
-                MainFrame.Navigate(new Dashboard());
-
-                // Show status message
+                // Force a sync if internet is available (this will download new items from Azure)
                 if (Database.IsInternetAvailable())
                 {
+                    await Database.CheckAndSyncAsync();
+
                     MessageBox.Show("Database initialized and synced with Azure SQL.",
                                   "Success",
                                   MessageBoxButton.OK,
@@ -45,6 +42,9 @@ namespace ADIX
                                   MessageBoxButton.OK,
                                   MessageBoxImage.Warning);
                 }
+
+                // Navigate to main page AFTER sync
+                MainFrame.Navigate(new Dashboard());
             }
             catch (Exception ex)
             {
@@ -52,6 +52,9 @@ namespace ADIX
                               "Error",
                               MessageBoxButton.OK,
                               MessageBoxImage.Error);
+
+                // Still navigate to dashboard even if sync fails
+                MainFrame.Navigate(new Dashboard());
             }
         }
 
@@ -84,6 +87,15 @@ namespace ADIX
                     MainFrame.Navigate(new Dashboard());
                     break;
                 case "POS":
+                    var posPage = new PointOfSale();
+                    // Refresh items when navigating to POS
+                    posPage.Loaded += (s, e) =>
+                    {
+                        if (posPage.DataContext is ViewModels.PointOfSaleViewModel vm)
+                        {
+                            vm.RefreshItems();
+                        }
+                    };
                     MainFrame.Navigate(new PointOfSale());
                     break;
                 case "Inventory":

@@ -66,6 +66,7 @@ namespace ADIX.ViewModels
             {
                 LoadStaff();
                 InitializeInvoice();
+                _repository.RefreshItemsFromSync();
                 LoadAvailableItems();
             }
             catch (Exception ex)
@@ -156,7 +157,27 @@ namespace ADIX.ViewModels
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        public void RefreshItems()
+        {
+            try
+            {
+                // Clear existing items
+                CartItems.Clear();
 
+                // Reload all items from database (including newly synced ones)
+                LoadAvailableItems();
+
+                // Recalculate totals
+                CalculateTotals();
+
+                OnPropertyChanged(nameof(CartItems));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error refreshing items: {ex.Message}", "Refresh Error",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
         private void LoadAvailableItems()
         {
             try
