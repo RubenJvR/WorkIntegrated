@@ -267,17 +267,7 @@
                         VerticalAlignment="Center"/>
             </Grid>
 
-            <!-- VAT-->
-            <ComboBox Grid.Row="8"
-          x:Name="VAT"
-          Style="{StaticResource RoundedComboBoxStyle}"
-          Tag="VAT"
-          SelectedIndex="-1">
-                <ComboBoxItem Content="Standard Rate"/>
-                <ComboBoxItem Content="Reduced Rate"/>
-                <ComboBoxItem Content="Zero Rate"/>
-            </ComboBox>
-
+         
             <!-- Stock Overview Header -->
             <Border Grid.Row="10" Style="{StaticResource HeaderBorderStyle}">
                 <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Stock Overview"/>
@@ -337,6 +327,7 @@
 
                     <!-- Columns -->
                     <DataGrid.Columns>
+                        <!-- Inventory -->
                         <DataGridTextColumn Header="Item Group" Binding="{Binding ItemGroup}" Width="150"/>
                         <DataGridTextColumn Header="Item Name" Binding="{Binding ItemName}" Width="150"/>
                         <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="80"/>
@@ -346,13 +337,11 @@
                         <DataGridTextColumn Header="Balance Stock" Binding="{Binding BalanceStock}" Width="150"/>
                         <DataGridTextColumn Header="Stock Returned" Binding="{Binding StockReturned}" Width="150"/>
                         <DataGridTextColumn Header="Stock Refunded" Binding="{Binding StockRefunded}" Width="150"/>
+                        <DataGridTextColumn Header="Cost Price" Binding="{Binding CostPrice}" Width="150"/>
+                        <DataGridTextColumn Header="Retail Price" Binding="{Binding RetailPrice}" Width="150"/>
                         <DataGridTextColumn Header="Cost Of Business Workings" Binding="{Binding CostOfBusinessWorkings}" Width="190"/>
-                        <DataGridTextColumn Header="Returned Stock unusable" Binding="{Binding ReturnedStockUnusable}" Width="190"/>
+                        <DataGridTextColumn Header="Returned Stock Unusable" Binding="{Binding ReturnedStockUnusable}" Width="190"/>
                         <DataGridTextColumn Header="Loss" Binding="{Binding Loss}" Width="110"/>
-
-
-
-
                     </DataGrid.Columns>
                 </DataGrid>
             </ScrollViewer>
