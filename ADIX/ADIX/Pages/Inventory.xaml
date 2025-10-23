@@ -176,7 +176,9 @@
           Style="{StaticResource RoundedComboBoxStyle}"
           Tag=" Item Group"
           SelectedIndex="-1">
-                <ComboBoxItem Content="ItemGroup 1"/>
+                <ComboBoxItem Content="New"/>
+                <ComboBoxItem Content="Secondhand"/>
+                <ComboBoxItem Content="Consignment"/>
             </ComboBox>
 
             <!-- Item Name-->

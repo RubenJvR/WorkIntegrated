@@ -1,75 +1,77 @@
-﻿using System;
+﻿using Microsoft.Data.Sqlite;
+using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
+using System.Data;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace ADIX
 {
-    /// <summary>
-    /// Interaction logic for Inventory.xaml
-    /// </summary>
-    /// 
-
     public partial class Inventory : Page
     {
-        public ObservableCollection<InventoryItem> InventoryItems { get; set; }
+        private const string ConnStr = "Data Source=ADIX.db";
 
         public Inventory()
         {
             InitializeComponent();
-            LoadData();
+            LoadInventoryAsync();
         }
 
-        private void LoadData()
+        private async void LoadInventoryAsync()
         {
-            // Dummy data for now
-            InventoryItems = new ObservableCollection<InventoryItem>
+            try
             {
-                new InventoryItem
-                {
-                    ItemGroup = "Electronics",
-                    ItemName = "Bluetooth Speaker",
-                    SKU = "ELEC001",
-                    OpeningStockQuantity = 50,
-                    StockReceived = 20,
-                    StockSold = 10,
-                    BalanceStock = 60,
-                    StockReturned = 2,
-                    StockRefunded = 1,
-                    CostOfBusinessWorkings = "Moderate",
-                    ReturnedStockUnusable = "Yes",
-                    Loss = "Low"
-                },
-                new InventoryItem
-                {
-                    ItemGroup = "Stationery",
-                    ItemName = "Notebook",
-                    SKU = "STN002",
-                    OpeningStockQuantity = 200,
-                    StockReceived = 50,
-                    StockSold = 70,
-                    BalanceStock = 180,
-                    StockReturned = 3,
-                    StockRefunded = 0,
-                    CostOfBusinessWorkings = "Low",
-                    ReturnedStockUnusable = "No",
-                    Loss = "None"
-                }
-            };
+                using var conn = new SqliteConnection(ConnStr);
+                await conn.OpenAsync();
 
-            // Bind to DataGrid
-            InventoryGrid.ItemsSource = InventoryItems;
+                // Get item data
+                string query = @"
+                    SELECT 
+                        itemID,
+                        description,
+                        costPrice,
+                        retailPrice,
+                        stockQuantity,
+                        stockSold
+                    FROM ITEM;
+                ";
+
+                using var cmd = new SqliteCommand(query, conn);
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                var inventoryList = new List<InventoryItem>();
+
+                while (await reader.ReadAsync())
+                {
+                    var item = new InventoryItem
+                    {
+                        ItemGroup = "New", 
+                        ItemName = reader["description"]?.ToString() ?? "Unknown",
+                        SKU = $"SKU-{reader["itemID"]}",
+                        OpeningStockQuantity = Convert.ToInt32(reader["stockQuantity"]),
+                        StockSold = Convert.ToInt32(reader["stockSold"]),
+                        StockReceived = 0, 
+                        StockReturned = 0,
+                        StockRefunded = 0,
+                        CostOfBusinessWorkings = Convert.ToDouble(reader["costPrice"]),
+                        ReturnedStockUnusable = 0
+                    };
+
+                    item.BalanceStock = item.OpeningStockQuantity - item.StockSold;
+                    item.Loss = item.CostOfBusinessWorkings * item.ReturnedStockUnusable;
+
+                    inventoryList.Add(item);
+                }
+
+                InventoryGrid.ItemsSource = inventoryList;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading inventory: {ex.Message}", "Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
+
+   
 }
