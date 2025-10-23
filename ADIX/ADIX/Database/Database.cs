@@ -685,6 +685,35 @@ namespace ADIX
             using var transaction = azureConn.BeginTransaction();
             try
             {
+                // Sync from Azure to Local (download changes from cloud)
+                foreach (DataRow azureRow in azureData.Rows)
+                {
+                    var primaryKey = azureRow[columns[0]];
+                    var azureModified = DateTime.Parse(azureRow["lastModified"].ToString());
+
+                    // Find matching row in local
+                    var localRow = localData.AsEnumerable().FirstOrDefault(r => r[columns[0]].ToString() == primaryKey.ToString());
+
+                    if (localRow == null)
+                    {
+                        // Insert new record from Azure to local
+                        InsertToLocal(sqliteConn, tableName, columns, azureRow);
+                        Console.WriteLine($"[{tableName}] Downloaded new record {primaryKey} from Azure");
+                    }
+                    else
+                    {
+                        var localModified = DateTime.Parse(localRow["lastModified"].ToString());
+
+                        if (azureModified > localModified)
+                        {
+                            // Azure is newer - update local (download)
+                            UpdateLocal(sqliteConn, tableName, columns, azureRow);
+                            Console.WriteLine($"[{tableName}] Updated local record {primaryKey} (Azure newer)");
+                        }
+                    }
+                }
+
+                // Sync from Local to Azure (upload changes to cloud)
                 foreach (DataRow localRow in localData.Rows)
                 {
                     var primaryKey = localRow[columns[0]];
@@ -697,7 +726,7 @@ namespace ADIX
                     {
                         // Insert new record to Azure
                         InsertToAzure(azureConn, transaction, tableName, columns, localRow);
-                        Console.WriteLine($"[{tableName}] Inserted new record {primaryKey} to Azure");
+                        Console.WriteLine($"[{tableName}] Uploaded new record {primaryKey} to Azure");
                     }
                     else
                     {
@@ -705,15 +734,9 @@ namespace ADIX
 
                         if (localModified > azureModified)
                         {
-                            // Local is newer - update Azure
+                            // Local is newer - update Azure (upload)
                             UpdateAzure(azureConn, transaction, tableName, columns, localRow);
                             Console.WriteLine($"[{tableName}] Updated Azure record {primaryKey} (local newer)");
-                        }
-                        else if (azureModified > localModified)
-                        {
-                            // Azure is newer - update local
-                            UpdateLocal(sqliteConn, tableName, columns, azureRow);
-                            Console.WriteLine($"[{tableName}] Updated local record {primaryKey} (Azure newer)");
                         }
                     }
                 }
@@ -1086,7 +1109,19 @@ namespace ADIX
             }
             cmd.ExecuteNonQuery();
         }
+        private static void InsertToLocal(SqliteConnection connection, string tableName, string[] columns, DataRow row)
+        {
+            var columnList = string.Join(", ", columns);
+            var paramList = string.Join(", ", columns.Select(c => $"@{c}"));
+            var insertSql = $"INSERT INTO {tableName} ({columnList}) VALUES ({paramList})";
 
+            using var cmd = new SqliteCommand(insertSql, connection);
+            foreach (var column in columns)
+            {
+                cmd.Parameters.AddWithValue($"@{column}", row[column] == DBNull.Value ? null : row[column]);
+            }
+            cmd.ExecuteNonQuery();
+        }
         public static void MarkSyncRequired()
         {
             _syncRequired = true;

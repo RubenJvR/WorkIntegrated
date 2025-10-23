@@ -86,7 +86,7 @@ namespace ADIX
                 MessageBox.Show($"Error loading inventory: {ex.Message}", "Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
+        
         public class Product
         {
             public int ItemID { get; set; }

@@ -65,6 +65,7 @@ namespace ADIX.Components
 
                         if (Database.IsInternetAvailable())
                         {
+                            
                             System.Threading.Tasks.Task.Run(async () => { await Database.CheckAndSyncAsync(); });
                         }
                     }

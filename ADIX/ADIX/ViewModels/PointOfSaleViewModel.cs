@@ -407,7 +407,31 @@ namespace ADIX.ViewModels
                    !string.IsNullOrWhiteSpace(SelectedPaymentMethod) &&
                    CartItems.Any(i => i.Quantity > 0);
         }
+        public void ReloadItemsFromDatabase()
+        {
+            try
+            {
+                // Clear existing items
+                CartItems.Clear();
 
+                // Load fresh data from SQLite
+                var items = _repository.GetAllItems();
+
+                foreach (var item in items)
+                {
+                    item.PropertyChanged += CartItem_PropertyChanged;
+                    CartItems.Add(item);
+                }
+
+                InitializeInvoice(); // Refresh invoice number
+                CalculateTotals();   // Recalculate totals
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error reloading POS items: {ex.Message}",
+                    "Reload Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
         private void Checkout(object? parameter)
         {
             try

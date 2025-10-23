@@ -12,9 +12,15 @@ namespace ADIX
         {
             InitializeComponent();
 
-            // Always use the singleton ViewModel
             _viewModel = ViewModelManager.PointOfSaleViewModel;
             DataContext = _viewModel;
+
+            this.Loaded += PointOfSale_Loaded;
+        }
+
+        private void PointOfSale_Loaded(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ReloadItemsFromDatabase();
         }
 
         private void Quote_Click(object sender, RoutedEventArgs e)
