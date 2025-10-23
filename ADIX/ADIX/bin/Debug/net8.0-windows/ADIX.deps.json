@@ -8,6 +8,7 @@
     ".NETCoreApp,Version=v8.0": {
       "ADIX/1.0.0": {
         "dependencies": {
+          "DotNetProjects.WpfToolkit.DataVisualization": "6.1.94",
           "LiveChartsCore.SkiaSharpView.WPF": "2.0.0-rc6.1",
           "Microsoft.Data.SqlClient": "6.1.2",
           "Microsoft.Data.Sqlite.Core": "9.0.8",
@@ -56,6 +57,14 @@
           "lib/net6.0/BouncyCastle.Cryptography.dll": {
             "assemblyVersion": "2.0.0.0",
             "fileVersion": "2.6.2.46322"
+          }
+        }
+      },
+      "DotNetProjects.WpfToolkit.DataVisualization/6.1.94": {
+        "runtime": {
+          "lib/net6.0-windows7.0/DotNetProjects.DataVisualization.Toolkit.dll": {
+            "assemblyVersion": "6.1.94.0",
+            "fileVersion": "6.1.94.0"
           }
         }
       },
@@ -951,6 +960,13 @@
       "sha512": "sha512-7oWOcvnntmMKNzDLsdxAYqApt+AjpRpP2CShjMfIa3umZ42UQMvH0tl1qAliYPNYO6vTdcGMqnRrCPmsfzTI1w==",
       "path": "bouncycastle.cryptography/2.6.2",
       "hashPath": "bouncycastle.cryptography.2.6.2.nupkg.sha512"
+    },
+    "DotNetProjects.WpfToolkit.DataVisualization/6.1.94": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-5xmRUH+/F3zRxcI8b93W9OUvOUKXpcHShj7jGJdpBAgQTNPEeMLISA/wsO5egSG74Msx+01xwaYjDFTDTUawhQ==",
+      "path": "dotnetprojects.wpftoolkit.datavisualization/6.1.94",
+      "hashPath": "dotnetprojects.wpftoolkit.datavisualization.6.1.94.nupkg.sha512"
     },
     "HarfBuzzSharp/8.3.1.1": {
       "type": "package",

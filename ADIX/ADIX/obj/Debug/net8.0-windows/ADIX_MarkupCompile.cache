@@ -4,16 +4,16 @@
 winexe
 C#
 .cs
-C:\Will\WorkIntegrated\ADIX\ADIX\obj\Debug\net8.0-windows\
+D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\obj\Debug\net8.0-windows\
 ADIX
 none
 false
-TRACE;DEBUG;NET;NET8_0;NETCOREAPP
-C:\Will\WorkIntegrated\ADIX\ADIX\App.xaml
+TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
+D:\VStudio work\Repos\ADIX_V4\ADIX\ADIX\App.xaml
 18-91006773
-2-887793555
+3-976475162
 32470723853
-248420131232
+249-418766625
 Components\HorizontalCarousel.xaml;Components\Sidebar.xaml;HCarousel.xaml;Login.xaml;MainWindow.xaml;Pages\Consignment.xaml;Pages\Dashboard.xaml;Pages\Finance.xaml;Pages\Inventory.xaml;Pages\Invoice.xaml;Pages\ItemGroup.xaml;Pages\MonthlyReport.xaml;Pages\PointOfSale.xaml;Pages\Products.xaml;Pages\Qoute.xaml;Pages\Sales.xaml;Pages\Setting.xaml;Pages\SupplierPage.xaml;
 
 False

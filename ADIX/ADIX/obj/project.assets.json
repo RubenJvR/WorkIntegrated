@@ -52,6 +52,18 @@
           }
         }
       },
+      "DotNetProjects.WpfToolkit.DataVisualization/6.1.94": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0-windows7.0/DotNetProjects.DataVisualization.Toolkit.dll": {}
+        },
+        "runtime": {
+          "lib/net6.0-windows7.0/DotNetProjects.DataVisualization.Toolkit.dll": {}
+        },
+        "frameworkReferences": [
+          "Microsoft.WindowsDesktop.App.WPF"
+        ]
+      },
       "HarfBuzzSharp/8.3.1.1": {
         "type": "package",
         "dependencies": {
@@ -1324,6 +1336,20 @@
         "lib/netstandard2.0/BouncyCastle.Cryptography.dll",
         "lib/netstandard2.0/BouncyCastle.Cryptography.xml",
         "packageIcon.png"
+      ]
+    },
+    "DotNetProjects.WpfToolkit.DataVisualization/6.1.94": {
+      "sha512": "5xmRUH+/F3zRxcI8b93W9OUvOUKXpcHShj7jGJdpBAgQTNPEeMLISA/wsO5egSG74Msx+01xwaYjDFTDTUawhQ==",
+      "type": "package",
+      "path": "dotnetprojects.wpftoolkit.datavisualization/6.1.94",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "dotnetprojects.wpftoolkit.datavisualization.6.1.94.nupkg.sha512",
+        "dotnetprojects.wpftoolkit.datavisualization.nuspec",
+        "lib/net40/DotNetProjects.DataVisualization.Toolkit.dll",
+        "lib/net5.0-windows7.0/DotNetProjects.DataVisualization.Toolkit.dll",
+        "lib/net6.0-windows7.0/DotNetProjects.DataVisualization.Toolkit.dll"
       ]
     },
     "HarfBuzzSharp/8.3.1.1": {
@@ -3072,6 +3098,7 @@
   },
   "projectFileDependencyGroups": {
     "net8.0-windows7.0": [
+      "DotNetProjects.WpfToolkit.DataVisualization >= 6.1.94",
       "LiveChartsCore.SkiaSharpView.WPF >= 2.0.0-rc6.1",
       "Microsoft.Data.SqlClient >= 6.1.2",
       "Microsoft.Data.Sqlite.Core >= 9.0.8",
@@ -3086,23 +3113,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\explo.BEN-PC\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\NuGetPackages": {},
+    "D:\\Program fike (SDK tools)\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Will\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
+      "projectUniqueName": "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\ADIX\\ADIX.csproj",
       "projectName": "ADIX",
-      "projectPath": "C:\\Will\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
-      "packagesPath": "C:\\Users\\explo.BEN-PC\\.nuget\\packages\\",
-      "outputPath": "C:\\Will\\WorkIntegrated\\ADIX\\ADIX\\obj\\",
+      "projectPath": "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\ADIX\\ADIX.csproj",
+      "packagesPath": "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\NuGetPackages",
+      "outputPath": "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\ADIX\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        "D:\\Program fike (SDK tools)\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\explo.BEN-PC\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\kagis\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -3128,12 +3155,17 @@
         "enableAudit": "true",
         "auditLevel": "low",
         "auditMode": "direct"
-      }
+      },
+      "SdkAnalysisLevel": "9.0.300"
     },
     "frameworks": {
       "net8.0-windows7.0": {
         "targetAlias": "net8.0-windows",
         "dependencies": {
+          "DotNetProjects.WpfToolkit.DataVisualization": {
+            "target": "Package",
+            "version": "[6.1.94, )"
+          },
           "LiveChartsCore.SkiaSharpView.WPF": {
             "target": "Package",
             "version": "[2.0.0-rc6.1, )"
@@ -3198,7 +3230,7 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "c:\\program files\\dotnet\\sdk\\8.0.205/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
       }
     }
   },
