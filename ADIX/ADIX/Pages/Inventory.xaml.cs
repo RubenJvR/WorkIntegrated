@@ -27,9 +27,9 @@ namespace ADIX
     {
         public Inventory()
         {
-            InitializeComponent();
+            InitializeComponent();         
         }
-
+        
         public class Product
         {
             public int ItemID { get; set; }
