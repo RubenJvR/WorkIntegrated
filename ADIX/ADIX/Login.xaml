@@ -74,7 +74,7 @@
                Orientation="Vertical"
                Margin="275,35,216,43" Grid.ColumnSpan="2">
 
-            <Image Source="/Images/loggo.png"
+            <Image Source="/Image/loggo.png"
               Width="200" Height="100"/>
 
             <TextBlock Text="Username"
@@ -105,8 +105,8 @@ FontWeight="Medium"
 
         </StackPanel>
 
-        <ui:Button  Content="Login" Click="Login_button" Margin="316,259,256,13" Height="30" Width="228" Grid.ColumnSpan="2" />
-        <ui:Button  Content="Cancel" Click="Cancel_button" Margin="316,294,256,-22" Height="30" Width="228" Grid.ColumnSpan="2" />
+        <ui:Button  Content="Login" Click="Login_button" Margin="316,259,265,13" Height="30" Grid.ColumnSpan="2" />
+        <ui:Button  Content="Cancel" Click="Cancel_button" Margin="316,294,265,-21" Grid.ColumnSpan="2" />
 
     </Grid>
 </Window>
