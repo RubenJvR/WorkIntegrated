@@ -247,7 +247,7 @@
                           AutoGenerateColumns="False"
                           IsReadOnly="False"
                           Background="#4F4F4F"
-                          Foreground="White"
+                          Foreground="#4F4F4F"
                           GridLinesVisibility="All"
                           BorderBrush="Black"
                           BorderThickness="1"

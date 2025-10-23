@@ -32,7 +32,9 @@ CREATE TABLE IF NOT EXISTS ITEM(
     stockSold INTEGER,
     supplierID INTEGER,
     sellerID INTEGER,
+    groupID INTEGER,
     FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
+    FOREIGN KEY(groupID) REFERENCES ITEMGROUP(groupID),
     FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
 );
 
@@ -65,6 +67,14 @@ CREATE TABLE IF NOT EXISTS INVOICEQUOTE(
     FOREIGN KEY(customerID) REFERENCES CUSTOMER(customerID),
     FOREIGN KEY(staffID) REFERENCES STAFF(staffID)
 );
+
+CREATE TABLE IF NOT EXISTS ITEMGROUP (
+    groupID INTEGER NOT NULL PRIMARY KEY,
+    groupName TEXT NOT NULL UNIQUE,
+    description TEXT,
+    lastModified TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 
 CREATE TABLE IF NOT EXISTS REPORT(
     reportID INTEGER NOT NULL PRIMARY KEY,
@@ -99,12 +109,27 @@ INSERT INTO SUPPLIER (name, contactInfo, address) VALUES
 ('BeverageCorp', 'info@beveragecorp.com', '456 Juice Ave');
 
 -- Add some items
-INSERT INTO ITEM (description, retailPrice, costPrice, stockQuantity, stockSold, supplierID, sellerID) VALUES
-('Apples (1kg)', 25.50, 15.00, 50, 0, 1, 1),
-('Orange Juice (1L)', 35.00, 20.00, 30, 0, 2, 2),
-('Chips (Large)', 15.00, 8.00, 80, 0, 2, 1),
-('Bananas (1kg)', 20.00, 12.00, 40, 0, 1, 2),
-('Cola (330ml)', 12.50, 7.00, 100, 0, 2, 1);
+INSERT INTO ITEM (description, retailPrice, costPrice, stockQuantity, stockSold, supplierID, sellerID, groupID) VALUES
+('Apples (1kg)', 25.50, 15.00, 50, 0, 1, 1,1),
+('Orange Juice (1L)', 35.00, 20.00, 30, 0, 2, 2,1),
+('Chips (Large)', 15.00, 8.00, 80, 0, 2, 1,1),
+('Bananas (1kg)', 20.00, 12.00, 40, 0, 1, 2,1),
+('Cola (330ml)', 12.50, 7.00, 100, 0, 2, 1,1);
+
+-- Add some item groups
+-- Example: Add some groups
+INSERT INTO ITEMGROUP (groupName, description) VALUES
+('Fruits', 'All kinds of fruits'),
+('Drinks', 'Beverages and juices'),
+('Snacks', 'Chips and packaged snacks');
+
+-- Example: Update items to link them
+UPDATE ITEM SET groupID = 1 WHERE description LIKE '%Apple%';
+UPDATE ITEM SET groupID = 1 WHERE description LIKE '%Banana%';
+UPDATE ITEM SET groupID = 2 WHERE description LIKE '%Juice%';
+UPDATE ITEM SET groupID = 2 WHERE description LIKE '%Cola%';
+UPDATE ITEM SET groupID = 3 WHERE description LIKE '%Chips%';
+
 
 -- Add some staff
 INSERT INTO STAFF (name, Role, userName, passwordHash, salary) VALUES

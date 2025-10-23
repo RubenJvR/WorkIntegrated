@@ -13,7 +13,7 @@ namespace ADIX
 {
     public static class Database
     {
-        private const string SqliteConnectionString = "Data Source=ADIX.db";
+        private const string SqliteConnectionString = "Data Source= ADIX.db";
         public static string AzureSqlConnectionString { get; set; } = "Server=tcp:adixserver.database.windows.net,1433;Initial Catalog=ADIXDB;User ID=adixAdmin;Password=A$12fe34dc56;Encrypt=True;";
         public static DatabaseType CurrentDatabaseType { get; set; } = DatabaseType.SQLite;
 
@@ -231,8 +231,10 @@ namespace ADIX
             stockSold INTEGER NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
             supplierID INTEGER,
             sellerID INTEGER,
+            groupID INTEGER,
             lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
+            FOREIGN KEY (groupID) REFERENCES ITEMGROUP(groupID),
             FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
         );
 
@@ -244,6 +246,15 @@ namespace ADIX
             credit REAL DEFAULT 0,
             lastModified TEXT DEFAULT CURRENT_TIMESTAMP
         );
+
+
+CREATE TABLE IF NOT EXISTS ITEMGROUP (
+    groupID INTEGER NOT NULL PRIMARY KEY,
+    groupName TEXT NOT NULL UNIQUE,
+    description TEXT,
+    lastModified TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 
         CREATE TABLE IF NOT EXISTS STAFF(
             staffID INTEGER NOT NULL PRIMARY KEY,
@@ -316,6 +327,14 @@ namespace ADIX
         private static void CreateAzureSQLTables(SqlConnection connection)
         {
             string createTablesSql = @"
+CREATE TABLE ITEMGROUP(
+            groupID INT NOT NULL PRIMARY KEY,
+            groupName NVARCHAR(255) NOT NULL UNIQUE,
+            description NVARCHAR(500),
+            lastModified DATETIME DEFAULT GETUTCDATE()
+        );
+
+
         CREATE TABLE SELLER(
             sellerID INT NOT NULL PRIMARY KEY,
             name NVARCHAR(255) NOT NULL,
@@ -342,8 +361,10 @@ namespace ADIX
             stockSold INT NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
             supplierID INT,
             sellerID INT,
+            groupID INT,
             lastModified DATETIME DEFAULT GETUTCDATE(),
             FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
+            FOREIGN KEY(groupID) REFERENCES ITEMGROUP(groupID),
             FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
         );
 
@@ -365,6 +386,7 @@ namespace ADIX
             salary FLOAT,
             lastModified DATETIME DEFAULT GETUTCDATE()
         );
+
 
         CREATE TABLE INVOICEQUOTE(
             invoiceQuoteID INT NOT NULL PRIMARY KEY,
@@ -528,38 +550,47 @@ namespace ADIX
         private static void InsertTestDataSQLite(SqliteConnection connection)
         {
             string insertDataSql = @"
-                INSERT INTO SELLER (name, contactInfo, bankDetails, commissionRate) VALUES
-                ('John Doe', 'john@example.com', '12345678', 0.05),
-                ('Jane Smith', 'jane@example.com', '87654321', 0.07);
+        -- Insert item groups first
+        INSERT OR IGNORE INTO ITEMGROUP (groupID, groupName, description) VALUES
+        (1, 'Fruits', 'Fresh fruits and produce'),
+        (2, 'Beverages', 'Drinks and beverages'),
+        (3, 'Snacks', 'Snacks and chips'),
+        (4, 'Dairy', 'Milk and dairy products'),
+        (5, 'Bakery', 'Bread and bakery items');
 
-                INSERT INTO SUPPLIER (name, contactInfo, address) VALUES
-                ('GreenFoods Ltd', 'greenfoods@example.com', '123 Green St'),
-                ('BeverageCorp', 'info@beveragecorp.com', '456 Juice Ave'),
-                ('SnackSupply Co', 'snacks@example.com', '789 Snack Road');
+        INSERT OR IGNORE INTO SELLER (sellerID, name, contactInfo, bankDetails, commissionRate) VALUES
+        (1, 'John Doe', 'john@example.com', '12345678', 0.05),
+        (2, 'Jane Smith', 'jane@example.com', '87654321', 0.07);
 
-                INSERT INTO ITEM (description, retailPrice, costPrice, stockQuantity, stockSold, supplierID, sellerID) VALUES
-                ('Apples (1kg)', 25.50, 15.00, 50, 0, 1, 1),
-                ('Orange Juice (1L)', 35.00, 20.00, 30, 0, 2, 2),
-                ('Chips (Large)', 15.00, 8.00, 80, 0, 3, 1),
-                ('Bananas (1kg)', 20.00, 12.00, 40, 0, 1, 2),
-                ('Cola (330ml)', 12.50, 7.00, 100, 0, 2, 1),
-                ('Bread (Loaf)', 18.00, 10.00, 60, 0, 1, 1),
-                ('Milk (1L)', 22.00, 14.00, 45, 0, 2, 2),
-                ('Chocolate Bar', 8.50, 5.00, 120, 0, 3, 1),
-                ('Water (500ml)', 9.00, 5.50, 150, 0, 2, 1),
-                ('Coffee (250g)', 65.00, 40.00, 25, 0, 1, 2);
+        INSERT OR IGNORE INTO SUPPLIER (supplierID, name, contactInfo, address) VALUES
+        (1, 'GreenFoods Ltd', 'greenfoods@example.com', '123 Green St'),
+        (2, 'BeverageCorp', 'info@beveragecorp.com', '456 Juice Ave'),
+        (3, 'SnackSupply Co', 'snacks@example.com', '789 Snack Road');
 
-                INSERT INTO STAFF (name, Role, userName, passwordHash, salary) VALUES
-                ('Ruben Janse', 'Admin', 'ruben', 'hashedpassword1', 15000),
-                ('Sarah Ndlovu', 'Cashier', 'sarah', 'hashedpassword2', 9000),
-                ('Michael Smith', 'Manager', 'michael', 'hashedpassword3', 12000),
-                ('Emily Johnson', 'Cashier', 'emily', 'hashedpassword4', 9000);
+        -- Updated ITEM inserts with groupID
+        INSERT OR IGNORE INTO ITEM (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, supplierID, sellerID, groupID) VALUES
+        (1, 'Apples (1kg)', 25.50, 15.00, 50, 0, 1, 1, 1),
+        (2, 'Orange Juice (1L)', 35.00, 20.00, 30, 0, 2, 2, 2),
+        (3, 'Chips (Large)', 15.00, 8.00, 80, 0, 3, 1, 3),
+        (4, 'Bananas (1kg)', 20.00, 12.00, 40, 0, 1, 2, 1),
+        (5, 'Cola (330ml)', 12.50, 7.00, 100, 0, 2, 1, 2),
+        (6, 'Bread (Loaf)', 18.00, 10.00, 60, 0, 1, 1, 5),
+        (7, 'Milk (1L)', 22.00, 14.00, 45, 0, 2, 2, 4),
+        (8, 'Chocolate Bar', 8.50, 5.00, 120, 0, 3, 1, 3),
+        (9, 'Water (500ml)', 9.00, 5.50, 150, 0, 2, 1, 2),
+        (10, 'Coffee (250g)', 65.00, 40.00, 25, 0, 1, 2, 2);
 
-                INSERT INTO CUSTOMER (name, phone, email, credit) VALUES
-                ('Alice Brown', '0712345678', 'alice@example.com', 100),
-                ('Bob White', '0723456789', 'bob@example.com', 50),
-                ('Charlie Green', '0734567890', 'charlie@example.com', 75);
-            ";
+        INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary) VALUES
+        (1, 'Ruben Janse', 'Admin', 'ruben', 'hashedpassword1', 15000),
+        (2, 'Sarah Ndlovu', 'Cashier', 'sarah', 'hashedpassword2', 9000),
+        (3, 'Michael Smith', 'Manager', 'michael', 'hashedpassword3', 12000),
+        (4, 'Emily Johnson', 'Cashier', 'emily', 'hashedpassword4', 9000);
+
+        INSERT OR IGNORE INTO CUSTOMER (customerID, name, phone, email, credit) VALUES
+        (1, 'Alice Brown', '0712345678', 'alice@example.com', 100),
+        (2, 'Bob White', '0723456789', 'bob@example.com', 50),
+        (3, 'Charlie Green', '0734567890', 'charlie@example.com', 75);
+    ";
 
             using var cmd = new SqliteCommand(insertDataSql, connection);
             cmd.ExecuteNonQuery();
@@ -568,6 +599,13 @@ namespace ADIX
         private static void InsertTestDataAzureSQL(SqlConnection connection)
         {
             string insertDataSql = @"
+  INSERT INTO ITEMGROUP (groupID, groupName, description) VALUES
+        (1, 'Fruits', 'Fresh fruits and produce'),
+        (2, 'Beverages', 'Drinks and beverages'),
+        (3, 'Snacks', 'Snacks and chips'),
+        (4, 'Dairy', 'Milk and dairy products'),
+        (5, 'Bakery', 'Bread and bakery items');
+
                 INSERT INTO CUSTOMER (customerID, name, phone, email, credit) VALUES
                 (1, 'Alice Brown', '0712345678', 'alice@example.com', 100),
                 (2, 'Bob White', '0723456789', 'bob@example.com', 50),
@@ -588,17 +626,17 @@ namespace ADIX
                 (2, 'BeverageCorp', 'info@beveragecorp.com', '456 Juice Ave'),
                 (3, 'SnackSupply Co', 'snacks@example.com', '789 Snack Road');
 
-                INSERT INTO ITEM (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, supplierID, sellerID) VALUES
-                (1, 'Apples (1kg)', 25.50, 15.00, 50, 0, 1, 1),
-                (2, 'Orange Juice (1L)', 35.00, 20.00, 30, 0, 2, 2),
-                (3, 'Chips (Large)', 15.00, 8.00, 80, 0, 3, 1),
-                (4, 'Bananas (1kg)', 20.00, 12.00, 40, 0, 1, 2),
-                (5, 'Cola (330ml)', 12.50, 7.00, 100, 0, 2, 1),
-                (6, 'Bread (Loaf)', 18.00, 10.00, 60, 0, 1, 1),
-                (7, 'Milk (1L)', 22.00, 14.00, 45, 0, 2, 2),
-                (8, 'Chocolate Bar', 8.50, 5.00, 120, 0, 3, 1),
-                (9, 'Water (500ml)', 9.00, 5.50, 150, 0, 2, 1),
-                (10, 'Coffee (250g)', 65.00, 40.00, 25, 0, 1, 2);
+            INSERT INTO ITEM (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, supplierID, sellerID, groupID) VALUES
+        (1, 'Apples (1kg)', 25.50, 15.00, 50, 0, 1, 1, 1),
+        (2, 'Orange Juice (1L)', 35.00, 20.00, 30, 0, 2, 2, 2),
+        (3, 'Chips (Large)', 15.00, 8.00, 80, 0, 3, 1, 3),
+        (4, 'Bananas (1kg)', 20.00, 12.00, 40, 0, 1, 2, 1),
+        (5, 'Cola (330ml)', 12.50, 7.00, 100, 0, 2, 1, 2),
+        (6, 'Bread (Loaf)', 18.00, 10.00, 60, 0, 1, 1, 5),
+        (7, 'Milk (1L)', 22.00, 14.00, 45, 0, 2, 2, 4),
+        (8, 'Chocolate Bar', 8.50, 5.00, 120, 0, 3, 1, 3),
+        (9, 'Water (500ml)', 9.00, 5.50, 150, 0, 2, 1, 2),
+        (10, 'Coffee (250g)', 65.00, 40.00, 25, 0, 1, 2, 2);
 
                 INSERT INTO INVOICEQUOTE (invoiceQuoteID, date, type, totalAmount, customerID, staffID) VALUES
                 (1, '2025-10-17', 1, 200, 1, 1),
