@@ -130,7 +130,7 @@ namespace ADIX
             using var checkCmd = new SqliteCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
             CreateSQLiteTables(connection);
-     
+
             if (result == null)
             {
                 CreateSQLiteTables(connection);
@@ -330,7 +330,6 @@ namespace ADIX
         {
             string createTablesSql = @"
     
-
 
 
         CREATE TABLE SELLER(
@@ -730,8 +729,19 @@ namespace ADIX
 
         private static void SyncItemMasterData(SqliteConnection sqliteConn, SqlConnection azureConn)
         {
-            // Sync item data except stockQuantity and stockSold
-            string[] columns = { "itemID", "description", "retailPrice", "costPrice", "supplierID", "sellerID", "lastModified" };
+            // Sync all relevant item data including stock values
+            string[] columns = {
+        "itemID",
+        "description",
+        "retailPrice",
+        "costPrice",
+        "stockQuantity",
+        "stockSold",
+        "stockRecieved",
+        "supplierID",
+        "sellerID",
+        "lastModified"
+    };
 
             var localData = GetTableData(sqliteConn, "ITEM", columns);
             var azureData = GetTableDataFromAzure(azureConn, "ITEM", columns);
@@ -742,37 +752,60 @@ namespace ADIX
                 foreach (DataRow localRow in localData.Rows)
                 {
                     var itemID = localRow["itemID"];
-                    var azureRow = azureData.AsEnumerable().FirstOrDefault(r => r["itemID"].ToString() == itemID.ToString());
+                    var azureRow = azureData.AsEnumerable()
+                        .FirstOrDefault(r => r["itemID"].ToString() == itemID.ToString());
 
                     if (azureRow == null)
                     {
-                        // New item - insert with zero quantities
-                        var insertSql = $@"INSERT INTO ITEM (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID) 
-                  VALUES (@itemID, @description, @retailPrice, @costPrice, 0, 0, 0, @supplierID, @sellerID)";
+                        // New item – insert using local stock values
+                        var insertSql = @"
+                    INSERT INTO ITEM 
+                    (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified)
+                    VALUES 
+                    (@itemID, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified)";
 
                         using var cmd = new SqlCommand(insertSql, azureConn, transaction);
                         cmd.Parameters.AddWithValue("@itemID", itemID);
                         cmd.Parameters.AddWithValue("@description", localRow["description"]);
                         cmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
                         cmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
-                        cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? null : localRow["supplierID"]);
-                        cmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? null : localRow["sellerID"]);
+                        cmd.Parameters.AddWithValue("@stockQuantity", localRow["stockQuantity"]);
+                        cmd.Parameters.AddWithValue("@stockSold", localRow["stockSold"]);
+                        cmd.Parameters.AddWithValue("@stockRecieved", localRow["stockRecieved"]);
+                        cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
+                        cmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
+                        cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
                         cmd.ExecuteNonQuery();
+
                         Console.WriteLine($"[ITEM] Added new item {itemID} to Azure");
                     }
                     else
                     {
-                        // Update item details but not quantities
-                        var updateSql = $@"UPDATE ITEM SET description=@description, retailPrice=@retailPrice, 
-                                          costPrice=@costPrice, supplierID=@supplierID, sellerID=@sellerID 
-                                          WHERE itemID=@itemID";
+                        // Update all fields including stock
+                        var updateSql = @"
+                    UPDATE ITEM 
+                    SET description=@description, 
+                        retailPrice=@retailPrice, 
+                        costPrice=@costPrice, 
+                        stockQuantity=@stockQuantity, 
+                        stockSold=@stockSold, 
+                        stockRecieved=@stockRecieved,
+                        supplierID=@supplierID, 
+                        sellerID=@sellerID,
+                        lastModified=@lastModified
+                    WHERE itemID=@itemID";
+
                         using var cmd = new SqlCommand(updateSql, azureConn, transaction);
                         cmd.Parameters.AddWithValue("@itemID", itemID);
                         cmd.Parameters.AddWithValue("@description", localRow["description"]);
                         cmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
                         cmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
-                        cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? null : localRow["supplierID"]);
-                        cmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? null : localRow["sellerID"]);
+                        cmd.Parameters.AddWithValue("@stockQuantity", localRow["stockQuantity"]);
+                        cmd.Parameters.AddWithValue("@stockSold", localRow["stockSold"]);
+                        cmd.Parameters.AddWithValue("@stockRecieved", localRow["stockRecieved"]);
+                        cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
+                        cmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
+                        cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -785,6 +818,7 @@ namespace ADIX
                 throw new Exception($"Failed to sync ITEM master data: {ex.Message}", ex);
             }
         }
+
 
 
 
