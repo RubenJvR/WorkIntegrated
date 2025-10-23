@@ -22,8 +22,8 @@ namespace ADIX
         {
             try
             {
-                
 
+            
                 // Initialize database and attempt sync
                 await Database.InitializeAsync();
 
