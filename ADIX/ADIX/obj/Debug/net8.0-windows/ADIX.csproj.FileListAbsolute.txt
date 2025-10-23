@@ -406,3 +406,6 @@ D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\ADIX
 D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\ref\ADIX.dll
 D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Consignment.g.cs
 D:\VStudio work\Repos\WorkIntegratedADIX\ADIX\ADIX\obj\Debug\net8.0-windows\Pages\Consignment.baml
+C:\Users\Admin\Source\Repos\WorkIntegrated\ADIX\ADIX\obj\Debug\net8.0-windows\ADIX.dll
+C:\Users\Admin\Source\Repos\WorkIntegrated\ADIX\ADIX\obj\Debug\net8.0-windows\refint\ADIX.dll
+C:\Users\Admin\Source\Repos\WorkIntegrated\ADIX\ADIX\obj\Debug\net8.0-windows\ADIX.pdb
