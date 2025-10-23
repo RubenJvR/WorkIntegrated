@@ -130,7 +130,7 @@ namespace ADIX
             using var checkCmd = new SqliteCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
             CreateSQLiteTables(connection);
-            
+     
             if (result == null)
             {
                 CreateSQLiteTables(connection);
@@ -173,7 +173,7 @@ namespace ADIX
             using var checkCmd = new SqlCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
             CreateAzureSQLTables(connection);
-            
+
             if (result == null)
             {
                 CreateAzureSQLTables(connection);
@@ -202,6 +202,7 @@ namespace ADIX
         private static void CreateSQLiteTables(SqliteConnection connection)
         {
             string createTablesSql = @"
+
 
 
         CREATE TABLE IF NOT EXISTS SELLER(
@@ -273,6 +274,8 @@ namespace ADIX
             customerID INTEGER,
             staffID INTEGER NOT NULL,
             synced INTEGER DEFAULT 0,
+            paymentMethod TEXT,
+            paymentStatus TEXT,
             lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(customerID) REFERENCES CUSTOMER(customerID),
             FOREIGN KEY(staffID) REFERENCES STAFF(staffID)
@@ -392,6 +395,8 @@ namespace ADIX
             customerID INT,
             staffID INT NOT NULL,
             lastModified DATETIME DEFAULT GETUTCDATE(),
+            paymentMethod NVARCHAR(50),
+            paymentStatus NVARCHAR(50),
             FOREIGN KEY(customerID) REFERENCES CUSTOMER(customerID),
             FOREIGN KEY(staffID) REFERENCES STAFF(staffID)
         );
