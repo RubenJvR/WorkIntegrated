@@ -479,7 +479,7 @@
                 <StackPanel Grid.Column="0" Orientation="Vertical" Margin="5">
                     <!-- Total Bill (ReadOnly) -->
                     <Border Style="{StaticResource InputBorderStyle}" Margin="0,0,0,5">
-                        <TextBlock Text="{Binding TotalBill, StringFormat='Total Bill Amount: R {0:F2}'}"
+                        <TextBlock Text="{Binding TotalBill, StringFormat='Total Bill Amount (incl VAT): R {0:F2}'}"
                                    Foreground="White"
                                    Padding="5,0,5,0"
                                    VerticalAlignment="Center"

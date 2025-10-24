@@ -32,7 +32,7 @@ namespace ADIX
             FinanceButton.Tag = null;
             MonthlyReportButton.Tag = null;
             SalesButton.Tag = null;
-            SettingButton.Tag = null;
+           
 
             // Set active button
             switch (buttonName)
@@ -64,9 +64,7 @@ namespace ADIX
                 case "Sales":
                     SalesButton.Tag = "Active";
                     break;
-                case "Settings":
-                    SettingButton.Tag = "Active";
-                    break;
+              
             }
 
             _currentActiveButton = buttonName;
@@ -89,7 +87,7 @@ namespace ADIX
                 FinanceText.Visibility = Visibility.Collapsed;
                 MonthlyReportText.Visibility = Visibility.Collapsed;
                 SalesText.Visibility = Visibility.Collapsed;
-                SettingText.Visibility = Visibility.Collapsed;
+               
                 LogoBorder.Visibility = Visibility.Collapsed;
 
                 // Center align content when collapsed
@@ -102,7 +100,7 @@ namespace ADIX
                 FinanceButton.Padding = new Thickness(0);
                 MonthlyReportButton.Padding = new Thickness(0);
                 SalesButton.Padding = new Thickness(0);
-                SettingButton.Padding = new Thickness(0);
+            
 
                 DashboardButton.HorizontalContentAlignment = HorizontalAlignment.Center;
                 POSButton.HorizontalContentAlignment = HorizontalAlignment.Center;
@@ -113,7 +111,7 @@ namespace ADIX
                 FinanceButton.HorizontalContentAlignment = HorizontalAlignment.Center;
                 MonthlyReportButton.HorizontalContentAlignment = HorizontalAlignment.Center;
                 SalesButton.HorizontalContentAlignment = HorizontalAlignment.Center;
-                SettingButton.HorizontalContentAlignment = HorizontalAlignment.Center;
+             
 
                 // Set tooltips for collapsed mode
                 ToolTipService.SetToolTip(DashboardButton, "Dashboard");
@@ -125,7 +123,7 @@ namespace ADIX
                 ToolTipService.SetToolTip(FinanceButton, "Finance");
                 ToolTipService.SetToolTip(MonthlyReportButton, "MonthlyReport");
                 ToolTipService.SetToolTip(SalesButton, "Sales");
-                ToolTipService.SetToolTip(SettingButton, "Settings");
+               
             }
             else
             {
@@ -140,7 +138,7 @@ namespace ADIX
                 FinanceText.Visibility = Visibility.Visible;
                 MonthlyReportText.Visibility = Visibility.Visible;
                 SalesText.Visibility = Visibility.Visible;
-                SettingText.Visibility = Visibility.Visible;
+            
                 LogoBorder.Visibility = Visibility.Visible;
 
                 // Reset to left alignment
@@ -153,7 +151,7 @@ namespace ADIX
                 FinanceButton.Padding = new Thickness(15, 0, 0, 0);
                 MonthlyReportButton.Padding = new Thickness(15, 0, 0, 0);
                 SalesButton.Padding = new Thickness(15, 0, 0, 0);
-                SettingButton.Padding = new Thickness(15, 0, 0, 0);
+             
 
                 DashboardButton.HorizontalContentAlignment = HorizontalAlignment.Left;
                 POSButton.HorizontalContentAlignment = HorizontalAlignment.Left;
@@ -164,7 +162,7 @@ namespace ADIX
                 FinanceButton.HorizontalContentAlignment = HorizontalAlignment.Left;
                 MonthlyReportButton.HorizontalContentAlignment = HorizontalAlignment.Left;
                 SalesButton.HorizontalContentAlignment = HorizontalAlignment.Left;
-                SettingButton.HorizontalContentAlignment = HorizontalAlignment.Left;
+              
 
                 // Clear tooltips
                 ToolTipService.SetToolTip(DashboardButton, null);
@@ -176,7 +174,7 @@ namespace ADIX
                 ToolTipService.SetToolTip(FinanceButton, null);
                 ToolTipService.SetToolTip(MonthlyReportButton, null);
                 ToolTipService.SetToolTip(SalesButton, null);
-                ToolTipService.SetToolTip(SettingButton, null);
+             
             }
 
             CollapseToggled?.Invoke(this, _isCollapsed);
@@ -237,11 +235,7 @@ namespace ADIX
             NavigationRequested?.Invoke(this, "Sales");
         }
 
-        private void Setting_button_click(object sender, RoutedEventArgs e)
-        {
-            SetActiveButton("Settings");
-            NavigationRequested?.Invoke(this, "Settings");
-        }
+    
 
         private void CollapseButton_Click(object sender, RoutedEventArgs e)
         {

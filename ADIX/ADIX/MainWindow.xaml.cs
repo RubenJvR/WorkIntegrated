@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Windows;
-using ADIX.Pages;
+
 
 namespace ADIX
 {
@@ -119,9 +119,7 @@ namespace ADIX
                 case "Sales":
                     MainFrame.Navigate(new Sales());
                     break;
-                case "Settings":
-                    MainFrame.Navigate(new Setting());
-                    break;
+               
             }
         }
        

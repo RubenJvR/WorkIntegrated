@@ -74,7 +74,7 @@
                Orientation="Vertical"
                Margin="275,35,216,43" Grid.ColumnSpan="2">
 
-            <Image Source="/Images/loggo.png"
+            <Image Source="/Image/ADIX_LOGO.png"
               Width="200" Height="100"/>
 
             <TextBlock Text="Username"
@@ -97,10 +97,7 @@ FontWeight="Medium"
  Height="30"
  VerticalContentAlignment="Center"
  Margin="0,5,0,0" />
-            <TextBlock Text="Forgot Password ? "
-                    FontSize="12"
-                  TextAlignment="Right" Height="24" Width="241"/>
-            <StackPanel/>
+            
 
 
         </StackPanel>
