@@ -154,12 +154,7 @@
                     </StackPanel>
                 </Button>
 
-                <Button x:Name="SettingButton" Margin="10,5" Height="45" Style="{StaticResource MenuButtonStyle}" Click="Setting_button_click">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                        <Image Source="/icons/settings.png" Width="24" Height="24" Margin="0,0,12,0"/>
-                        <TextBlock x:Name="SettingText" Text="Settings" Foreground="White" VerticalAlignment="Center" FontSize="14"/>
-                    </StackPanel>
-                </Button>
+               
             </StackPanel>
         </DockPanel>
     </ScrollViewer>
