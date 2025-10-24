@@ -287,7 +287,7 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="150" IsReadOnly="True">
+                            <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="180" IsReadOnly="True">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="White"/>

@@ -317,7 +317,7 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="Payment Method" Binding="{Binding PaymentMethod}" Width="120" IsReadOnly="True">
+                        <DataGridTextColumn Header="Payment Method" Binding="{Binding PaymentMethod}" Width="140" IsReadOnly="True">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="White"/>
