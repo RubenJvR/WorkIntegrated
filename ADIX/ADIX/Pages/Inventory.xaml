@@ -362,6 +362,9 @@
                 <Button Content="Import" Width="150" Height="40"
         Background="Blue" Foreground="White" Margin="5"
         Click="ImportCSV_Click"/>
+                <Button Content="Delete" Width="150" Height="40"
+Background="Red" Foreground="White" Margin="5"
+Click="Delete_Click"/>
 
             </StackPanel>
 
