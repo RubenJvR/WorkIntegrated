@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\ADIX\\ADIX.csproj": {}
+    "C:\\Fuckwill\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj": {}
   },
   "projects": {
-    "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\ADIX\\ADIX.csproj": {
+    "C:\\Fuckwill\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\ADIX\\ADIX.csproj",
+        "projectUniqueName": "C:\\Fuckwill\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
         "projectName": "ADIX",
-        "projectPath": "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\ADIX\\ADIX.csproj",
-        "packagesPath": "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\NuGetPackages",
-        "outputPath": "D:\\VStudio work\\Repos\\ADIX_V4\\ADIX\\ADIX\\obj\\",
+        "projectPath": "C:\\Fuckwill\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
+        "packagesPath": "C:\\Users\\explo.BEN-PC\\.nuget\\packages\\",
+        "outputPath": "C:\\Fuckwill\\WorkIntegrated\\ADIX\\ADIX\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "D:\\Program fike (SDK tools)\\NuGetPackages"
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\kagis\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\explo.BEN-PC\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -43,8 +43,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.300"
+        }
       },
       "frameworks": {
         "net8.0-windows7.0": {
@@ -122,7 +121,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "c:\\program files\\dotnet\\sdk\\8.0.205/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

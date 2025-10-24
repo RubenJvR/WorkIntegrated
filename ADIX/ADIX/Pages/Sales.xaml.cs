@@ -139,7 +139,15 @@ namespace ADIX
             {
                 var paymentItem = (ComboBoxItem)PaymentMethod.SelectedItem;
                 string payment = paymentItem.Content.ToString() ?? string.Empty;
-                filtered = filtered.Where(t => t.PaymentMethod == payment);
+
+                // Only filter if not "All"
+                if (payment != "All")
+                {
+                    // Case-insensitive comparison, handle null/empty
+                    filtered = filtered.Where(t =>
+                        !string.IsNullOrEmpty(t.PaymentMethod) &&
+                        t.PaymentMethod.Equals(payment, StringComparison.OrdinalIgnoreCase));
+                }
             }
 
             filteredTransactions.Clear();
@@ -161,6 +169,8 @@ namespace ADIX
 
             switch (selection)
             {
+                case "All Time":
+                    return transactions; // No filter, show everything
                 case "This Month":
                     startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
                     break;
@@ -191,6 +201,65 @@ namespace ADIX
             ApplyFilters();
             MessageBox.Show($"Table generated with {filteredTransactions.Count} transactions.",
                 "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        // Add Test Data button (for testing purposes)
+        private void AddTestData_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                using var connection = new SqliteConnection("Data Source=ADIX.db");
+                connection.Open();
+
+                string insertTestData = @"
+                    INSERT INTO INVOICEQUOTE (date, type, totalAmount, customerID, staffID, paymentMethod, paymentStatus, synced)
+                    VALUES 
+                    ('2025-10-20 10:30:00', 1, 5350.00, 1, 2, 'Cash', 'Paid', 0),
+                    ('2025-10-21 14:15:00', 1, 2250.00, 2, 3, 'EFT', 'Paid', 0),
+                    ('2025-10-22 09:45:00', 1, 1200.00, 3, 2, 'Credit', 'Paid', 0),
+                    ('2025-10-23 16:20:00', 1, 750.00, NULL, 4, 'Cash', 'Paid', 0),
+                    ('2025-10-15 11:00:00', 1, 6150.00, 1, 2, 'EFT', 'Paid', 0);";
+
+                using var cmd = new SqliteCommand(insertTestData, connection);
+                cmd.ExecuteNonQuery();
+
+                // Get the starting invoice ID
+                long startInvoiceId;
+                using (var getIdCmd = new SqliteCommand("SELECT MAX(invoiceQuoteID) - 4 FROM INVOICEQUOTE", connection))
+                {
+                    startInvoiceId = Convert.ToInt64(getIdCmd.ExecuteScalar());
+                }
+
+                string insertItems = $@"
+                    INSERT INTO INVOICEITEM (quantity, priceAtSale, itemID, invoiceQuoteID, synced)
+                    VALUES 
+                    (1, 4500.00, 1, {startInvoiceId}, 0),
+                    (1, 850.00, 3, {startInvoiceId}, 0),
+                    (1, 1800.00, 6, {startInvoiceId + 1}, 0),
+                    (1, 350.00, 8, {startInvoiceId + 1}, 0),
+                    (1, 120.00, 7, {startInvoiceId + 1}, 0),
+                    (2, 600.00, 4, {startInvoiceId + 2}, 0),
+                    (1, 280.00, 9, {startInvoiceId + 3}, 0),
+                    (2, 120.00, 7, {startInvoiceId + 3}, 0),
+                    (1, 350.00, 8, {startInvoiceId + 3}, 0),
+                    (1, 5200.00, 2, {startInvoiceId + 4}, 0),
+                    (1, 950.00, 10, {startInvoiceId + 4}, 0);";
+
+                using var itemsCmd = new SqliteCommand(insertItems, connection);
+                itemsCmd.ExecuteNonQuery();
+
+                MessageBox.Show("Test sales data added successfully!\n\n5 transactions created.",
+                    "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Reload data
+                LoadTransactionsFromDatabase();
+                ApplyFilters();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adding test data: {ex.Message}\n\nData may already exist.",
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         // Refund button click

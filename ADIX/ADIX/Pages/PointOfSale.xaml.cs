@@ -8,6 +8,8 @@ namespace ADIX
     {
         private PointOfSaleViewModel _viewModel;
 
+        private System.Windows.Threading.DispatcherTimer _refreshTimer;
+
         public PointOfSale()
         {
             InitializeComponent();
@@ -16,13 +18,42 @@ namespace ADIX
             DataContext = _viewModel;
 
             this.Loaded += PointOfSale_Loaded;
+            this.Unloaded += PointOfSale_Unloaded;
+
+            // Setup auto-refresh timer (every 30 seconds)
+            _refreshTimer = new System.Windows.Threading.DispatcherTimer();
+            _refreshTimer.Interval = TimeSpan.FromSeconds(30);
+            _refreshTimer.Tick += RefreshTimer_Tick;
         }
+
 
         private void PointOfSale_Loaded(object sender, RoutedEventArgs e)
         {
             _viewModel.ReloadItemsFromDatabase();
+            _refreshTimer.Start(); // Start auto-refresh when page loads
         }
 
+        private void PointOfSale_Unloaded(object sender, RoutedEventArgs e)
+        {
+            _refreshTimer.Stop(); // Stop timer when page unloads
+        }
+
+        private async void RefreshTimer_Tick(object sender, EventArgs e)
+        {
+            // Check for sync and refresh items
+            if (Database.IsInternetAvailable())
+            {
+                try
+                {
+                    await Database.CheckAndSyncAsync();
+                    _viewModel.ReloadItemsFromDatabase();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Auto-refresh sync failed: {ex.Message}");
+                }
+            }
+        }
         private void Quote_Click(object sender, RoutedEventArgs e)
         {
             // Get cart items with quantity > 0
