@@ -77,8 +77,8 @@
             <Image Source="/Image/ADIX_LOGO.png"
               Width="200" Height="100"/>
 
-            <TextBlock Text="Username"
-            FontSize="12"/>
+            <TextBlock Text="Username" 
+            FontSize="14"/>
 
             <TextBox x:Name="UsernameText" 
                 FontSize="13"
@@ -89,8 +89,8 @@
                />
 
 
-            <TextBlock Text="Password"
-         FontSize="12"/>
+            <TextBlock Text="Password" 
+         FontSize="14"/>
 
             <PasswordBox x:Name="passwordBox" FontSize="13"
 FontWeight="Medium"

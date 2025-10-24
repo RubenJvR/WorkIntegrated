@@ -211,23 +211,24 @@
                 </Border>
 
                 <!-- Expense Breakdown Table -->
-                <ScrollViewer Margin="0,10,0,10" 
-                              HorizontalScrollBarVisibility="Auto" 
-                              VerticalScrollBarVisibility="Auto"
-                              MaxHeight="200">
+                <Border Margin="0,10,0,10" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1" MaxHeight="200">
                     <DataGrid x:Name="ExpenseGrid"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              Background="#4F4F4F"
-                              Foreground="White"
-                              GridLinesVisibility="All"
-                              BorderBrush="Black"
-                              BorderThickness="1"
-                              HeadersVisibility="Column"
-                              CanUserAddRows="False"
-                              RowHeight="35"
-                              ColumnHeaderHeight="40"
-                              FontSize="14">
+              AutoGenerateColumns="False"
+              IsReadOnly="True"
+              Background="#4F4F4F"
+              Foreground="White"
+              GridLinesVisibility="All"
+              BorderBrush="Black"
+              BorderThickness="1"
+              HeadersVisibility="Column"
+              CanUserAddRows="False"
+              CanUserDeleteRows="False"
+              RowHeight="35"
+              ColumnHeaderHeight="40"
+              FontSize="14"
+              AlternatingRowBackground="#5A5A5A">
+
+                        <!-- Column Header Styling -->
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
                                 <Setter Property="Background" Value="#2D2D2D"/>
@@ -237,8 +238,11 @@
                                 <Setter Property="BorderThickness" Value="0.5"/>
                                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
                                 <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                <Setter Property="Padding" Value="5"/>
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
+
+                        <!-- Cell Styling -->
                         <DataGrid.CellStyle>
                             <Style TargetType="DataGridCell">
                                 <Setter Property="BorderBrush" Value="Black"/>
@@ -246,17 +250,70 @@
                                 <Setter Property="Padding" Value="5,2"/>
                                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
                                 <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#6A6A6A"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="BorderBrush" Value="#4AA902"/>
+                                    </Trigger>
+                                </Style.Triggers>
                             </Style>
                         </DataGrid.CellStyle>
+
+                        <!-- Row Styling -->
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Setter Property="Background" Value="#4F4F4F"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#6A6A6A"/>
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#5A5A5A"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="120"/>
-                            <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="150"/>
-                            <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat='R {0:N2}'}" Width="120"/>
-                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
+                            <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="120" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Padding" Value="5"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="150" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Padding" Value="5"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat='R {0:N2}'}" Width="120" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Padding" Value="5"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Padding" Value="5"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                         </DataGrid.Columns>
                     </DataGrid>
-                </ScrollViewer>
-
+                </Border>
                 <!-- Financial Overview -->
                 <Border Style="{StaticResource HeaderBorderStyle}">
                     <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Financial Overview"/>
@@ -434,23 +491,24 @@
                 </StackPanel>
 
                 <!-- Supplier Payments Table -->
-                <ScrollViewer Margin="0,10,0,10" 
-                              HorizontalScrollBarVisibility="Auto" 
-                              VerticalScrollBarVisibility="Auto"
-                              MaxHeight="250">
+                <Border Margin="0,10,0,10" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1" MaxHeight="250">
                     <DataGrid x:Name="SupplierTable"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              Background="#4F4F4F"
-                              Foreground="White"
-                              GridLinesVisibility="All"
-                              BorderBrush="Black"
-                              BorderThickness="1"
-                              HeadersVisibility="Column"
-                              CanUserAddRows="False"
-                              RowHeight="35"
-                              ColumnHeaderHeight="40"
-                              FontSize="12">
+              AutoGenerateColumns="False"
+              IsReadOnly="True"
+              Background="#4F4F4F"
+              Foreground="White"
+              GridLinesVisibility="All"
+              BorderBrush="Black"
+              BorderThickness="1"
+              HeadersVisibility="Column"
+              CanUserAddRows="False"
+              CanUserDeleteRows="False"
+              RowHeight="35"
+              ColumnHeaderHeight="40"
+              FontSize="12"
+              AlternatingRowBackground="#5A5A5A">
+
+                        <!-- Column Header Styling -->
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
                                 <Setter Property="Background" Value="#2D2D2D"/>
@@ -460,8 +518,11 @@
                                 <Setter Property="BorderThickness" Value="0.5"/>
                                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
                                 <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                <Setter Property="Padding" Value="5"/>
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
+
+                        <!-- Cell Styling -->
                         <DataGrid.CellStyle>
                             <Style TargetType="DataGridCell">
                                 <Setter Property="BorderBrush" Value="Black"/>
@@ -469,22 +530,110 @@
                                 <Setter Property="Padding" Value="5,2"/>
                                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
                                 <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#6A6A6A"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="BorderBrush" Value="#4AA902"/>
+                                    </Trigger>
+                                </Style.Triggers>
                             </Style>
                         </DataGrid.CellStyle>
+
+                        <!-- Row Styling -->
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Setter Property="Background" Value="#4F4F4F"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#6A6A6A"/>
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#5A5A5A"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Supplier" Binding="{Binding SupplierName}" Width="120"/>
-                            <DataGridTextColumn Header="Invoice #" Binding="{Binding InvoiceNumber}" Width="100"/>
-                            <DataGridTextColumn Header="Invoice Date" Binding="{Binding InvoiceDate}" Width="100"/>
-                            <DataGridTextColumn Header="Due Date" Binding="{Binding DueDate}" Width="100"/>
-                            <DataGridTextColumn Header="Amount" Binding="{Binding InvoiceAmount, StringFormat='R {0:N2}'}" Width="100"/>
-                            <DataGridTextColumn Header="Paid" Binding="{Binding AmountPaid, StringFormat='R {0:N2}'}" Width="100"/>
-                            <DataGridTextColumn Header="Balance" Binding="{Binding BalanceDue, StringFormat='R {0:N2}'}" Width="100"/>
-                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="80"/>
-                            <DataGridTextColumn Header="Payment Method" Binding="{Binding PaymentMethod}" Width="120"/>
+                            <DataGridTextColumn Header="Supplier" Binding="{Binding SupplierName}" Width="120" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Padding" Value="5"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Invoice #" Binding="{Binding InvoiceNumber}" Width="100" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Padding" Value="5"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Invoice Date" Binding="{Binding InvoiceDate}" Width="100" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Padding" Value="5"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Due Date" Binding="{Binding DueDate}" Width="100" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Padding" Value="5"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Amount" Binding="{Binding InvoiceAmount, StringFormat='R {0:N2}'}" Width="100" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Padding" Value="5"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Paid" Binding="{Binding AmountPaid, StringFormat='R {0:N2}'}" Width="100" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Padding" Value="5"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Balance" Binding="{Binding BalanceDue, StringFormat='R {0:N2}'}" Width="100" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Padding" Value="5"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="80" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Padding" Value="5"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Payment Method" Binding="{Binding PaymentMethod}" Width="120" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Padding" Value="5"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                         </DataGrid.Columns>
                     </DataGrid>
-                </ScrollViewer>
-
+                </Border>
                 <!-- Action Buttons -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
                     <Button Content="Refresh Data" Width="120" Height="40"
