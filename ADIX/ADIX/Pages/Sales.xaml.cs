@@ -14,7 +14,7 @@ using PdfParagraph = iTextSharp.text.Paragraph;
 
 namespace ADIX
 {
-    public partial class Sales : Window
+    public partial class Sales : Page
     {
         // Observable collection for binding to DataGrid
         private ObservableCollection<SaleTransaction> allTransactions = new();
