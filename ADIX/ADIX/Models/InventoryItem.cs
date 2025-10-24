@@ -8,12 +8,13 @@ namespace ADIX
 {
     class InventoryItem
     {
-        public string ItemGroup {  get; set; }
+        public int ItemID { get; set; }
+        public string ItemGroup { get; set; }
         public string ItemName { get; set; }
         public string SKU { get; set; }
-        public int OpeningStockQuantity { get; set;}
-        public int StockReceived { get; set;}
-        public int StockSold { get; set;}
+        public int OpeningStockQuantity { get; set; }
+        public int StockReceived { get; set; }
+        public int StockSold { get; set; }
         public int BalanceStock { get; set; }
         public int StockReturned { get; set; }
         public int StockRefunded { get; set; }
@@ -22,4 +23,5 @@ namespace ADIX
         public double Loss { get; set; }
 
     }
+
 }
