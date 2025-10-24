@@ -4,6 +4,7 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:ADIX"
+      xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="Finance">
@@ -47,29 +48,30 @@
             <Setter Property="FontWeight" Value="Bold"/>
         </Style>
 
-        <!-- Placeholder styles -->
-        <Style x:Key="PlaceholderBorderStyle" TargetType="Border">
+        <!-- Chart Border Style - ENLARGED -->
+        <Style x:Key="ChartBorderStyle" TargetType="Border">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="#4AA902"/>
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Width" Value="250"/>
-            <Setter Property="Height" Value="150"/>
-            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Width" Value="380"/>
+            <Setter Property="Height" Value="350"/>
+            <Setter Property="Margin" Value="10,5"/>
+            <Setter Property="Padding" Value="15"/>
         </Style>
 
-        <Style x:Key="PlaceholderTextStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12"/>
+        <Style x:Key="ChartTitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
             <Setter Property="Foreground" Value="Black"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
-            <Setter Property="TextAlignment" Value="Center"/>
-            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
         </Style>
 
         <!-- Converters -->
         <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
 
-        <!-- Rounded ComboBox with placeholder - Same style as your POS page -->
+        <!-- Rounded ComboBox with placeholder -->
         <Style x:Key="RoundedComboBoxStyle" TargetType="ComboBox">
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Background" Value="#4F4F4F"/>
@@ -128,68 +130,6 @@
                                 </Border>
                             </Popup>
                         </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Rounded dark CheckBox style -->
-        <Style x:Key="RoundedCheckBoxStyle" TargetType="CheckBox">
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Background" Value="#4F4F4F"/>
-            <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="Height" Value="30"/>
-            <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="CheckBox">
-                        <Border x:Name="Border"
-                        Background="{TemplateBinding Background}"
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="6"
-                        Padding="{TemplateBinding Padding}">
-                            <Grid>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <!-- Custom tick box -->
-                                    <Border x:Name="CheckMarkBorder"
-                                    Width="16"
-                                    Height="16"
-                                    BorderBrush="White"
-                                    BorderThickness="1"
-                                    CornerRadius="3"
-                                    VerticalAlignment="Center"
-                                    Margin="0,0,8,0">
-                                        <Path x:Name="CheckMark"
-                                      Data="M 2 8 L 6 12 L 14 2"
-                                      Stroke="White"
-                                      StrokeThickness="2"
-                                      Visibility="Collapsed"/>
-                                    </Border>
-
-                                    <!-- Content text -->
-                                    <ContentPresenter VerticalAlignment="Center"
-                                              RecognizesAccessKey="True"/>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <!-- Checked -->
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#3A3A3A"/>
-                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
-                            </Trigger>
-                            <!-- Hover -->
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#5A5A5A"/>
-                            </Trigger>
-                            <!-- Disabled -->
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.5"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -275,7 +215,7 @@
                               HorizontalScrollBarVisibility="Auto" 
                               VerticalScrollBarVisibility="Auto"
                               MaxHeight="200">
-                    <DataGrid x:Name="PosItemGrid"
+                    <DataGrid x:Name="ExpenseGrid"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
                               Background="#4F4F4F"
@@ -317,51 +257,117 @@
                     </DataGrid>
                 </ScrollViewer>
 
-                <!-- Financial Overview Placeholder -->
+                <!-- Financial Overview -->
                 <Border Style="{StaticResource HeaderBorderStyle}">
                     <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Financial Overview"/>
                 </Border>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10">
-                    <!-- Pie Chart Placeholder -->
-                    <Border Style="{StaticResource PlaceholderBorderStyle}">
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <TextBlock Text="Expense Distribution" FontWeight="Bold" Style="{StaticResource PlaceholderTextStyle}"/>
-                            <TextBlock Text="Pie Chart" Style="{StaticResource PlaceholderTextStyle}" Margin="0,5,0,0"/>
-                            <TextBlock Text="(Available when database ready)" Style="{StaticResource PlaceholderTextStyle}" FontSize="10" Margin="0,10,0,0"/>
-                            <Border Width="80" Height="80" Background="#E0E0E0" CornerRadius="40" Margin="0,5,0,0">
-                                <TextBlock Text="📊" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                        </StackPanel>
-                    </Border>
+                <!-- Charts Container - IMPROVED LAYOUT -->
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,10,0,10">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
 
-                    <!-- Line Chart Placeholder -->
-                    <Border Style="{StaticResource PlaceholderBorderStyle}">
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <TextBlock Text="Monthly Turnover" FontWeight="Bold" Style="{StaticResource PlaceholderTextStyle}"/>
-                            <TextBlock Text="Line Chart" Style="{StaticResource PlaceholderTextStyle}" Margin="0,5,0,0"/>
-                            <TextBlock Text="(Available when database ready)" Style="{StaticResource PlaceholderTextStyle}" FontSize="10" Margin="0,10,0,0"/>
-                            <Border Width="100" Height="40" Background="#E0E0E0" CornerRadius="5" Margin="0,5,0,0">
-                                <TextBlock Text="⎺⎺⎺⎺⎺" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#666666"/>
-                            </Border>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Column Chart Placeholder -->
-                    <Border Style="{StaticResource PlaceholderBorderStyle}">
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <TextBlock Text="Profit/Loss Trend" FontWeight="Bold" Style="{StaticResource PlaceholderTextStyle}"/>
-                            <TextBlock Text="Column Chart" Style="{StaticResource PlaceholderTextStyle}" Margin="0,5,0,0"/>
-                            <TextBlock Text="(Available when database ready)" Style="{StaticResource PlaceholderTextStyle}" FontSize="10" Margin="0,10,0,0"/>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,0">
-                                <Border Width="15" Height="30" Background="#4AA902" Margin="2" CornerRadius="2"/>
-                                <Border Width="15" Height="45" Background="#4AA902" Margin="2" CornerRadius="2"/>
-                                <Border Width="15" Height="25" Background="#4AA902" Margin="2" CornerRadius="2"/>
-                                <Border Width="15" Height="35" Background="#4AA902" Margin="2" CornerRadius="2"/>
+                        <!-- Pie Chart - CLEAN VERSION WITH BETTER TOOLTIPS -->
+                        <Border Style="{StaticResource ChartBorderStyle}">
+                            <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                                <TextBlock Style="{StaticResource ChartTitleStyle}" Text="Expense Distribution"/>
+                                <lvc:PieChart x:Name="PieChart" 
+                     Series="{Binding ExpenseSeries}"
+                     LegendLocation="Bottom"
+                     Hoverable="True"
+                     InnerRadius="80"
+                     Width="340" 
+                     Height="260"
+                     Margin="0,5,0,0">
+                                    <lvc:PieChart.ChartLegend>
+                                        <lvc:DefaultLegend 
+                    Foreground="Black" 
+                    FontSize="10"
+                    Margin="0,10,0,0"
+                    MaxWidth="300"/>
+                                    </lvc:PieChart.ChartLegend>
+                                    <lvc:PieChart.DataTooltip>
+                                        <lvc:DefaultTooltip 
+                    SelectionMode="OnlySender" 
+                    ShowTitle="True"
+                    ShowSeries="True"
+                    Foreground="White"
+                    Background="#2D2D2D"
+                    BorderBrush="#4AA902"
+                    BorderThickness="2"
+                    FontSize="12"
+                    FontWeight="Bold"
+                    CornerRadius="5"/>
+                                    </lvc:PieChart.DataTooltip>
+                                </lvc:PieChart>
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
+                        </Border>
+                        
+                        
+                        <!-- Line Chart - ENLARGED -->
+                        <Border Style="{StaticResource ChartBorderStyle}">
+                            <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                                <TextBlock Style="{StaticResource ChartTitleStyle}" Text="Monthly Turnover"/>
+                                <lvc:CartesianChart x:Name="LineChart" 
+                                                   Series="{Binding TurnoverSeries}"
+                                                   LegendLocation="None"
+                                                   Width="320" 
+                                                   Height="250"
+                                                   Margin="0,10,0,0">
+                                    <lvc:CartesianChart.AxisX>
+                                        <lvc:Axis Labels="{Binding TurnoverLabels}" 
+                                                  Foreground="Black"
+                                                  FontSize="11">
+                                            <lvc:Axis.Separator>
+                                                <lvc:Separator StrokeThickness="0"/>
+                                            </lvc:Axis.Separator>
+                                        </lvc:Axis>
+                                    </lvc:CartesianChart.AxisX>
+                                    <lvc:CartesianChart.AxisY>
+                                        <lvc:Axis LabelFormatter="{Binding AmountFormatter}" 
+                                                  Foreground="Black"
+                                                  FontSize="11">
+                                            <lvc:Axis.Separator>
+                                                <lvc:Separator StrokeThickness="1" Stroke="#E0E0E0"/>
+                                            </lvc:Axis.Separator>
+                                        </lvc:Axis>
+                                    </lvc:CartesianChart.AxisY>
+                                </lvc:CartesianChart>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Column Chart - ENLARGED -->
+                        <Border Style="{StaticResource ChartBorderStyle}">
+                            <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                                <TextBlock Style="{StaticResource ChartTitleStyle}" Text="Profit/Loss Trend"/>
+                                <lvc:CartesianChart x:Name="ColumnChart" 
+                                                   Series="{Binding ProfitLossSeries}"
+                                                   LegendLocation="None"
+                                                   Width="320" 
+                                                   Height="250"
+                                                   Margin="0,10,0,0">
+                                    <lvc:CartesianChart.AxisX>
+                                        <lvc:Axis Labels="{Binding ProfitLossLabels}" 
+                                                  Foreground="Black"
+                                                  FontSize="11">
+                                            <lvc:Axis.Separator>
+                                                <lvc:Separator StrokeThickness="0"/>
+                                            </lvc:Axis.Separator>
+                                        </lvc:Axis>
+                                    </lvc:CartesianChart.AxisX>
+                                    <lvc:CartesianChart.AxisY>
+                                        <lvc:Axis LabelFormatter="{Binding AmountFormatter}" 
+                                                  Foreground="Black"
+                                                  FontSize="11">
+                                            <lvc:Axis.Separator>
+                                                <lvc:Separator StrokeThickness="1" Stroke="#E0E0E0"/>
+                                            </lvc:Axis.Separator>
+                                        </lvc:Axis>
+                                    </lvc:CartesianChart.AxisY>
+                                </lvc:CartesianChart>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
 
                 <!-- Supplier Payments Section -->
                 <Border Style="{StaticResource HeaderBorderStyle}">
@@ -371,10 +377,11 @@
                 <!-- Filter Controls with Styled ComboBoxes -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,5">
                     <!-- Supplier Filter ComboBox -->
-                    <ComboBox Width="150" 
+                    <ComboBox x:Name="SupplierFilterComboBox"
+                              Width="150" 
                               Style="{StaticResource RoundedComboBoxStyle}"
                               Tag="All Suppliers"
-                              SelectedIndex="0">
+                              SelectionChanged="SupplierFilter_SelectionChanged">
                         <ComboBox.ItemContainerStyle>
                             <Style TargetType="ComboBoxItem">
                                 <Setter Property="Foreground" Value="white"/>
@@ -382,17 +389,18 @@
                             </Style>
                         </ComboBox.ItemContainerStyle>
                         <ComboBoxItem Content="All Suppliers" IsSelected="True"/>
-                        <ComboBoxItem Content="GreenFoods Ltd"/>
-                        <ComboBoxItem Content="BeverageCorp"/>
-                        <ComboBoxItem Content="SnackSupply Co"/>
+                        <ComboBoxItem Content="Precision Bows Ltd"/>
+                        <ComboBoxItem Content="Eagle Arrows Co"/>
+                        <ComboBoxItem Content="TargetCraft Supplies"/>
                     </ComboBox>
 
                     <!-- Status Filter ComboBox -->
-                    <ComboBox Width="150" 
+                    <ComboBox x:Name="StatusFilterComboBox"
+                              Width="150" 
                               Style="{StaticResource RoundedComboBoxStyle}"
                               Tag="All Status"
                               Margin="10,0,0,0"
-                              SelectedIndex="0">
+                              SelectionChanged="StatusFilter_SelectionChanged">
                         <ComboBox.ItemContainerStyle>
                             <Style TargetType="ComboBoxItem">
                                 <Setter Property="Foreground" Value="white"/>
@@ -406,11 +414,12 @@
                     </ComboBox>
 
                     <!-- Date Filter ComboBox -->
-                    <ComboBox Width="150" 
+                    <ComboBox x:Name="DateFilterComboBox"
+                              Width="150" 
                               Style="{StaticResource RoundedComboBoxStyle}"
                               Tag="All Dates"
                               Margin="10,0,0,0"
-                              SelectedIndex="0">
+                              SelectionChanged="DateFilter_SelectionChanged">
                         <ComboBox.ItemContainerStyle>
                             <Style TargetType="ComboBoxItem">
                                 <Setter Property="Foreground" Value="white"/>

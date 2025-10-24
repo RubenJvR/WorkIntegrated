@@ -311,11 +311,6 @@
 
 
 
-
-
-
-
-
             <!-- Suppliers Table -->
             <ScrollViewer Grid.Row="12" Margin="0,10,0,10"
                           HorizontalScrollBarVisibility="Auto"
@@ -377,16 +372,19 @@
             <!-- Bottom Buttons -->
             <StackPanel Grid.Row="14" Orientation="Horizontal"
                         HorizontalAlignment="Center" Margin="0,10,0,0">
-                
+
                 <Button Content="Delete Supplier" Width="150" Height="40"
-                        Background="Red" Foreground="White" FontWeight="Bold" Margin="5"/>
-                
+                Background="Red" Foreground="White" FontWeight="Bold" Margin="5"
+                Click="DeleteSupplierButton_Click"/>
+
                 <Button Content="Add Supplier" Width="150" Height="40"
-                        Background="Green" Foreground="White" FontWeight="Bold" Margin="5"/>
-                
+        Background="Green" Foreground="White" FontWeight="Bold" Margin="5"
+        Click="AddSupplierButton_Click"/>
+
                 <Button Content="Edit Supplier" Width="150" Height="40"
-                        Background="#4F4F4F" Foreground="White" Margin="5"/>
-               
+        Background="#4F4F4F" Foreground="White" Margin="5"
+        Click="EditSupplierButton_Click"/>
+
             </StackPanel>
         </Grid>
     </Grid>

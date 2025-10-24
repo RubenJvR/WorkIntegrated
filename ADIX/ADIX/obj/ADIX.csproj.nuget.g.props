@@ -18,5 +18,6 @@
   </ImportGroup>
   <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
     <PkgWPF-UI Condition=" '$(PkgWPF-UI)' == '' ">D:\VStudio work\Repos\ADIX_V4\ADIX\NuGetPackages\wpf-ui\4.0.3</PkgWPF-UI>
+    <PkgLiveCharts_Wpf Condition=" '$(PkgLiveCharts_Wpf)' == '' ">D:\VStudio work\Repos\ADIX_V4\ADIX\NuGetPackages\livecharts.wpf\0.9.7</PkgLiveCharts_Wpf>
   </PropertyGroup>
 </Project>
