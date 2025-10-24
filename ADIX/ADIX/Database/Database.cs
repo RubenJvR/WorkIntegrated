@@ -661,21 +661,231 @@ namespace ADIX
             SyncMasterData(sqliteConn, azureConn, "CUSTOMER", new[] { "customerID", "name", "phone", "email", "credit", "lastModified" });
             SyncMasterData(sqliteConn, azureConn, "STAFF", new[] { "staffID", "name", "Role", "userName", "passwordHash", "salary", "lastModified" });
 
-            // Step 2: Sync item master data (prices, descriptions) but NOT quantities
-            SyncItemMasterData(sqliteConn, azureConn);
+            // Step 2: Sync item master data (prices, descriptions) but NOT quantities YET
+            SyncItemMasterDataWithoutInventory(sqliteConn, azureConn);
 
-            // Step 3: Sync transactions (invoices and invoice items)
+            // Step 3: Sync transactions FIRST (upload local transactions to Azure)
             SyncTransactions(sqliteConn, azureConn);
 
-            // Step 4: Recalculate inventory from transactions
-            RecalculateInventory(sqliteConn, azureConn);
+            // Step 4: Recalculate inventory on BOTH databases independently
+            RecalculateInventoryOnBothDatabases(sqliteConn, azureConn);
 
             // Step 5: Sync reports
             SyncMasterData(sqliteConn, azureConn, "REPORT", new[] { "reportID", "reportType", "date", "staffID", "lastModified" });
 
             Console.WriteLine("Transaction-based sync completed successfully.");
         }
+        private static void SyncItemMasterDataWithoutInventory(SqliteConnection sqliteConn, SqlConnection azureConn)
+        {
+            string[] columns = {
+        "itemID",
+        "description",
+        "retailPrice",
+        "costPrice",
+        "supplierID",
+        "sellerID",
+        "lastModified"
+    };
 
+            var localData = GetTableData(sqliteConn, "ITEM", columns);
+            var azureData = GetTableDataFromAzure(azureConn, "ITEM", columns);
+
+            using var transaction = azureConn.BeginTransaction();
+            try
+            {
+                foreach (DataRow localRow in localData.Rows)
+                {
+                    var itemID = localRow["itemID"];
+                    var azureRow = azureData.AsEnumerable()
+                        .FirstOrDefault(r => r["itemID"].ToString() == itemID.ToString());
+
+                    if (azureRow == null)
+                    {
+                        // New item – insert with initial inventory from local
+                        var localInventory = GetLocalInventory(sqliteConn, Convert.ToInt32(itemID));
+                        var insertSql = @"
+                    INSERT INTO ITEM 
+                    (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified)
+                    VALUES 
+                    (@itemID, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified)";
+
+                        using var cmd = new SqlCommand(insertSql, azureConn, transaction);
+                        cmd.Parameters.AddWithValue("@itemID", itemID);
+                        cmd.Parameters.AddWithValue("@description", localRow["description"]);
+                        cmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
+                        cmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
+                        cmd.Parameters.AddWithValue("@stockQuantity", localInventory.stockQuantity);
+                        cmd.Parameters.AddWithValue("@stockSold", localInventory.stockSold);
+                        cmd.Parameters.AddWithValue("@stockRecieved", localInventory.stockRecieved);
+                        cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
+                        cmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
+                        cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
+                        cmd.ExecuteNonQuery();
+
+                        Console.WriteLine($"[ITEM] Added new item {itemID} to Azure");
+                    }
+                    else
+                    {
+                        // Update only master data (NOT inventory)
+                        var updateSql = @"
+                    UPDATE ITEM 
+                    SET description=@description, 
+                        retailPrice=@retailPrice, 
+                        costPrice=@costPrice, 
+                        supplierID=@supplierID, 
+                        sellerID=@sellerID,
+                        lastModified=@lastModified
+                    WHERE itemID=@itemID";
+
+                        using var cmd = new SqlCommand(updateSql, azureConn, transaction);
+                        cmd.Parameters.AddWithValue("@itemID", itemID);
+                        cmd.Parameters.AddWithValue("@description", localRow["description"]);
+                        cmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
+                        cmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
+                        cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
+                        cmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
+                        cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                transaction.Commit();
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                throw new Exception($"Failed to sync ITEM master data: {ex.Message}", ex);
+            }
+        }
+
+        private static (int stockQuantity, int stockSold, int stockRecieved) GetLocalInventory(SqliteConnection conn, int itemID)
+        {
+            var query = "SELECT stockQuantity, stockSold, stockRecieved FROM ITEM WHERE itemID = @itemID";
+            using var cmd = new SqliteCommand(query, conn);
+            cmd.Parameters.AddWithValue("@itemID", itemID);
+
+            using var reader = cmd.ExecuteReader();
+            if (reader.Read())
+            {
+                return (reader.GetInt32(0), reader.GetInt32(1), reader.GetInt32(2));
+            }
+
+            return (0, 0, 0);
+        }
+        public static void InitializeStockReceived(int itemID)
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            // Set stockRecieved = current stockQuantity + stockSold if stockRecieved is 0
+            var updateSql = @"UPDATE ITEM 
+                      SET stockRecieved = stockQuantity + stockSold,
+                          lastModified = CURRENT_TIMESTAMP
+                      WHERE itemID = @id AND stockRecieved = 0";
+
+            using var cmd = new SqliteCommand(updateSql, connection);
+            cmd.Parameters.AddWithValue("@id", itemID);
+            cmd.ExecuteNonQuery();
+        }
+        private static void RecalculateInventoryOnBothDatabases(SqliteConnection sqliteConn, SqlConnection azureConn)
+        {
+            Console.WriteLine("Recalculating inventory from transactions on both databases...");
+
+            // Recalculate Azure inventory
+            RecalculateInventoryForDatabase(azureConn, isAzure: true);
+
+            // Recalculate Local inventory
+            RecalculateInventoryForDatabase(sqliteConn, isAzure: false);
+
+            Console.WriteLine("Inventory recalculation completed for both databases");
+        }
+        private static void RecalculateInventoryForDatabase(DbConnection connection, bool isAzure)
+        {
+            var items = new DataTable();
+            string getItemsSql = "SELECT itemID, stockRecieved FROM ITEM";
+
+            using (var cmd = connection.CreateCommand())
+            {
+                cmd.CommandText = getItemsSql;
+                using var reader = cmd.ExecuteReader();
+                items.Load(reader);
+            }
+
+            DbTransaction transaction = null;
+            if (isAzure)
+                transaction = ((SqlConnection)connection).BeginTransaction();
+            else
+                transaction = ((SqliteConnection)connection).BeginTransaction();
+
+            try
+            {
+                foreach (DataRow item in items.Rows)
+                {
+                    var itemID = item["itemID"];
+                    var stockReceived = Convert.ToInt32(item["stockRecieved"]);
+
+                    // Calculate total sold from invoice items (type 1 = invoice/sale)
+                    var soldSql = @"SELECT COALESCE(SUM(ii.quantity), 0) 
+                           FROM INVOICEITEM ii
+                           INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
+                           WHERE ii.itemID = @itemID AND iq.type = 1";
+
+                    int totalSold = 0;
+                    using (var soldCmd = connection.CreateCommand())
+                    {
+                        soldCmd.Transaction = transaction;
+                        soldCmd.CommandText = soldSql;
+
+                        var param = soldCmd.CreateParameter();
+                        param.ParameterName = "@itemID";
+                        param.Value = itemID;
+                        soldCmd.Parameters.Add(param);
+
+                        totalSold = Convert.ToInt32(soldCmd.ExecuteScalar());
+                    }
+
+                    // Calculate remaining stock
+                    int remainingStock = Math.Max(0, stockReceived - totalSold);
+
+                    // Update item with recalculated values
+                    var updateSql = @"UPDATE ITEM 
+                             SET stockSold = @sold, 
+                                 stockQuantity = @quantity 
+                             WHERE itemID = @itemID";
+
+                    using var updateCmd = connection.CreateCommand();
+                    updateCmd.Transaction = transaction;
+                    updateCmd.CommandText = updateSql;
+
+                    var soldParam = updateCmd.CreateParameter();
+                    soldParam.ParameterName = "@sold";
+                    soldParam.Value = totalSold;
+                    updateCmd.Parameters.Add(soldParam);
+
+                    var qtyParam = updateCmd.CreateParameter();
+                    qtyParam.ParameterName = "@quantity";
+                    qtyParam.Value = remainingStock;
+                    updateCmd.Parameters.Add(qtyParam);
+
+                    var idParam = updateCmd.CreateParameter();
+                    idParam.ParameterName = "@itemID";
+                    idParam.Value = itemID;
+                    updateCmd.Parameters.Add(idParam);
+
+                    updateCmd.ExecuteNonQuery();
+
+                    string dbName = isAzure ? "Azure" : "Local";
+                    Console.WriteLine($"[{dbName} ITEM {itemID}] Recalculated: Received={stockReceived}, Sold={totalSold}, Remaining={remainingStock}");
+                }
+
+                transaction.Commit();
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                throw new Exception($"Failed to recalculate inventory: {ex.Message}", ex);
+            }
+        }
         private static void SyncMasterData(SqliteConnection sqliteConn, SqlConnection azureConn, string tableName, string[] columns)
         {
             // Get data from both databases
@@ -749,100 +959,6 @@ namespace ADIX
                 throw new Exception($"Failed to sync {tableName}: {ex.Message}", ex);
             }
         }
-
-        private static void SyncItemMasterData(SqliteConnection sqliteConn, SqlConnection azureConn)
-        {
-            // Sync all relevant item data including stock values
-            string[] columns = {
-        "itemID",
-        "description",
-        "retailPrice",
-        "costPrice",
-        "stockQuantity",
-        "stockSold",
-        "stockRecieved",
-        "supplierID",
-        "sellerID",
-        "lastModified"
-    };
-
-            var localData = GetTableData(sqliteConn, "ITEM", columns);
-            var azureData = GetTableDataFromAzure(azureConn, "ITEM", columns);
-
-            using var transaction = azureConn.BeginTransaction();
-            try
-            {
-                foreach (DataRow localRow in localData.Rows)
-                {
-                    var itemID = localRow["itemID"];
-                    var azureRow = azureData.AsEnumerable()
-                        .FirstOrDefault(r => r["itemID"].ToString() == itemID.ToString());
-
-                    if (azureRow == null)
-                    {
-                        // New item – insert using local stock values
-                        var insertSql = @"
-                    INSERT INTO ITEM 
-                    (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified)
-                    VALUES 
-                    (@itemID, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified)";
-
-                        using var cmd = new SqlCommand(insertSql, azureConn, transaction);
-                        cmd.Parameters.AddWithValue("@itemID", itemID);
-                        cmd.Parameters.AddWithValue("@description", localRow["description"]);
-                        cmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
-                        cmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
-                        cmd.Parameters.AddWithValue("@stockQuantity", localRow["stockQuantity"]);
-                        cmd.Parameters.AddWithValue("@stockSold", localRow["stockSold"]);
-                        cmd.Parameters.AddWithValue("@stockRecieved", localRow["stockRecieved"]);
-                        cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
-                        cmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
-                        cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
-                        cmd.ExecuteNonQuery();
-
-                        Console.WriteLine($"[ITEM] Added new item {itemID} to Azure");
-                    }
-                    else
-                    {
-                        // Update all fields including stock
-                        var updateSql = @"
-                    UPDATE ITEM 
-                    SET description=@description, 
-                        retailPrice=@retailPrice, 
-                        costPrice=@costPrice, 
-                        stockQuantity=@stockQuantity, 
-                        stockSold=@stockSold, 
-                        stockRecieved=@stockRecieved,
-                        supplierID=@supplierID, 
-                        sellerID=@sellerID,
-                        lastModified=@lastModified
-                    WHERE itemID=@itemID";
-
-                        using var cmd = new SqlCommand(updateSql, azureConn, transaction);
-                        cmd.Parameters.AddWithValue("@itemID", itemID);
-                        cmd.Parameters.AddWithValue("@description", localRow["description"]);
-                        cmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
-                        cmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
-                        cmd.Parameters.AddWithValue("@stockQuantity", localRow["stockQuantity"]);
-                        cmd.Parameters.AddWithValue("@stockSold", localRow["stockSold"]);
-                        cmd.Parameters.AddWithValue("@stockRecieved", localRow["stockRecieved"]);
-                        cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
-                        cmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
-                        cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-
-                transaction.Commit();
-            }
-            catch (Exception ex)
-            {
-                transaction.Rollback();
-                throw new Exception($"Failed to sync ITEM master data: {ex.Message}", ex);
-            }
-        }
-
-
 
 
         private static void SyncTransactions(SqliteConnection sqliteConn, SqlConnection azureConn)
@@ -948,105 +1064,6 @@ namespace ADIX
             }
         }
 
-        private static void RecalculateInventory(SqliteConnection sqliteConn, SqlConnection azureConn)
-        {
-            Console.WriteLine("Recalculating inventory from transactions...");
-
-            // Get all items from Azure
-            var items = new DataTable();
-            using (var cmd = new SqlCommand("SELECT itemID FROM ITEM", azureConn))
-            using (var reader = cmd.ExecuteReader())
-            {
-                items.Load(reader);
-            }
-
-            using var transaction = azureConn.BeginTransaction();
-            try
-            {
-                foreach (DataRow item in items.Rows)
-                {
-                    var itemID = item["itemID"];
-
-                    // Calculate total sold from invoice items (type 1 = invoice/sale)
-                    var soldSql = @"SELECT COALESCE(SUM(ii.quantity), 0) 
-                                   FROM INVOICEITEM ii
-                                   INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
-                                   WHERE ii.itemID = @itemID AND iq.type = 1";
-
-                    int totalSold = 0;
-                    using (var soldCmd = new SqlCommand(soldSql, azureConn, transaction))
-                    {
-                        soldCmd.Parameters.AddWithValue("@itemID", itemID);
-                        totalSold = Convert.ToInt32(soldCmd.ExecuteScalar());
-                    }
-
-                    // Get initial stock (you might want to track this separately)
-                    // For now, we'll use current stockQuantity + stockSold as initial
-                    var getCurrentSql = "SELECT stockQuantity, stockSold FROM ITEM WHERE itemID = @itemID";
-                    int currentQty = 0;
-                    int currentSold = 0;
-                    using (var getCurrentCmd = new SqlCommand(getCurrentSql, azureConn, transaction))
-                    {
-                        getCurrentCmd.Parameters.AddWithValue("@itemID", itemID);
-                        using var reader = getCurrentCmd.ExecuteReader();
-                        if (reader.Read())
-                        {
-                            currentQty = reader.GetInt32(0);
-                            currentSold = reader.GetInt32(1);
-                        }
-                    }
-
-                    // Calculate initial stock
-                    int initialStock = currentQty + currentSold;
-
-                    // Update item with recalculated values
-                    var updateSql = @"UPDATE ITEM 
-                                     SET stockSold = @sold, 
-                                         stockQuantity = @quantity 
-                                     WHERE itemID = @itemID";
-                    using var updateCmd = new SqlCommand(updateSql, azureConn, transaction);
-                    updateCmd.Parameters.AddWithValue("@sold", totalSold);
-                    updateCmd.Parameters.AddWithValue("@quantity", Math.Max(0, initialStock - totalSold));
-                    updateCmd.Parameters.AddWithValue("@itemID", itemID);
-                    updateCmd.ExecuteNonQuery();
-
-                    Console.WriteLine($"[ITEM {itemID}] Recalculated: Initial={initialStock}, Sold={totalSold}, Remaining={Math.Max(0, initialStock - totalSold)}");
-                }
-
-                // Now sync calculated quantities back to local
-                SyncInventoryToLocal(sqliteConn, azureConn, transaction);
-
-                transaction.Commit();
-            }
-            catch (Exception ex)
-            {
-                transaction.Rollback();
-                throw new Exception($"Failed to recalculate inventory: {ex.Message}", ex);
-            }
-        }
-
-        private static void SyncInventoryToLocal(SqliteConnection sqliteConn, SqlConnection azureConn, SqlTransaction transaction)
-        {
-            // Pull the recalculated inventory from Azure to local
-            var items = new DataTable();
-            using (var cmd = new SqlCommand("SELECT itemID, stockQuantity, stockSold FROM ITEM", azureConn, transaction))
-            using (var reader = cmd.ExecuteReader())
-            {
-                items.Load(reader);
-            }
-
-            foreach (DataRow item in items.Rows)
-            {
-                var updateSql = "UPDATE ITEM SET stockQuantity = @qty, stockSold = @sold WHERE itemID = @id";
-                using var updateCmd = new SqliteCommand(updateSql, sqliteConn);
-                updateCmd.Parameters.AddWithValue("@qty", item["stockQuantity"]);
-                updateCmd.Parameters.AddWithValue("@sold", item["stockSold"]);
-                updateCmd.Parameters.AddWithValue("@id", item["itemID"]);
-                updateCmd.ExecuteNonQuery();
-            }
-
-            Console.WriteLine("Synced recalculated inventory to local database");
-        }
 
         private static DataTable GetTableData(SqliteConnection connection, string tableName, string[] columns)
         {
