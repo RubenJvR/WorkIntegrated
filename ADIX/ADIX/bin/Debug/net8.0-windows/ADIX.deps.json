@@ -9,6 +9,7 @@
       "ADIX/1.0.0": {
         "dependencies": {
           "DotNetProjects.WpfToolkit.DataVisualization": "6.1.94",
+          "LiveCharts.Wpf": "0.9.7",
           "LiveChartsCore.SkiaSharpView.WPF": "2.0.0-rc6.1",
           "Microsoft.Data.SqlClient": "6.1.2",
           "Microsoft.Data.Sqlite.Core": "9.0.8",
@@ -117,6 +118,25 @@
           "lib/net8.0/iTextSharp.LGPLv2.Core.dll": {
             "assemblyVersion": "3.7.7.0",
             "fileVersion": "3.7.7.0"
+          }
+        }
+      },
+      "LiveCharts/0.9.7": {
+        "runtime": {
+          "lib/net45/LiveCharts.dll": {
+            "assemblyVersion": "0.9.7.0",
+            "fileVersion": "0.9.7.0"
+          }
+        }
+      },
+      "LiveCharts.Wpf/0.9.7": {
+        "dependencies": {
+          "LiveCharts": "0.9.7"
+        },
+        "runtime": {
+          "lib/net45/LiveCharts.Wpf.dll": {
+            "assemblyVersion": "0.9.7.0",
+            "fileVersion": "0.9.7.0"
           }
         }
       },
@@ -995,6 +1015,20 @@
       "sha512": "sha512-lmLlUZHBGPVsnd0jZd3zkiGMKESy3CX+q9RMJWMl4vWSWwqI2V85h5ATHJNGRD5Ke85L2aUW55JypSJWls5PpQ==",
       "path": "itextsharp.lgplv2.core/3.7.7",
       "hashPath": "itextsharp.lgplv2.core.3.7.7.nupkg.sha512"
+    },
+    "LiveCharts/0.9.7": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-p4xyBrUaNNfkWZSNsIle0r51cyVyFg0Yi0uBRZM5GQtdFiA/7guZHlffFyNUILIdux10Ch2hUaJpcZENVU9aaQ==",
+      "path": "livecharts/0.9.7",
+      "hashPath": "livecharts.0.9.7.nupkg.sha512"
+    },
+    "LiveCharts.Wpf/0.9.7": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-lv6YZoK0B4yWykMq5b9grZXtIbTj+OWu4sVN9GDpdgV6zffu64m4d5CW8KSjfSl9rB8VU649x1NZvhoU67hCDg==",
+      "path": "livecharts.wpf/0.9.7",
+      "hashPath": "livecharts.wpf.0.9.7.nupkg.sha512"
     },
     "LiveChartsCore/2.0.0-rc6.1": {
       "type": "package",

@@ -79,7 +79,7 @@
             <StackPanel>
                 <!-- Logo -->
                 <Border x:Name="LogoBorder" Height="120" Margin="10,10,10,10" CornerRadius="5" Visibility="Visible">
-                    <Image Source="/Image/loggo.png" Width="180" Height="90" Stretch="Uniform"/>
+                    <Image Source="/Image/ADIX_LOGO.png" Width="180" Height="90" Stretch="Uniform"/>
                 </Border>
 
                 <!-- Collapse/Expand Button - Now below logo -->

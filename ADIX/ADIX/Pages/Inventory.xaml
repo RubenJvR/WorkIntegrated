@@ -274,9 +274,7 @@
             </Border>
 
             <!-- Inventory Table -->
-            <ScrollViewer Grid.Row="12" Margin="0,0,0,10"
-              HorizontalScrollBarVisibility="Auto"
-              VerticalScrollBarVisibility="Auto">
+            <Border Grid.Row="12" Margin="0,0,0,10" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1" Height="300">
                 <DataGrid x:Name="InventoryGrid"
               AutoGenerateColumns="False"
               IsReadOnly="False"
@@ -287,12 +285,13 @@
               BorderThickness="1"
               HeadersVisibility="Column"
               CanUserAddRows="True"
+              CanUserDeleteRows="False"
               RowHeight="35"
               ColumnHeaderHeight="40"
               FontSize="14"
-              Height="300"
               SelectionMode="Single"
-              SelectionUnit="FullRow">
+              SelectionUnit="FullRow"
+              AlternatingRowBackground="#5A5A5A">
 
                     <!-- Column Header Styling -->
                     <DataGrid.ColumnHeaderStyle>
@@ -304,6 +303,7 @@
                             <Setter Property="BorderThickness" Value="0.5"/>
                             <Setter Property="HorizontalContentAlignment" Value="Center"/>
                             <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            <Setter Property="Padding" Value="5"/>
                         </Style>
                     </DataGrid.ColumnHeaderStyle>
 
@@ -315,36 +315,165 @@
                             <Setter Property="Padding" Value="5,2"/>
                             <Setter Property="HorizontalContentAlignment" Value="Center"/>
                             <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="Background" Value="Transparent"/>
                             <Style.Triggers>
-                                <!-- Keep dark theme on selection -->
                                 <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="#2D2D2D"/>
+                                    <Setter Property="Background" Value="#6A6A6A"/>
                                     <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="BorderBrush" Value="#4AA902"/>
                                 </Trigger>
                             </Style.Triggers>
                         </Style>
                     </DataGrid.CellStyle>
 
+                    <!-- Row Styling -->
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Background" Value="#4F4F4F"/>
+                            <Setter Property="Foreground" Value="White"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#6A6A6A"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#5A5A5A"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+
                     <!-- Columns -->
                     <DataGrid.Columns>
                         <!-- Inventory -->
-                        <DataGridTextColumn Header="Item Group" Binding="{Binding ItemGroup}" Width="150"/>
-                        <DataGridTextColumn Header="Item Name" Binding="{Binding ItemName}" Width="150"/>
-                        <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="80"/>
-                        <DataGridTextColumn Header="Opening Stock Quantity" Binding="{Binding OpeningStockQuantity}" Width="200"/>
-                        <DataGridTextColumn Header="Stock Received" Binding="{Binding StockReceived}" Width="150"/>
-                        <DataGridTextColumn Header="Stock Sold" Binding="{Binding StockSold}" Width="150"/>
-                        <DataGridTextColumn Header="Balance Stock" Binding="{Binding BalanceStock}" Width="150"/>
-                        <DataGridTextColumn Header="Stock Returned" Binding="{Binding StockReturned}" Width="150"/>
-                        <DataGridTextColumn Header="Stock Refunded" Binding="{Binding StockRefunded}" Width="150"/>
-                        <DataGridTextColumn Header="Cost Price" Binding="{Binding CostPrice}" Width="150"/>
-                        <DataGridTextColumn Header="Retail Price" Binding="{Binding RetailPrice}" Width="150"/>
-                        <DataGridTextColumn Header="Cost Of Business Workings" Binding="{Binding CostOfBusinessWorkings}" Width="190"/>
-                        <DataGridTextColumn Header="Returned Stock Unusable" Binding="{Binding ReturnedStockUnusable}" Width="190"/>
-                        <DataGridTextColumn Header="Loss" Binding="{Binding Loss}" Width="110"/>
+                        <DataGridTextColumn Header="Item Group" Binding="{Binding ItemGroup}" Width="150" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Item Name" Binding="{Binding ItemName}" Width="150" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="80" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Opening Stock Quantity" Binding="{Binding OpeningStockQuantity}" Width="200" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Stock Received" Binding="{Binding StockReceived}" Width="150" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Stock Sold" Binding="{Binding StockSold}" Width="150" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Balance Stock" Binding="{Binding BalanceStock}" Width="150" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Stock Returned" Binding="{Binding StockReturned}" Width="150" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Stock Refunded" Binding="{Binding StockRefunded}" Width="150" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Cost Price" Binding="{Binding CostPrice}" Width="150" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Retail Price" Binding="{Binding RetailPrice}" Width="150" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Cost Of Business Workings" Binding="{Binding CostOfBusinessWorkings}" Width="190" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Returned Stock Unusable" Binding="{Binding ReturnedStockUnusable}" Width="190" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Loss" Binding="{Binding Loss}" Width="110" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
                     </DataGrid.Columns>
                 </DataGrid>
-            </ScrollViewer>
+            </Border>
             <StackPanel Grid.Row="14" Orientation="Horizontal"
             HorizontalAlignment="Center" Margin="0,10,0,0">
 

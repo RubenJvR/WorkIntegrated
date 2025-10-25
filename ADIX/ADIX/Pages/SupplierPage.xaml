@@ -311,29 +311,25 @@
 
 
 
-
-
-
-
-
             <!-- Suppliers Table -->
-            <ScrollViewer Grid.Row="12" Margin="0,10,0,10"
-                          HorizontalScrollBarVisibility="Auto"
-                          VerticalScrollBarVisibility="Auto">
+            <Border Grid.Row="12" Margin="0,10,0,10" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1" Height="288">
                 <DataGrid x:Name="SupplierGrid"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="False"
-                          Background="#4F4F4F"
-                          Foreground="White"
-                          GridLinesVisibility="All"
-                          BorderBrush="Black"
-                          BorderThickness="1"
-                          HeadersVisibility="Column"
-                          CanUserAddRows="True"
-                          RowHeight="35"
-                          ColumnHeaderHeight="40"
-                          FontSize="14"
-                          Height="178">
+              AutoGenerateColumns="False"
+              IsReadOnly="False"
+              Background="#4F4F4F"
+              Foreground="White"
+              GridLinesVisibility="All"
+              BorderBrush="Black"
+              BorderThickness="1"
+              HeadersVisibility="Column"
+              CanUserAddRows="True"
+              CanUserDeleteRows="False"
+              RowHeight="35"
+              ColumnHeaderHeight="40"
+              FontSize="14"
+              AlternatingRowBackground="#5A5A5A">
+
+                    <!-- Column Header Styling -->
                     <DataGrid.ColumnHeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="Background" Value="#2D2D2D"/>
@@ -343,8 +339,11 @@
                             <Setter Property="BorderThickness" Value="0.5"/>
                             <Setter Property="HorizontalContentAlignment" Value="Center"/>
                             <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            <Setter Property="Padding" Value="5"/>
                         </Style>
                     </DataGrid.ColumnHeaderStyle>
+
+                    <!-- Cell Styling -->
                     <DataGrid.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="BorderBrush" Value="Black"/>
@@ -352,41 +351,167 @@
                             <Setter Property="Padding" Value="5,2"/>
                             <Setter Property="HorizontalContentAlignment" Value="Center"/>
                             <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#6A6A6A"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="BorderBrush" Value="#4AA902"/>
+                                </Trigger>
+                            </Style.Triggers>
                         </Style>
                     </DataGrid.CellStyle>
+
+                    <!-- Row Styling -->
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Background" Value="#4F4F4F"/>
+                            <Setter Property="Foreground" Value="White"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#6A6A6A"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#5A5A5A"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Supplier/Consignor" Binding="{Binding Supplier}" Width="200"/>
-                        <DataGridTextColumn Header="SKU" Binding="{Binding Quantity}" Width="70"/>
-                        <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="230"/>
-                        <DataGridTextColumn Header="Stock Received" Binding="{Binding StockReceived}" Width="120"/>
-                        <DataGridTextColumn Header="Stock Balance" Binding="{Binding StockBalance}" Width="150"/>
-                        <DataGridTextColumn Header="Amount Sold" Binding="{Binding AmountSold}" Width="100"/>
-                        <DataGridTextColumn Header="Cost Price" Binding="{Binding CostPrice}" Width="130"/>
-                        <DataGridTextColumn Header="Selling Price" Binding="{Binding SellingPrice}" Width="180"/>
-                        <DataGridTextColumn Header="Total Sales" Binding="{Binding TotalSales}" Width="150"/>
-                        <DataGridTextColumn Header="Profit" Binding="{Binding Profit}" Width="150"/>
-                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="150"/>
-                        <DataGridTextColumn Header="Amount Paid" Binding="{Binding AmountPaid}" Width="150"/>
-                        <DataGridTextColumn Header="Total to pay" Binding="{Binding TotalToPay}" Width="150"/>
-                        <DataGridTextColumn Header="Invoice Ref" Binding="{Binding InvoiceRef}" Width="150"/>
+                        <DataGridTextColumn Header="Supplier/Consignor" Binding="{Binding Supplier}" Width="200" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="SKU" Binding="{Binding Quantity}" Width="70" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="230" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Stock Received" Binding="{Binding StockReceived}" Width="120" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Stock Balance" Binding="{Binding StockBalance}" Width="150" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Amount Sold" Binding="{Binding AmountSold}" Width="100" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Cost Price" Binding="{Binding CostPrice}" Width="130" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Selling Price" Binding="{Binding SellingPrice}" Width="180" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Total Sales" Binding="{Binding TotalSales}" Width="150" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Profit" Binding="{Binding Profit}" Width="150" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="150" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Amount Paid" Binding="{Binding AmountPaid}" Width="150" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Total to pay" Binding="{Binding TotalToPay}" Width="150" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Invoice Ref" Binding="{Binding InvoiceRef}" Width="150" IsReadOnly="False">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Padding" Value="5"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
                     </DataGrid.Columns>
                 </DataGrid>
-            </ScrollViewer>
+            </Border>
 
-           
             <!-- Bottom Buttons -->
             <StackPanel Grid.Row="14" Orientation="Horizontal"
                         HorizontalAlignment="Center" Margin="0,10,0,0">
-                
+
                 <Button Content="Delete Supplier" Width="150" Height="40"
-                        Background="Red" Foreground="White" FontWeight="Bold" Margin="5"/>
-                
+                Background="Red" Foreground="White" FontWeight="Bold" Margin="5"
+                Click="DeleteSupplierButton_Click"/>
+
                 <Button Content="Add Supplier" Width="150" Height="40"
-                        Background="Green" Foreground="White" FontWeight="Bold" Margin="5"/>
-                
+        Background="Green" Foreground="White" FontWeight="Bold" Margin="5"
+        Click="AddSupplierButton_Click"/>
+
                 <Button Content="Edit Supplier" Width="150" Height="40"
-                        Background="#4F4F4F" Foreground="White" Margin="5"/>
-               
+        Background="#4F4F4F" Foreground="White" Margin="5"
+        Click="EditSupplierButton_Click"/>
+
             </StackPanel>
         </Grid>
     </Grid>
