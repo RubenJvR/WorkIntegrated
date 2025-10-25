@@ -57,6 +57,7 @@ namespace ADIX.Repositories
 
             return items;
         }
+
         public void RefreshItemsFromSync()
         {
             try
@@ -82,6 +83,7 @@ namespace ADIX.Repositories
                 Console.WriteLine($"Error refreshing items from sync: {ex.Message}");
             }
         }
+
         public POSItem GetItemById(int itemId)
         {
             try
@@ -156,32 +158,29 @@ namespace ADIX.Repositories
             return staff;
         }
 
-        public int CreateInvoice(string customerName, int staffId, string paymentMethod,
+        public long CreateInvoice(string customerName, int staffId, string paymentMethod,
             bool paymentReceived, decimal vatAmount, string address, int type, decimal totalAmount)
         {
             try
             {
                 using var conn = new SqliteConnection(_connectionString);
                 conn.Open();
-                string paymentStatus = "";
+
+                string paymentStatus = paymentReceived ? "Paid" : "Not Paid";
+
                 // Create or get customer
                 int customerId = GetOrCreateCustomer(conn, customerName, address);
-                if (paymentReceived)
-                {
-                    paymentStatus= "Paid";
-                }
-                else
-                {
-                    paymentStatus = "Not Paid";
-                }
-                
-                // Create invoice with synced = 0 (not synced yet)
+
+                // FIXED: Use Database.GetNextInvoiceNumber() for timestamp-based unique IDs
+                long invoiceId = Database.GetNextInvoiceNumber();
+
+                // Create invoice with synced = 0 (not synced yet) and explicit ID
                 string query = @"
-                    INSERT INTO INVOICEQUOTE (date, type, totalAmount, customerID, staffID, paymentMethod, paymentStatus, synced)
-                    VALUES (@date, @type, @totalAmount, @customerID, @staffID, @paymentMethod, @paymentStatus,0);
-                    SELECT last_insert_rowid();";
+                    INSERT INTO INVOICEQUOTE (invoiceQuoteID, date, type, totalAmount, customerID, staffID, paymentMethod, paymentStatus, synced, lastModified)
+                    VALUES (@invoiceID, @date, @type, @totalAmount, @customerID, @staffID, @paymentMethod, @paymentStatus, 0, CURRENT_TIMESTAMP)";
 
                 using var cmd = new SqliteCommand(query, conn);
+                cmd.Parameters.AddWithValue("@invoiceID", invoiceId);
                 cmd.Parameters.AddWithValue("@date", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                 cmd.Parameters.AddWithValue("@type", type);
                 cmd.Parameters.AddWithValue("@paymentMethod", paymentMethod);
@@ -189,9 +188,12 @@ namespace ADIX.Repositories
                 cmd.Parameters.AddWithValue("@totalAmount", (double)totalAmount);
                 cmd.Parameters.AddWithValue("@customerID", customerId);
                 cmd.Parameters.AddWithValue("@staffID", staffId);
+                cmd.ExecuteNonQuery();
 
-                var result = cmd.ExecuteScalar();
-                return Convert.ToInt32(result);
+                // Mark sync required
+                Database.MarkSyncRequired();
+
+                return invoiceId;
             }
             catch (Exception ex)
             {
@@ -199,7 +201,7 @@ namespace ADIX.Repositories
             }
         }
 
-        public void AddInvoiceItems(int invoiceId, List<POSItem> items)
+        public void AddInvoiceItems(long invoiceId, List<POSItem> items)
         {
             SqliteConnection conn = null;
             SqliteTransaction transaction = null;
@@ -215,20 +217,24 @@ namespace ADIX.Repositories
                 {
                     if (item.Quantity > 0)
                     {
-                        // Add invoice item with synced = 0
+                        // Generate unique invoice item ID (timestamp-based)
+                        long invoiceItemId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+                        // Small delay to ensure uniqueness if multiple items
+                        System.Threading.Thread.Sleep(1);
+
+                        // Add invoice item with synced = 0 and explicit ID
                         string itemQuery = @"
-                    INSERT INTO INVOICEITEM (quantity, priceAtSale, itemID, invoiceQuoteID, synced)
-                    VALUES (@quantity, @priceAtSale, @itemID, @invoiceQuoteID, 0)";
+                            INSERT INTO INVOICEITEM (invoiceItemID, quantity, priceAtSale, itemID, invoiceQuoteID, synced, lastModified)
+                            VALUES (@invoiceItemID, @quantity, @priceAtSale, @itemID, @invoiceQuoteID, 0, CURRENT_TIMESTAMP)";
 
                         using var itemCmd = new SqliteCommand(itemQuery, conn, transaction);
+                        itemCmd.Parameters.AddWithValue("@invoiceItemID", invoiceItemId);
                         itemCmd.Parameters.AddWithValue("@quantity", item.Quantity);
                         itemCmd.Parameters.AddWithValue("@priceAtSale", (double)item.Price);
                         itemCmd.Parameters.AddWithValue("@itemID", item.ItemID);
                         itemCmd.Parameters.AddWithValue("@invoiceQuoteID", invoiceId);
                         itemCmd.ExecuteNonQuery();
-
-                        // REMOVED: Local stock update - let sync handle this via RecalculateInventory
-                        // This prevents double-counting when sync recalculates from transactions
                     }
                 }
 
@@ -295,32 +301,24 @@ namespace ADIX.Repositories
             using var insertCmd = new SqliteCommand(insertQuery, conn);
             insertCmd.Parameters.AddWithValue("@name", customerName);
 
-            return Convert.ToInt32(insertCmd.ExecuteScalar());
+            int customerId = Convert.ToInt32(insertCmd.ExecuteScalar());
+
+            // Mark sync required for new customer
+            Database.MarkSyncRequired();
+
+            return customerId;
         }
 
-        public int GetNextInvoiceNumber()
+        public long GetNextInvoiceNumber()
         {
-            try
-            {
-                using var conn = new SqliteConnection(_connectionString);
-                conn.Open();
-
-                string query = "SELECT COALESCE(MAX(invoiceQuoteID), 0) + 1 FROM INVOICEQUOTE";
-                using var cmd = new SqliteCommand(query, conn);
-
-                return Convert.ToInt32(cmd.ExecuteScalar());
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error getting invoice number: {ex.Message}", ex);
-            }
+            // FIXED: Use Database.GetNextInvoiceNumber() instead of local sequential logic
+            return Database.GetNextInvoiceNumber();
         }
-
 
         /// <summary>
         /// Create a refund invoice
         /// </summary>
-        public int CreateRefund(string customerName, int staffId, decimal vatAmount, string address, decimal totalAmount)
+        public long CreateRefund(string customerName, int staffId, decimal vatAmount, string address, decimal totalAmount)
         {
             try
             {
@@ -330,22 +328,27 @@ namespace ADIX.Repositories
                 // Create or get customer
                 int customerId = GetOrCreateCustomer(conn, customerName, address);
 
-                // Create refund invoice with type = 1 (same as sale, but we'll handle negative quantities in sync)
-                // Total amount is stored as positive, but quantities will be negative
+                // FIXED: Use timestamp-based ID
+                long refundId = Database.GetNextInvoiceNumber();
+
+                // Create refund invoice with type = 1 (same as sale, but with negative quantities)
                 string query = @"
-                INSERT INTO INVOICEQUOTE (date, type, totalAmount, customerID, staffID, synced)
-                VALUES (@date, @type, @totalAmount, @customerID, @staffID, 0);
-                SELECT last_insert_rowid();";
+                    INSERT INTO INVOICEQUOTE (invoiceQuoteID, date, type, totalAmount, customerID, staffID, synced, lastModified)
+                    VALUES (@invoiceID, @date, @type, @totalAmount, @customerID, @staffID, 0, CURRENT_TIMESTAMP)";
 
                 using var cmd = new SqliteCommand(query, conn);
+                cmd.Parameters.AddWithValue("@invoiceID", refundId);
                 cmd.Parameters.AddWithValue("@date", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                 cmd.Parameters.AddWithValue("@type", 1); // Type 1 = Sale/Refund (distinguished by negative quantities)
-                cmd.Parameters.AddWithValue("@totalAmount", (double)Math.Abs(totalAmount)); // Store as positive
+                cmd.Parameters.AddWithValue("@totalAmount", (double)Math.Abs(totalAmount));
                 cmd.Parameters.AddWithValue("@customerID", customerId);
                 cmd.Parameters.AddWithValue("@staffID", staffId);
+                cmd.ExecuteNonQuery();
 
-                var result = cmd.ExecuteScalar();
-                return Convert.ToInt32(result);
+                // Mark sync required
+                Database.MarkSyncRequired();
+
+                return refundId;
             }
             catch (Exception ex)
             {
@@ -356,7 +359,7 @@ namespace ADIX.Repositories
         /// <summary>
         /// Add refund items to invoice (with negative quantities)
         /// </summary>
-        public void AddRefundItems(int refundId, List<POSItem> items)
+        public void AddRefundItems(long refundId, List<POSItem> items)
         {
             SqliteConnection conn = null;
             SqliteTransaction transaction = null;
@@ -372,19 +375,23 @@ namespace ADIX.Repositories
                 {
                     if (item.Quantity > 0)
                     {
+                        // Generate unique invoice item ID
+                        long invoiceItemId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                        System.Threading.Thread.Sleep(1); // Ensure uniqueness
+
                         // Use negative quantity for refunds
                         string itemQuery = @"
-                    INSERT INTO INVOICEITEM (quantity, priceAtSale, itemID, invoiceQuoteID, synced)
-                    VALUES (@quantity, @priceAtSale, @itemID, @invoiceQuoteID, 0)";
+                            INSERT INTO INVOICEITEM (invoiceItemID, quantity, priceAtSale, itemID, invoiceQuoteID, synced, lastModified)
+                            VALUES (@invoiceItemID, @quantity, @priceAtSale, @itemID, @invoiceQuoteID, 0, CURRENT_TIMESTAMP)";
 
                         using var itemCmd = new SqliteCommand(itemQuery, conn, transaction);
+                        itemCmd.Parameters.AddWithValue("@invoiceItemID", invoiceItemId);
                         itemCmd.Parameters.AddWithValue("@quantity", -item.Quantity); // Negative for refund
                         itemCmd.Parameters.AddWithValue("@priceAtSale", (double)item.Price);
                         itemCmd.Parameters.AddWithValue("@itemID", item.ItemID);
                         itemCmd.Parameters.AddWithValue("@invoiceQuoteID", refundId);
                         itemCmd.ExecuteNonQuery();
 
-                        // REMOVED: Local stock update - let sync handle this via RecalculateInventory
                         Console.WriteLine($"[REFUND] Processed refund for item {item.ItemID}: {item.Quantity} units");
                     }
                 }
@@ -485,8 +492,6 @@ namespace ADIX.Repositories
             }
         }
 
-
-        // Test connection method
         public bool TestConnection()
         {
             try
@@ -549,7 +554,6 @@ namespace ADIX.Repositories
 
             return await Database.CheckAndSyncAsync();
         }
-
     }
 
     public class StaffMember

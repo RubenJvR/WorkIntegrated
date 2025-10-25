@@ -13,6 +13,25 @@ namespace ADIX
 {
     public static class Database
     {
+        private static string _deviceId;
+        public static void InitializeDeviceId()
+        {
+            // Generate or load unique device ID
+            string deviceIdFile = "device_id.txt";
+
+            if (File.Exists(deviceIdFile))
+            {
+                _deviceId = File.ReadAllText(deviceIdFile).Trim();
+            }
+            else
+            {
+                _deviceId = Guid.NewGuid().ToString("N").Substring(0, 8); // Short unique ID
+                File.WriteAllText(deviceIdFile, _deviceId);
+            }
+
+            Console.WriteLine($"Device ID: {_deviceId}");
+        }
+
         private const string SqliteConnectionString = "Data Source=ADIX.db";
         public static string AzureSqlConnectionString { get; set; } = "Server=tcp:adixserver.database.windows.net,1433;Initial Catalog=ADIXDB;User ID=adixAdmin;Password=A$12fe34dc56;Encrypt=True;";
         public static DatabaseType CurrentDatabaseType { get; set; } = DatabaseType.SQLite;
@@ -115,7 +134,55 @@ namespace ADIX
 
         public static void Initialize()
         {
+            InitializeDeviceId();
             InitializeAsync().Wait();
+        }
+        public static long GetNextInvoiceNumber()
+        {
+            try
+            {
+                using var connection = new SqliteConnection(SqliteConnectionString);
+                connection.Open();
+
+                // Generate unique ID: deviceId (8 chars) + timestamp (milliseconds)
+                // Example: ABC12345_1704123456789
+                long timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+                // For display purposes, also get a sequential number
+                string query = "SELECT COALESCE(MAX(invoiceQuoteID), 0) + 1 FROM INVOICEQUOTE";
+                using var cmd = new SqliteCommand(query, connection);
+                long sequentialId = Convert.ToInt64(cmd.ExecuteScalar());
+
+                // Use timestamp-based ID to avoid collisions
+                // This ensures each device generates unique IDs even when offline
+                return timestamp;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error getting invoice number: {ex.Message}", ex);
+            }
+        }
+
+        public static long GetNextItemID()
+        {
+            try
+            {
+                using var connection = new SqliteConnection(SqliteConnectionString);
+                connection.Open();
+
+                // Use timestamp-based ID to avoid collisions between offline devices
+                long timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+                // For items, use a smaller range to keep IDs manageable
+                // Extract last 9 digits (still unique enough)
+                long itemId = timestamp % 1000000000;
+
+                return itemId;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error getting item ID: {ex.Message}", ex);
+            }
         }
 
         private static void InitializeSQLite()
@@ -171,7 +238,7 @@ namespace ADIX
             string checkQuery = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'SELLER'";
             using var checkCmd = new SqlCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-            
+         
             if (result == null)
             {
                 CreateAzureSQLTables(connection);
@@ -200,8 +267,6 @@ namespace ADIX
         private static void CreateSQLiteTables(SqliteConnection connection)
         {
             string createTablesSql = @"
-
- 
 
         CREATE TABLE IF NOT EXISTS SELLER(
             sellerID INTEGER NOT NULL PRIMARY KEY,
@@ -385,7 +450,7 @@ namespace ADIX
         );
 
         CREATE TABLE INVOICEQUOTE(
-            invoiceQuoteID INT NOT NULL PRIMARY KEY,
+            invoiceQuoteID BIGINT NOT NULL PRIMARY KEY,
             date DATETIME NOT NULL,
             type INT NOT NULL CHECK(type IN (1,2)),
             totalAmount FLOAT NOT NULL,
@@ -409,11 +474,11 @@ namespace ADIX
 
        
         CREATE TABLE INVOICEITEM(
-            invoiceItemID INT NOT NULL PRIMARY KEY,
+            invoiceItemID BIGINT NOT NULL PRIMARY KEY,
             quantity INT NOT NULL,
             priceAtSale FLOAT NOT NULL CHECK(priceAtSale >= 0),
             itemID INT NOT NULL,
-            invoiceQuoteID INT NOT NULL,
+            invoiceQuoteID BIGINT NOT NULL,
             lastModified DATETIME DEFAULT GETUTCDATE(),
             FOREIGN KEY(invoiceQuoteID) REFERENCES INVOICEQUOTE(invoiceQuoteID),
             FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
@@ -694,14 +759,14 @@ namespace ADIX
             {
                 foreach (DataRow localRow in localData.Rows)
                 {
-                    var itemID = localRow["itemID"];
+                    var itemID = Convert.ToInt32(localRow["itemID"]);
                     var azureRow = azureData.AsEnumerable()
                         .FirstOrDefault(r => r["itemID"].ToString() == itemID.ToString());
 
                     if (azureRow == null)
                     {
                         // New item – insert with initial inventory from local
-                        var localInventory = GetLocalInventory(sqliteConn, Convert.ToInt32(itemID));
+                        var localInventory = GetLocalInventory(sqliteConn, itemID);
                         var insertSql = @"
                     INSERT INTO ITEM 
                     (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified)
@@ -725,26 +790,89 @@ namespace ADIX
                     }
                     else
                     {
-                        // Update only master data (NOT inventory)
-                        var updateSql = @"
-                    UPDATE ITEM 
-                    SET description=@description, 
-                        retailPrice=@retailPrice, 
-                        costPrice=@costPrice, 
-                        supplierID=@supplierID, 
-                        sellerID=@sellerID,
-                        lastModified=@lastModified
-                    WHERE itemID=@itemID";
+                        // CONFLICT DETECTION: Check if it's the same item or different items with same ID
+                        string localDesc = localRow["description"]?.ToString() ?? "";
+                        string azureDesc = azureRow["description"]?.ToString() ?? "";
 
-                        using var cmd = new SqlCommand(updateSql, azureConn, transaction);
-                        cmd.Parameters.AddWithValue("@itemID", itemID);
-                        cmd.Parameters.AddWithValue("@description", localRow["description"]);
-                        cmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
-                        cmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
-                        cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
-                        cmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
-                        cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
-                        cmd.ExecuteNonQuery();
+                        var localModified = DateTime.Parse(localRow["lastModified"].ToString());
+                        var azureModified = DateTime.Parse(azureRow["lastModified"].ToString());
+
+                        // If descriptions are significantly different, this is a collision!
+                        if (!localDesc.Equals(azureDesc, StringComparison.OrdinalIgnoreCase))
+                        {
+                            Console.WriteLine($"[CONFLICT] Item ID {itemID} collision detected!");
+                            Console.WriteLine($"  Local: {localDesc}");
+                            Console.WriteLine($"  Azure: {azureDesc}");
+
+                            // Get local inventory for the conflicting item
+                            var conflictInventory = GetLocalInventory(sqliteConn, itemID);
+
+                            // Generate new ID for local item
+                            int newItemId = Convert.ToInt32(GetNextItemID());
+
+                            // Update local item with new ID
+                            using var updateLocalCmd = new SqliteCommand(
+                                "UPDATE ITEM SET itemID = @newId WHERE itemID = @oldId",
+                                sqliteConn);
+                            updateLocalCmd.Parameters.AddWithValue("@newId", newItemId);
+                            updateLocalCmd.Parameters.AddWithValue("@oldId", itemID);
+                            updateLocalCmd.ExecuteNonQuery();
+
+                            // Update any invoice items referencing this item
+                            using var updateInvoiceItemsCmd = new SqliteCommand(
+                                "UPDATE INVOICEITEM SET itemID = @newId WHERE itemID = @oldId",
+                                sqliteConn);
+                            updateInvoiceItemsCmd.Parameters.AddWithValue("@newId", newItemId);
+                            updateInvoiceItemsCmd.Parameters.AddWithValue("@oldId", itemID);
+                            updateInvoiceItemsCmd.ExecuteNonQuery();
+
+                            // Now insert with new ID
+                            var insertConflictSql = @"
+                        INSERT INTO ITEM 
+                        (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified)
+                        VALUES 
+                        (@itemID, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified)";
+
+                            using var conflictCmd = new SqlCommand(insertConflictSql, azureConn, transaction);
+                            conflictCmd.Parameters.AddWithValue("@itemID", newItemId);
+                            conflictCmd.Parameters.AddWithValue("@description", localRow["description"]);
+                            conflictCmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
+                            conflictCmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
+                            conflictCmd.Parameters.AddWithValue("@stockQuantity", conflictInventory.stockQuantity);
+                            conflictCmd.Parameters.AddWithValue("@stockSold", conflictInventory.stockSold);
+                            conflictCmd.Parameters.AddWithValue("@stockRecieved", conflictInventory.stockRecieved);
+                            conflictCmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
+                            conflictCmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
+                            conflictCmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
+                            conflictCmd.ExecuteNonQuery();
+
+                            Console.WriteLine($"[CONFLICT RESOLVED] Reassigned local item to new ID: {newItemId}");
+                        }
+                        else if (localModified > azureModified)
+                        {
+                            // Same item, local is newer - update Azure (prices, etc.)
+                            var updateSql = @"
+                        UPDATE ITEM 
+                        SET description=@description, 
+                            retailPrice=@retailPrice, 
+                            costPrice=@costPrice, 
+                            supplierID=@supplierID, 
+                            sellerID=@sellerID,
+                            lastModified=@lastModified
+                        WHERE itemID=@itemID";
+
+                            using var cmd = new SqlCommand(updateSql, azureConn, transaction);
+                            cmd.Parameters.AddWithValue("@itemID", itemID);
+                            cmd.Parameters.AddWithValue("@description", localRow["description"]);
+                            cmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
+                            cmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
+                            cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
+                            cmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
+                            cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
+                            cmd.ExecuteNonQuery();
+
+                            Console.WriteLine($"[ITEM] Updated item {itemID} in Azure (local newer)");
+                        }
                     }
                 }
 
@@ -891,7 +1019,6 @@ namespace ADIX
 
         private static void SyncMasterData(SqliteConnection sqliteConn, SqlConnection azureConn, string tableName, string[] columns)
         {
-            // Get data from both databases
             var localData = GetTableData(sqliteConn, tableName, columns);
             var azureData = GetTableDataFromAzure(azureConn, tableName, columns);
 
@@ -904,12 +1031,10 @@ namespace ADIX
                     var primaryKey = azureRow[columns[0]];
                     var azureModified = DateTime.Parse(azureRow["lastModified"].ToString());
 
-                    // Find matching row in local
                     var localRow = localData.AsEnumerable().FirstOrDefault(r => r[columns[0]].ToString() == primaryKey.ToString());
 
                     if (localRow == null)
                     {
-                        // Insert new record from Azure to local
                         InsertToLocal(sqliteConn, tableName, columns, azureRow);
                         Console.WriteLine($"[{tableName}] Downloaded new record {primaryKey} from Azure");
                     }
@@ -919,7 +1044,6 @@ namespace ADIX
 
                         if (azureModified > localModified)
                         {
-                            // Azure is newer - update local (download)
                             UpdateLocal(sqliteConn, tableName, columns, azureRow);
                             Console.WriteLine($"[{tableName}] Updated local record {primaryKey} (Azure newer)");
                         }
@@ -932,12 +1056,34 @@ namespace ADIX
                     var primaryKey = localRow[columns[0]];
                     var localModified = DateTime.Parse(localRow["lastModified"].ToString());
 
-                    // Find matching row in Azure
                     var azureRow = azureData.AsEnumerable().FirstOrDefault(r => r[columns[0]].ToString() == primaryKey.ToString());
 
                     if (azureRow == null)
                     {
-                        // Insert new record to Azure
+                        // Check for duplicate (same name, different ID)
+                        if (tableName == "CUSTOMER")
+                        {
+                            var nameDuplicateCheck = @"SELECT customerID FROM CUSTOMER WHERE name = @name";
+                            using var dupCmd = new SqlCommand(nameDuplicateCheck, azureConn, transaction);
+                            dupCmd.Parameters.AddWithValue("@name", localRow["name"]);
+                            var existingId = dupCmd.ExecuteScalar();
+
+                            if (existingId != null)
+                            {
+                                // Merge: Update local to use Azure's ID
+                                Console.WriteLine($"[{tableName}] Merging duplicate customer: Local ID {primaryKey} -> Azure ID {existingId}");
+
+                                using var mergeCmd = new SqliteCommand(
+                                    "UPDATE INVOICEQUOTE SET customerID = @azureId WHERE customerID = @localId",
+                                    sqliteConn);
+                                mergeCmd.Parameters.AddWithValue("@azureId", existingId);
+                                mergeCmd.Parameters.AddWithValue("@localId", primaryKey);
+                                mergeCmd.ExecuteNonQuery();
+
+                                continue; // Skip insert
+                            }
+                        }
+
                         InsertToAzure(azureConn, transaction, tableName, columns, localRow);
                         Console.WriteLine($"[{tableName}] Uploaded new record {primaryKey} to Azure");
                     }
@@ -947,7 +1093,6 @@ namespace ADIX
 
                         if (localModified > azureModified)
                         {
-                            // Local is newer - update Azure (upload)
                             UpdateAzure(azureConn, transaction, tableName, columns, localRow);
                             Console.WriteLine($"[{tableName}] Updated Azure record {primaryKey} (local newer)");
                         }
@@ -978,41 +1123,71 @@ namespace ADIX
             {
                 foreach (DataRow invoice in localInvoices.Rows)
                 {
+                    long invoiceId = Convert.ToInt64(invoice["invoiceQuoteID"]);
+
                     // Check if invoice exists in Azure
                     var checkSql = "SELECT COUNT(*) FROM INVOICEQUOTE WHERE invoiceQuoteID = @id";
                     using var checkCmd = new SqlCommand(checkSql, azureConn, transaction);
-                    checkCmd.Parameters.AddWithValue("@id", invoice["invoiceQuoteID"]);
+                    checkCmd.Parameters.AddWithValue("@id", invoiceId);
                     var exists = (int)checkCmd.ExecuteScalar() > 0;
 
-                    if (!exists)
+                    if (exists)
                     {
-                        // Insert invoice header
-                        var insertSql = @"INSERT INTO INVOICEQUOTE 
-                    (invoiceQuoteID, date, type, totalAmount, customerID, staffID, paymentMethod, paymentStatus, lastModified) 
-                    VALUES (@id, @date, @type, @amount, @custID, @staffID, @paymentMethod, @paymentStatus, @lastModified)";
+                        // CONFLICT: Invoice ID already exists in Azure (from another device)
+                        Console.WriteLine($"[CONFLICT] Invoice {invoiceId} already exists in Azure. Generating new ID...");
 
-                        using var insertCmd = new SqlCommand(insertSql, azureConn, transaction);
-                        insertCmd.Parameters.AddWithValue("@id", invoice["invoiceQuoteID"]);
-                        insertCmd.Parameters.AddWithValue("@date", invoice["date"]);
-                        insertCmd.Parameters.AddWithValue("@type", invoice["type"]);
-                        insertCmd.Parameters.AddWithValue("@amount", invoice["totalAmount"]);
-                        insertCmd.Parameters.AddWithValue("@custID", invoice["customerID"] == DBNull.Value ? (object)DBNull.Value : invoice["customerID"]);
-                        insertCmd.Parameters.AddWithValue("@staffID", invoice["staffID"]);
-                        insertCmd.Parameters.AddWithValue("@paymentMethod", invoice["paymentMethod"] == DBNull.Value ? (object)DBNull.Value : invoice["paymentMethod"]);
-                        insertCmd.Parameters.AddWithValue("@paymentStatus", invoice["paymentStatus"] == DBNull.Value ? (object)DBNull.Value : invoice["paymentStatus"]);
-                        insertCmd.Parameters.AddWithValue("@lastModified", invoice["lastModified"]);
-                        insertCmd.ExecuteNonQuery();
+                        // Generate new unique ID for this invoice
+                        long newInvoiceId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-                        Console.WriteLine($"[INVOICE] Synced invoice {invoice["invoiceQuoteID"]} to Azure");
+                        // Update local invoice with new ID
+                        using var updateLocalCmd = new SqliteCommand(
+                            "UPDATE INVOICEQUOTE SET invoiceQuoteID = @newId WHERE invoiceQuoteID = @oldId",
+                            sqliteConn);
+                        updateLocalCmd.Parameters.AddWithValue("@newId", newInvoiceId);
+                        updateLocalCmd.Parameters.AddWithValue("@oldId", invoiceId);
+                        updateLocalCmd.ExecuteNonQuery();
 
-                        // Sync invoice items only (NO inventory adjustment here)
-                        SyncInvoiceItemsOnly(sqliteConn, azureConn, transaction, Convert.ToInt64(invoice["invoiceQuoteID"]));
+                        // Update invoice items with new ID
+                        using var updateItemsCmd = new SqliteCommand(
+                            "UPDATE INVOICEITEM SET invoiceQuoteID = @newId WHERE invoiceQuoteID = @oldId",
+                            sqliteConn);
+                        updateItemsCmd.Parameters.AddWithValue("@newId", newInvoiceId);
+                        updateItemsCmd.Parameters.AddWithValue("@oldId", invoiceId);
+                        updateItemsCmd.ExecuteNonQuery();
 
-                        // Mark as synced locally
-                        using var updateCmd = new SqliteCommand("UPDATE INVOICEQUOTE SET synced = 1 WHERE invoiceQuoteID = @id", sqliteConn);
-                        updateCmd.Parameters.AddWithValue("@id", invoice["invoiceQuoteID"]);
-                        updateCmd.ExecuteNonQuery();
+                        // Use new ID for Azure insert
+                        invoiceId = newInvoiceId;
+                        invoice["invoiceQuoteID"] = newInvoiceId;
+
+                        Console.WriteLine($"[CONFLICT RESOLVED] Reassigned to new ID: {newInvoiceId}");
                     }
+
+                    // Insert invoice header to Azure
+                    var insertSql = @"INSERT INTO INVOICEQUOTE 
+                (invoiceQuoteID, date, type, totalAmount, customerID, staffID, paymentMethod, paymentStatus, lastModified) 
+                VALUES (@id, @date, @type, @amount, @custID, @staffID, @paymentMethod, @paymentStatus, @lastModified)";
+
+                    using var insertCmd = new SqlCommand(insertSql, azureConn, transaction);
+                    insertCmd.Parameters.AddWithValue("@id", invoiceId);
+                    insertCmd.Parameters.AddWithValue("@date", invoice["date"]);
+                    insertCmd.Parameters.AddWithValue("@type", invoice["type"]);
+                    insertCmd.Parameters.AddWithValue("@amount", invoice["totalAmount"]);
+                    insertCmd.Parameters.AddWithValue("@custID", invoice["customerID"] == DBNull.Value ? (object)DBNull.Value : invoice["customerID"]);
+                    insertCmd.Parameters.AddWithValue("@staffID", invoice["staffID"]);
+                    insertCmd.Parameters.AddWithValue("@paymentMethod", invoice["paymentMethod"] == DBNull.Value ? (object)DBNull.Value : invoice["paymentMethod"]);
+                    insertCmd.Parameters.AddWithValue("@paymentStatus", invoice["paymentStatus"] == DBNull.Value ? (object)DBNull.Value : invoice["paymentStatus"]);
+                    insertCmd.Parameters.AddWithValue("@lastModified", invoice["lastModified"]);
+                    insertCmd.ExecuteNonQuery();
+
+                    Console.WriteLine($"[INVOICE] Synced invoice {invoiceId} to Azure");
+
+                    // Sync invoice items only (NO inventory adjustment here)
+                    SyncInvoiceItemsOnly(sqliteConn, azureConn, transaction, invoiceId);
+
+                    // Mark as synced locally
+                    using var updateCmd = new SqliteCommand("UPDATE INVOICEQUOTE SET synced = 1 WHERE invoiceQuoteID = @id", sqliteConn);
+                    updateCmd.Parameters.AddWithValue("@id", invoiceId);
+                    updateCmd.ExecuteNonQuery();
                 }
 
                 transaction.Commit();
