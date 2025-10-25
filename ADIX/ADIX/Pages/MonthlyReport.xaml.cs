@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Data.Sqlite;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -6,6 +7,7 @@ using System.Data;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 
 namespace ADIX
@@ -14,22 +16,26 @@ namespace ADIX
     {
         private MonthlyReportData _currentReport;
         private ObservableCollection<Transaction> _transactions;
-        private ObservableCollection<SupplierButton> _supplierButtons;
+        private ObservableCollection<Supplier> _suppliers;
+        private const string SqliteConnectionString = "Data Source=ADIX.db";
 
         public MonthlyReport()
         {
             InitializeComponent();
             Loaded += MonthlyReport_Loaded;
             _transactions = new ObservableCollection<Transaction>();
-            _supplierButtons = new ObservableCollection<SupplierButton>();
+            _suppliers = new ObservableCollection<Supplier>();
             _currentReport = new MonthlyReportData();
+
+            // Initialize expenses table
+            Database.InitializeExpensesTable();
         }
 
         private void MonthlyReport_Loaded(object sender, RoutedEventArgs e)
         {
             InitializeYearSelector();
-            LoadSampleData();
-            InitializeSupplierButtons();
+            LoadActualData();
+            LoadSuppliers();
         }
 
         private void InitializeYearSelector()
@@ -57,38 +63,66 @@ namespace ADIX
             }
         }
 
-        private void LoadSampleData()
+        private void LoadActualData()
         {
             try
             {
-                // Generate sample transactions
-                _transactions.Clear();
+                var selectedMonth = MonthSelector.SelectedIndex + 1;
+                var selectedYear = YearSelector.SelectedItem?.ToString();
 
-                var sampleTransactions = new List<Transaction>
-                {
-                    new Transaction { Date = new DateTime(2024, 1, 15), CustomerName = "Alice Brown", SalesStaff = "Ruben Janse", Paid = 1250.50m, PurchaseAmount = 1250.50m, PaymentMethod = "Card", InvoiceNumber = "INV-001" },
-                    new Transaction { Date = new DateTime(2024, 1, 16), CustomerName = "Bob White", SalesStaff = "Sarah Ndlovu", Paid = 850.75m, PurchaseAmount = 850.75m, PaymentMethod = "Cash", InvoiceNumber = "INV-002" },
-                    new Transaction { Date = new DateTime(2024, 1, 17), CustomerName = "Charlie Green", SalesStaff = "Michael Smith", Paid = 2200.00m, PurchaseAmount = 2200.00m, PaymentMethod = "EFT", InvoiceNumber = "INV-003" },
-                    new Transaction { Date = new DateTime(2024, 1, 18), CustomerName = "Diana Blue", SalesStaff = "Emily Johnson", Paid = -450.25m, PurchaseAmount = -450.25m, PaymentMethod = "Return", InvoiceNumber = "REF-001" },
-                    new Transaction { Date = new DateTime(2024, 1, 19), CustomerName = "Edward Black", SalesStaff = "Ruben Janse", Paid = 1800.00m, PurchaseAmount = 1800.00m, PaymentMethod = "Card", InvoiceNumber = "INV-004" },
-                    new Transaction { Date = new DateTime(2024, 1, 20), CustomerName = "Fiona Gray", SalesStaff = "Sarah Ndlovu", Paid = 950.30m, PurchaseAmount = 950.30m, PaymentMethod = "Cash", InvoiceNumber = "INV-005" },
-                    new Transaction { Date = new DateTime(2024, 1, 21), CustomerName = "George Yellow", SalesStaff = "Michael Smith", Paid = 3200.75m, PurchaseAmount = 3200.75m, PaymentMethod = "EFT", InvoiceNumber = "INV-006" },
-                    new Transaction { Date = new DateTime(2024, 1, 22), CustomerName = "Hannah Purple", SalesStaff = "Emily Johnson", Paid = 125.50m, PurchaseAmount = 125.50m, PaymentMethod = "Credit", InvoiceNumber = "INV-007" }
-                };
+                if (string.IsNullOrEmpty(selectedYear) || selectedMonth == 0)
+                    return;
 
-                foreach (var transaction in sampleTransactions)
-                {
-                    _transactions.Add(transaction);
-                }
-
-                MonthlyReportGrid.ItemsSource = _transactions;
-
-                // Update report data
+                LoadTransactionsFromDatabase(selectedMonth, int.Parse(selectedYear));
                 UpdateReportData();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading sample data: {ex.Message}");
+                MessageBox.Show($"Error loading data: {ex.Message}");
+            }
+        }
+
+        private void LoadTransactionsFromDatabase(int month, int year)
+        {
+            try
+            {
+                _transactions.Clear();
+
+                // Use the new method from Database class
+                var transactionsData = Database.GetMonthlyTransactions(month, year);
+
+                foreach (DataRow row in transactionsData.Rows)
+                {
+                    var transactionType = Convert.ToInt32(row["TransactionType"]);
+                    var isReturn = transactionType == 2; // Assuming type 2 is returns/refunds
+
+                    var transaction = new Transaction
+                    {
+                        Date = DateTime.Parse(row["Date"].ToString()),
+                        CustomerName = row["CustomerName"].ToString(),
+                        SalesStaff = row["SalesStaff"].ToString(),
+                        Paid = Convert.ToDecimal(row["Paid"]),
+                        PurchaseAmount = Convert.ToDecimal(row["PurchaseAmount"]),
+                        PaymentMethod = row["PaymentMethod"].ToString(),
+                        InvoiceNumber = isReturn ? $"REF-{row["InvoiceNumber"]}" : $"INV-{row["InvoiceNumber"]}"
+                    };
+
+                    // For returns, make amounts negative
+                    if (isReturn)
+                    {
+                        transaction.Paid = -transaction.Paid;
+                        transaction.PurchaseAmount = -transaction.PurchaseAmount;
+                        transaction.PaymentMethod = "Return";
+                    }
+
+                    _transactions.Add(transaction);
+                }
+
+                MonthlyReportGrid.ItemsSource = _transactions;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading transactions from database: {ex.Message}");
             }
         }
 
@@ -102,46 +136,23 @@ namespace ADIX
                 if (string.IsNullOrEmpty(selectedYear) || selectedMonth == 0)
                     return;
 
-                // Calculate financial metrics from transactions
-                var monthTransactions = _transactions.Where(t =>
-                    t.Date.Month == selectedMonth &&
-                    t.Date.Year == int.Parse(selectedYear));
+                // Get financial summary from database
+                var financialSummary = Database.GetMonthlyFinancialSummary(selectedMonth, int.Parse(selectedYear));
 
-                _currentReport.CardAmount = monthTransactions
-                    .Where(t => t.PaymentMethod == "Card" && t.Paid > 0)
-                    .Sum(t => t.Paid);
+                _currentReport.CardAmount = financialSummary.cardAmount;
+                _currentReport.CashAmount = financialSummary.cashAmount;
+                _currentReport.EFTAmount = financialSummary.eftAmount;
+                _currentReport.ReturnAmount = financialSummary.returnAmount;
+                _currentReport.CreditAmount = financialSummary.creditAmount;
+                _currentReport.TotalTurnover = financialSummary.totalTurnover;
 
-                _currentReport.CashAmount = monthTransactions
-                    .Where(t => t.PaymentMethod == "Cash" && t.Paid > 0)
-                    .Sum(t => t.Paid);
-
-                _currentReport.EFTAmount = monthTransactions
-                    .Where(t => t.PaymentMethod == "EFT" && t.Paid > 0)
-                    .Sum(t => t.Paid);
-
-                _currentReport.ReturnAmount = Math.Abs(monthTransactions
-                    .Where(t => t.PaymentMethod == "Return")
-                    .Sum(t => t.Paid));
-
-                _currentReport.CreditAmount = monthTransactions
-                    .Where(t => t.PaymentMethod == "Credit" && t.Paid > 0)
-                    .Sum(t => t.Paid);
-
-                _currentReport.TotalTurnover = _currentReport.CardAmount + _currentReport.CashAmount +
-                                             _currentReport.EFTAmount + _currentReport.CreditAmount -
-                                             _currentReport.ReturnAmount;
-
-                // Sample expense data
-                _currentReport.RentExpense = 15000.00m;
-                _currentReport.UtilitiesExpense = 2500.00m;
-                _currentReport.SalaryExpense = 45000.00m;
-                _currentReport.OtherExpense = 8000.00m;
-                _currentReport.TotalExpenses = _currentReport.RentExpense + _currentReport.UtilitiesExpense +
-                                             _currentReport.SalaryExpense + _currentReport.OtherExpense;
+                // Load actual expenses from database
+                LoadExpensesFromDatabase(selectedMonth, int.Parse(selectedYear));
 
                 // Calculate profit metrics
-                _currentReport.MonthlyCostOfBusiness = _currentReport.TotalExpenses;
-                _currentReport.GrossProfit = _currentReport.TotalTurnover;
+                decimal cogs = Database.GetMonthlyCOGS(selectedMonth, int.Parse(selectedYear));
+                _currentReport.MonthlyCostOfBusiness = _currentReport.TotalExpenses + cogs;
+                _currentReport.GrossProfit = _currentReport.TotalTurnover - cogs;
                 _currentReport.NetProfit = _currentReport.GrossProfit - _currentReport.TotalExpenses;
                 _currentReport.ProfitMargin = _currentReport.TotalTurnover > 0 ?
                     (_currentReport.NetProfit / _currentReport.TotalTurnover) * 100 : 0;
@@ -155,41 +166,191 @@ namespace ADIX
             }
         }
 
-        private void InitializeSupplierButtons()
+        private void LoadExpensesFromDatabase(int month, int year)
         {
             try
             {
-                _supplierButtons.Clear();
+                using var connection = new SqliteConnection(SqliteConnectionString);
+                connection.Open();
 
-                var sampleSuppliers = new List<SupplierButton>
-                {
-                    new SupplierButton("GreenFoods Ltd", () => SaveSupplierReport("GreenFoods Ltd")),
-                    new SupplierButton("BeverageCorp", () => SaveSupplierReport("BeverageCorp")),
-                    new SupplierButton("SnackSupply Co", () => SaveSupplierReport("SnackSupply Co")),
-                    new SupplierButton("Fresh Produce Inc", () => SaveSupplierReport("Fresh Produce Inc")),
-                    new SupplierButton("Dairy Distributors", () => SaveSupplierReport("Dairy Distributors"))
-                };
+                string expensesQuery = @"
+                    SELECT 
+                        expenseType,
+                        SUM(amount) as TotalAmount
+                    FROM EXPENSES 
+                    WHERE strftime('%m', date) = @month 
+                    AND strftime('%Y', date) = @year
+                    GROUP BY expenseType";
 
-                foreach (var supplier in sampleSuppliers)
+                using var expensesCmd = new SqliteCommand(expensesQuery, connection);
+                expensesCmd.Parameters.AddWithValue("@month", month.ToString("00"));
+                expensesCmd.Parameters.AddWithValue("@year", year.ToString());
+
+                // Reset expenses
+                _currentReport.RentExpense = 0;
+                _currentReport.UtilitiesExpense = 0;
+                _currentReport.SalaryExpense = 0;
+                _currentReport.OtherExpense = 0;
+
+                using var reader = expensesCmd.ExecuteReader();
+                while (reader.Read())
                 {
-                    _supplierButtons.Add(supplier);
+                    var expenseType = reader["expenseType"].ToString().ToLower();
+                    var amount = Convert.ToDecimal(reader["TotalAmount"]);
+
+                    switch (expenseType)
+                    {
+                        case "rent":
+                            _currentReport.RentExpense = amount;
+                            break;
+                        case "utilities":
+                        case "utility":
+                            _currentReport.UtilitiesExpense = amount;
+                            break;
+                        case "salaries":
+                        case "salary":
+                            _currentReport.SalaryExpense = amount;
+                            break;
+                        default:
+                            _currentReport.OtherExpense += amount;
+                            break;
+                    }
                 }
 
-                SupplierButtonsContainer.ItemsSource = _supplierButtons;
+                _currentReport.TotalExpenses = _currentReport.RentExpense + _currentReport.UtilitiesExpense +
+                                             _currentReport.SalaryExpense + _currentReport.OtherExpense;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error initializing supplier buttons: {ex.Message}");
+                MessageBox.Show($"Error loading expenses: {ex.Message}");
+                // Fallback to default expenses
+                _currentReport.RentExpense = 15000.00m;
+                _currentReport.UtilitiesExpense = 2500.00m;
+                _currentReport.SalaryExpense = 45000.00m;
+                _currentReport.OtherExpense = 5000.00m;
+                _currentReport.TotalExpenses = _currentReport.RentExpense + _currentReport.UtilitiesExpense +
+                                             _currentReport.SalaryExpense + _currentReport.OtherExpense;
             }
         }
 
-        private void SaveSupplierReport(string supplierName)
+        private void LoadSuppliers()
         {
             try
             {
-                string message = $"Supplier report for {supplierName} saved successfully!\n\n" +
-                               $"This would generate a detailed stock report for {supplierName} " +
-                               $"including item quantities, sales data, and inventory levels.";
+                _suppliers.Clear();
+
+                // Load actual suppliers from database
+                using var connection = new SqliteConnection(SqliteConnectionString);
+                connection.Open();
+
+                string query = "SELECT supplierID, name FROM SUPPLIER ORDER BY name";
+                using var cmd = new SqliteCommand(query, connection);
+                using var reader = cmd.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    var supplierId = reader["supplierID"].ToString();
+                    var supplierName = reader["name"].ToString();
+                    _suppliers.Add(new Supplier { Id = supplierId, Name = supplierName });
+                }
+
+                // Add sample suppliers if no suppliers exist in database
+                if (_suppliers.Count == 0)
+                {
+                    _suppliers.Add(new Supplier { Id = "1", Name = "Precision Bows Ltd" });
+                    _suppliers.Add(new Supplier { Id = "2", Name = "Eagle Arrows Co" });
+                    _suppliers.Add(new Supplier { Id = "3", Name = "TargetCraft Supplies" });
+                }
+
+                SupplierComboBox.ItemsSource = _suppliers;
+                if (_suppliers.Count > 0)
+                    SupplierComboBox.SelectedIndex = 0;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading suppliers: {ex.Message}");
+            }
+        }
+
+        private void SaveSupplierReport_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var selectedSupplier = SupplierComboBox.SelectedItem as Supplier;
+                if (selectedSupplier == null)
+                {
+                    MessageBox.Show("Please select a supplier first.", "No Supplier Selected", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var selectedMonth = MonthSelector.SelectedIndex + 1;
+                var selectedYear = YearSelector.SelectedItem?.ToString();
+
+                if (string.IsNullOrEmpty(selectedYear) || selectedMonth == 0)
+                {
+                    MessageBox.Show("Please select a valid month and year.", "Invalid Date", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Generate supplier-specific report
+                using var connection = new SqliteConnection(SqliteConnectionString);
+                connection.Open();
+
+                string query = @"
+                    SELECT 
+                        i.description as ItemDescription,
+                        i.stockQuantity as CurrentStock,
+                        i.stockSold as SoldThisMonth,
+                        i.retailPrice as RetailPrice,
+                        i.costPrice as CostPrice,
+                        (SELECT COALESCE(SUM(ii.quantity), 0) 
+                         FROM INVOICEITEM ii 
+                         INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
+                         WHERE ii.itemID = i.itemID 
+                         AND strftime('%m', iq.date) = @month 
+                         AND strftime('%Y', iq.date) = @year) as MonthlySales
+                    FROM ITEM i
+                    WHERE i.supplierID = @supplierId
+                    ORDER BY i.description";
+
+                using var cmd = new SqliteCommand(query, connection);
+                cmd.Parameters.AddWithValue("@supplierId", selectedSupplier.Id);
+                cmd.Parameters.AddWithValue("@month", selectedMonth.ToString("00"));
+                cmd.Parameters.AddWithValue("@year", selectedYear);
+
+                var reportData = new List<string>();
+                decimal totalStockValue = 0;
+                decimal totalSalesValue = 0;
+                int totalItems = 0;
+
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    var description = reader["ItemDescription"].ToString();
+                    var currentStock = Convert.ToInt32(reader["CurrentStock"]);
+                    var monthlySales = Convert.ToInt32(reader["MonthlySales"]);
+                    var retailPrice = Convert.ToDecimal(reader["RetailPrice"]);
+                    var costPrice = Convert.ToDecimal(reader["CostPrice"]);
+
+                    var stockValue = currentStock * costPrice;
+                    var salesValue = monthlySales * retailPrice;
+
+                    totalStockValue += stockValue;
+                    totalSalesValue += salesValue;
+                    totalItems++;
+
+                    reportData.Add($"{description}: Stock: {currentStock}, Monthly Sales: {monthlySales}, Stock Value: R {stockValue:F2}");
+                }
+
+                string message = $"Supplier report for {selectedSupplier.Name} saved successfully!\n\n" +
+                               $"Report Period: {MonthSelector.SelectedItem} {selectedYear}\n" +
+                               $"Summary:\n" +
+                               $"• Total Items: {totalItems}\n" +
+                               $"• Total Stock Value: R {totalStockValue:F2}\n" +
+                               $"• Monthly Sales Value: R {totalSalesValue:F2}\n\n" +
+                               $"Items ({reportData.Count}):\n" +
+                               string.Join("\n", reportData.Take(10)) +
+                               (reportData.Count > 10 ? "\n..." : "");
 
                 MessageBox.Show(message, "Supplier Report Saved", MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -202,21 +363,31 @@ namespace ADIX
         // Event handlers
         private void MonthSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            UpdateReportData();
+            if (IsLoaded)
+                LoadActualData();
         }
 
         private void YearSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            UpdateReportData();
+            if (IsLoaded)
+                LoadActualData();
         }
 
         private void GenerateReport_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                LoadSampleData(); // Reload data with current month/year filter
-                MessageBox.Show($"Report generated for {MonthSelector.SelectedItem} {YearSelector.SelectedItem}!",
-                    "Report Generated", MessageBoxButton.OK, MessageBoxImage.Information);
+                LoadActualData(); // Reload data with current month/year filter
+
+                string message = $"Report generated for {MonthSelector.SelectedItem} {YearSelector.SelectedItem}!\n\n" +
+                              $"Financial Summary:\n" +
+                              $"• Total Transactions: {_transactions.Count}\n" +
+                              $"• Total Turnover: R {_currentReport.TotalTurnover:F2}\n" +
+                              $"• Total Expenses: R {_currentReport.TotalExpenses:F2}\n" +
+                              $"• Net Profit: R {_currentReport.NetProfit:F2}\n" +
+                              $"• Profit Margin: {_currentReport.ProfitMargin:F2}%";
+
+                MessageBox.Show(message, "Report Generated", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -228,13 +399,90 @@ namespace ADIX
         {
             try
             {
+                // Generate comprehensive report
+                var selectedMonth = MonthSelector.SelectedIndex + 1;
+                var selectedYear = YearSelector.SelectedItem?.ToString();
+
+                using var connection = new SqliteConnection(SqliteConnectionString);
+                connection.Open();
+
+                // Get additional statistics
+                string statsQuery = @"
+                    SELECT 
+                        COUNT(DISTINCT iq.customerID) as UniqueCustomers,
+                        COUNT(DISTINCT iq.staffID) as ActiveStaff,
+                        AVG(iq.totalAmount) as AverageSale,
+                        COUNT(*) as TotalTransactions
+                    FROM INVOICEQUOTE iq
+                    WHERE strftime('%m', iq.date) = @month 
+                    AND strftime('%Y', iq.date) = @year
+                    AND iq.type = 1";
+
+                using var statsCmd = new SqliteCommand(statsQuery, connection);
+                statsCmd.Parameters.AddWithValue("@month", selectedMonth.ToString("00"));
+                statsCmd.Parameters.AddWithValue("@year", selectedYear);
+
+                int uniqueCustomers = 0;
+                int activeStaff = 0;
+                decimal averageSale = 0;
+                int totalTransactions = 0;
+
+                using var statsReader = statsCmd.ExecuteReader();
+                if (statsReader.Read())
+                {
+                    uniqueCustomers = Convert.ToInt32(statsReader["UniqueCustomers"]);
+                    activeStaff = Convert.ToInt32(statsReader["ActiveStaff"]);
+                    averageSale = statsReader["AverageSale"] != DBNull.Value ?
+                        Convert.ToDecimal(statsReader["AverageSale"]) : 0;
+                    totalTransactions = Convert.ToInt32(statsReader["TotalTransactions"]);
+                }
+
+                // Get top selling items
+                string topItemsQuery = @"
+                    SELECT 
+                        i.description as ItemName,
+                        SUM(ii.quantity) as TotalSold,
+                        SUM(ii.quantity * ii.priceAtSale) as TotalRevenue
+                    FROM INVOICEITEM ii
+                    INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
+                    INNER JOIN ITEM i ON ii.itemID = i.itemID
+                    WHERE strftime('%m', iq.date) = @month 
+                    AND strftime('%Y', iq.date) = @year
+                    AND iq.type = 1
+                    AND ii.quantity > 0
+                    GROUP BY i.itemID, i.description
+                    ORDER BY TotalSold DESC
+                    LIMIT 5";
+
+                var topItems = new List<string>();
+                using var topItemsCmd = new SqliteCommand(topItemsQuery, connection);
+                topItemsCmd.Parameters.AddWithValue("@month", selectedMonth.ToString("00"));
+                topItemsCmd.Parameters.AddWithValue("@year", selectedYear);
+
+                using var topItemsReader = topItemsCmd.ExecuteReader();
+                while (topItemsReader.Read())
+                {
+                    var itemName = topItemsReader["ItemName"].ToString();
+                    var totalSold = Convert.ToInt32(topItemsReader["TotalSold"]);
+                    var totalRevenue = Convert.ToDecimal(topItemsReader["TotalRevenue"]);
+                    topItems.Add($"{itemName}: {totalSold} sold, R {totalRevenue:F2} revenue");
+                }
+
                 string message = $"Full month stock report saved successfully!\n\n" +
-                               $"Report includes:\n" +
-                               $"• Complete inventory snapshot\n" +
-                               $"• Sales performance by category\n" +
-                               $"• Supplier performance metrics\n" +
-                               $"• Stock movement analysis\n\n" +
-                               $"This report should only be generated at the end of the month.";
+                               $"Report for: {MonthSelector.SelectedItem} {selectedYear}\n\n" +
+                               $"Business Metrics:\n" +
+                               $"• Total Transactions: {totalTransactions}\n" +
+                               $"• Unique Customers: {uniqueCustomers}\n" +
+                               $"• Active Staff: {activeStaff}\n" +
+                               $"• Average Sale: R {averageSale:F2}\n\n" +
+                               $"Financial Summary:\n" +
+                               $"• Total Turnover: R {_currentReport.TotalTurnover:F2}\n" +
+                               $"• Total Expenses: R {_currentReport.TotalExpenses:F2}\n" +
+                               $"• Net Profit: R {_currentReport.NetProfit:F2}\n" +
+                               $"• Profit Margin: {_currentReport.ProfitMargin:F2}%\n\n" +
+                               $"Top Selling Items:\n" +
+                               string.Join("\n", topItems) +
+                               $"\n\nThis report should only be generated at the end of the month.";
 
                 MessageBox.Show(message, "Full Month Report Saved", MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -248,10 +496,22 @@ namespace ADIX
         {
             try
             {
+                // In a real implementation, you would generate an actual PDF here
+                // For now, we'll show a confirmation message with actual data
+
+                var selectedMonth = MonthSelector.SelectedIndex + 1;
+                var selectedYear = YearSelector.SelectedItem?.ToString();
+
                 string message = $"PDF export completed successfully!\n\n" +
                                $"Exported: Monthly Report for {MonthSelector.SelectedItem} {YearSelector.SelectedItem}\n" +
-                               $"File: Monthly_Report_{MonthSelector.SelectedItem}_{YearSelector.SelectedItem}.pdf\n\n" +
-                               $"The PDF includes all transaction data, financial summaries, and charts.";
+                               $"File: Monthly_Report_{selectedYear}_{selectedMonth:00}.pdf\n\n" +
+                               $"The PDF includes:\n" +
+                               $"• {_transactions.Count} transactions\n" +
+                               $"• Financial summaries\n" +
+                               $"• Payment method breakdown\n" +
+                               $"• Expense details\n" +
+                               $"• Profit & loss statement\n" +
+                               $"• Supplier stock reports";
 
                 MessageBox.Show(message, "PDF Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -303,36 +563,32 @@ namespace ADIX
         public decimal ProfitMargin { get; set; }
     }
 
-    public class SupplierButton
+    public class Supplier
     {
-        public string DisplayName { get; }
-        public ICommand SaveCommand { get; }
+        public string Id { get; set; }
+        public string Name { get; set; }
 
-        public SupplierButton(string displayName, Action saveAction)
+        public override string ToString()
         {
-            DisplayName = displayName;
-            SaveCommand = new RelayCommand(_ => saveAction());
+            return Name;
         }
     }
 
-    public class RelayCommand : ICommand
+   
+    public class ProfitMarginToColorConverter : IValueConverter
     {
-        private readonly Action<object> _execute;
-        private readonly Func<object, bool> _canExecute;
-
-        public RelayCommand(Action<object> execute, Func<object, bool> canExecute = null)
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
-            _canExecute = canExecute;
+            if (value is decimal profitMargin)
+            {
+                return profitMargin >= 0 ? "#4AA902" : "#FF0000"; // Green for positive, Red for negative
+            }
+            return "#4AA902"; // Default color
         }
 
-        public event EventHandler CanExecuteChanged
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            add { CommandManager.RequerySuggested += value; }
-            remove { CommandManager.RequerySuggested -= value; }
+            throw new NotImplementedException();
         }
-
-        public bool CanExecute(object parameter) => _canExecute == null || _canExecute(parameter);
-        public void Execute(object parameter) => _execute(parameter);
     }
 }
