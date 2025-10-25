@@ -163,19 +163,29 @@ namespace ADIX.Repositories
             {
                 using var conn = new SqliteConnection(_connectionString);
                 conn.Open();
-
+                string paymentStatus = "";
                 // Create or get customer
                 int customerId = GetOrCreateCustomer(conn, customerName, address);
-
+                if (paymentReceived)
+                {
+                    paymentStatus= "Paid";
+                }
+                else
+                {
+                    paymentStatus = "Not Paid";
+                }
+                
                 // Create invoice with synced = 0 (not synced yet)
                 string query = @"
-                    INSERT INTO INVOICEQUOTE (date, type, totalAmount, customerID, staffID, synced)
-                    VALUES (@date, @type, @totalAmount, @customerID, @staffID, 0);
+                    INSERT INTO INVOICEQUOTE (date, type, totalAmount, customerID, staffID, paymentMethod, paymentStatus, synced)
+                    VALUES (@date, @type, @totalAmount, @customerID, @staffID, @paymentMethod, @paymentStatus,0);
                     SELECT last_insert_rowid();";
 
                 using var cmd = new SqliteCommand(query, conn);
                 cmd.Parameters.AddWithValue("@date", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                 cmd.Parameters.AddWithValue("@type", type);
+                cmd.Parameters.AddWithValue("@paymentMethod", paymentMethod);
+                cmd.Parameters.AddWithValue("@paymentStatus", paymentStatus);
                 cmd.Parameters.AddWithValue("@totalAmount", (double)totalAmount);
                 cmd.Parameters.AddWithValue("@customerID", customerId);
                 cmd.Parameters.AddWithValue("@staffID", staffId);
