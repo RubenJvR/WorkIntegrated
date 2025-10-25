@@ -217,8 +217,8 @@ namespace ADIX.Repositories
                     {
                         // Add invoice item with synced = 0
                         string itemQuery = @"
-                            INSERT INTO INVOICEITEM (quantity, priceAtSale, itemID, invoiceQuoteID, synced)
-                            VALUES (@quantity, @priceAtSale, @itemID, @invoiceQuoteID, 0)";
+                    INSERT INTO INVOICEITEM (quantity, priceAtSale, itemID, invoiceQuoteID, synced)
+                    VALUES (@quantity, @priceAtSale, @itemID, @invoiceQuoteID, 0)";
 
                         using var itemCmd = new SqliteCommand(itemQuery, conn, transaction);
                         itemCmd.Parameters.AddWithValue("@quantity", item.Quantity);
@@ -227,18 +227,8 @@ namespace ADIX.Repositories
                         itemCmd.Parameters.AddWithValue("@invoiceQuoteID", invoiceId);
                         itemCmd.ExecuteNonQuery();
 
-                        // Update stock locally (immediate feedback for user)
-                        string stockQuery = @"
-                            UPDATE ITEM 
-                            SET stockQuantity = stockQuantity - @quantity,
-                                stockSold = stockSold + @quantity,
-                                lastModified = CURRENT_TIMESTAMP
-                            WHERE itemID = @itemID";
-
-                        using var stockCmd = new SqliteCommand(stockQuery, conn, transaction);
-                        stockCmd.Parameters.AddWithValue("@quantity", item.Quantity);
-                        stockCmd.Parameters.AddWithValue("@itemID", item.ItemID);
-                        stockCmd.ExecuteNonQuery();
+                        // REMOVED: Local stock update - let sync handle this via RecalculateInventory
+                        // This prevents double-counting when sync recalculates from transactions
                     }
                 }
 
@@ -246,6 +236,9 @@ namespace ADIX.Repositories
 
                 // Mark that sync is required
                 Database.MarkSyncRequired();
+
+                // Recalculate local inventory immediately after transaction
+                RecalculateLocalInventory(conn);
 
                 // Try to sync immediately if online
                 if (Database.IsInternetAvailable())
@@ -379,7 +372,7 @@ namespace ADIX.Repositories
                 {
                     if (item.Quantity > 0)
                     {
-                        // Use negative quantity for refunds (this is the proper way)
+                        // Use negative quantity for refunds
                         string itemQuery = @"
                     INSERT INTO INVOICEITEM (quantity, priceAtSale, itemID, invoiceQuoteID, synced)
                     VALUES (@quantity, @priceAtSale, @itemID, @invoiceQuoteID, 0)";
@@ -391,19 +384,7 @@ namespace ADIX.Repositories
                         itemCmd.Parameters.AddWithValue("@invoiceQuoteID", refundId);
                         itemCmd.ExecuteNonQuery();
 
-                        // Update stock locally (add back to stock for refund)
-                        string stockQuery = @"
-                    UPDATE ITEM 
-                    SET stockQuantity = stockQuantity + @quantity,
-                        stockSold = stockSold - @quantity,
-                        lastModified = CURRENT_TIMESTAMP
-                    WHERE itemID = @itemID";
-
-                        using var stockCmd = new SqliteCommand(stockQuery, conn, transaction);
-                        stockCmd.Parameters.AddWithValue("@quantity", item.Quantity); // Positive quantity for stock adjustment
-                        stockCmd.Parameters.AddWithValue("@itemID", item.ItemID);
-                        stockCmd.ExecuteNonQuery();
-
+                        // REMOVED: Local stock update - let sync handle this via RecalculateInventory
                         Console.WriteLine($"[REFUND] Processed refund for item {item.ItemID}: {item.Quantity} units");
                     }
                 }
@@ -412,6 +393,9 @@ namespace ADIX.Repositories
 
                 // Mark that sync is required
                 Database.MarkSyncRequired();
+
+                // Recalculate local inventory immediately after refund
+                RecalculateLocalInventory(conn);
 
                 // Try to sync immediately if online
                 if (Database.IsInternetAvailable())
@@ -441,7 +425,65 @@ namespace ADIX.Repositories
             }
         }
 
+        private void RecalculateLocalInventory(SqliteConnection conn)
+        {
+            try
+            {
+                // Get all items
+                string getItemsSql = "SELECT itemID, stockRecieved FROM ITEM";
+                var items = new System.Data.DataTable();
 
+                using (var cmd = new SqliteCommand(getItemsSql, conn))
+                using (var reader = cmd.ExecuteReader())
+                {
+                    items.Load(reader);
+                }
+
+                foreach (System.Data.DataRow item in items.Rows)
+                {
+                    var itemID = item["itemID"];
+                    var stockReceived = Convert.ToInt32(item["stockRecieved"]);
+
+                    // Calculate total sold from invoice items (type 1 = invoice/sale)
+                    var soldSql = @"SELECT COALESCE(SUM(ii.quantity), 0) 
+                           FROM INVOICEITEM ii
+                           INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
+                           WHERE ii.itemID = @itemID AND iq.type = 1";
+
+                    int totalSold;
+                    using (var soldCmd = new SqliteCommand(soldSql, conn))
+                    {
+                        soldCmd.Parameters.AddWithValue("@itemID", itemID);
+                        totalSold = Convert.ToInt32(soldCmd.ExecuteScalar());
+                    }
+
+                    // Calculate remaining stock
+                    int remainingStock = Math.Max(0, stockReceived - totalSold);
+
+                    // Update item with recalculated values
+                    var updateSql = @"UPDATE ITEM 
+                             SET stockSold = @sold, 
+                                 stockQuantity = @quantity,
+                                 lastModified = CURRENT_TIMESTAMP
+                             WHERE itemID = @itemID";
+
+                    using (var updateCmd = new SqliteCommand(updateSql, conn))
+                    {
+                        updateCmd.Parameters.AddWithValue("@sold", totalSold);
+                        updateCmd.Parameters.AddWithValue("@quantity", remainingStock);
+                        updateCmd.Parameters.AddWithValue("@itemID", itemID);
+                        updateCmd.ExecuteNonQuery();
+                    }
+
+                    Console.WriteLine($"[LOCAL RECALC] Item {itemID}: Received={stockReceived}, Sold={totalSold}, Remaining={remainingStock}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error recalculating local inventory: {ex.Message}");
+                // Don't throw - this is a non-critical operation
+            }
+        }
 
 
         // Test connection method

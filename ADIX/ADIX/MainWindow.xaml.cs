@@ -22,18 +22,30 @@ namespace ADIX
         {
             try
             {
-                // Initialize database
+                // Initialize database (this already syncs if internet is available)
                 await Database.InitializeAsync();
 
-                // Force a sync if internet is available (this will download new items from Azure)
+                // REMOVED: Duplicate sync call
+                // Database.InitializeAsync() already handles syncing
+
+                // Show appropriate message based on connection status
                 if (Database.IsInternetAvailable())
                 {
-                    await Database.CheckAndSyncAsync();
-
-                    MessageBox.Show("Database initialized and synced with Azure SQL.",
-                                  "Success",
-                                  MessageBoxButton.OK,
-                                  MessageBoxImage.Information);
+                    var lastSync = Database.GetLastSyncTime();
+                    if (lastSync != DateTime.MinValue)
+                    {
+                        MessageBox.Show($"Database initialized and synced with Azure SQL.\nLast sync: {lastSync:yyyy-MM-dd HH:mm:ss}",
+                                      "Success",
+                                      MessageBoxButton.OK,
+                                      MessageBoxImage.Information);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Database initialized successfully.",
+                                      "Success",
+                                      MessageBoxButton.OK,
+                                      MessageBoxImage.Information);
+                    }
                 }
                 else
                 {
@@ -43,7 +55,7 @@ namespace ADIX
                                   MessageBoxImage.Warning);
                 }
 
-                // Navigate to main page AFTER sync
+                // Navigate to main page AFTER initialization
                 MainFrame.Navigate(new Dashboard());
             }
             catch (Exception ex)
@@ -53,7 +65,7 @@ namespace ADIX
                               MessageBoxButton.OK,
                               MessageBoxImage.Error);
 
-                // Still navigate to dashboard even if sync fails
+                // Still navigate to dashboard even if initialization fails
                 MainFrame.Navigate(new Dashboard());
             }
         }
@@ -87,16 +99,30 @@ namespace ADIX
                     MainFrame.Navigate(new Dashboard());
                     break;
                 case "POS":
+                    // Create POS page and refresh items when loaded
                     var posPage = new PointOfSale();
-                    // Refresh items when navigating to POS
-                    posPage.Loaded += (s, e) =>
+                    posPage.Loaded += async (s, e) =>
                     {
-                        if (posPage.DataContext is ViewModels.PointOfSaleViewModel vm)
+                        // Trigger background sync check when POS loads
+                        if (Database.IsInternetAvailable() && Database.IsSyncRequired())
                         {
-                            vm.RefreshItems();
+                            try
+                            {
+                                await Database.CheckAndSyncAsync();
+
+                                // Refresh POS items after sync
+                                if (posPage.DataContext is ViewModels.PointOfSaleViewModel vm)
+                                {
+                                    vm.ReloadItemsFromDatabase();
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Background sync on POS load failed: {ex.Message}");
+                            }
                         }
                     };
-                    MainFrame.Navigate(new PointOfSale());
+                    MainFrame.Navigate(posPage);
                     break;
                 case "Inventory":
                     MainFrame.Navigate(new Inventory());
@@ -119,10 +145,9 @@ namespace ADIX
                 case "Sales":
                     MainFrame.Navigate(new Sales());
                     break;
-               
             }
         }
-       
+
         private void SidebarControl_Loaded(object sender, RoutedEventArgs e)
         {
             // Optional: Any sidebar initialization code
