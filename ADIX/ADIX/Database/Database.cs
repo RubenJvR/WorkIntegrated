@@ -129,8 +129,7 @@ namespace ADIX
             string checkQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name='SELLER'";
             using var checkCmd = new SqliteCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-            CreateSQLiteTables(connection);
-
+            
             if (result == null)
             {
                 CreateSQLiteTables(connection);
@@ -172,8 +171,7 @@ namespace ADIX
             string checkQuery = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'SELLER'";
             using var checkCmd = new SqlCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-            CreateAzureSQLTables(connection);
-
+            
             if (result == null)
             {
                 CreateAzureSQLTables(connection);
@@ -181,7 +179,7 @@ namespace ADIX
             }
         }
 
-        internal static bool ValidateUser(string username, string passwordhash )
+        internal static bool ValidateUser(string username, string passwordhash)
         {
             using var conn = new SqliteConnection(SqliteConnectionString);
             conn.Open();
@@ -193,7 +191,7 @@ namespace ADIX
             cmd.Parameters.AddWithValue("@passwordhash", passwordhash);
 
             var result = cmd.ExecuteScalar();
-            return Convert.ToInt32(result) > 0; throw new NotImplementedException();
+            return Convert.ToInt32(result) > 0;
         }
 
 
@@ -203,7 +201,7 @@ namespace ADIX
         {
             string createTablesSql = @"
 
-
+ 
 
         CREATE TABLE IF NOT EXISTS SELLER(
             sellerID INTEGER NOT NULL PRIMARY KEY,
@@ -273,7 +271,7 @@ namespace ADIX
             totalAmount REAL NOT NULL,
             customerID INTEGER,
             staffID INTEGER NOT NULL,
-            synced INTEGER DEFAULT 0,
+            synced INTEGER DEFAULT 0 CHECK(synced IN(0,1)),
             paymentMethod TEXT,
             paymentStatus TEXT,
             lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -675,6 +673,7 @@ namespace ADIX
 
             Console.WriteLine("Transaction-based sync completed successfully.");
         }
+
         private static void SyncItemMasterDataWithoutInventory(SqliteConnection sqliteConn, SqlConnection azureConn)
         {
             string[] columns = {
@@ -772,6 +771,7 @@ namespace ADIX
 
             return (0, 0, 0);
         }
+
         public static void InitializeStockReceived(int itemID)
         {
             using var connection = new SqliteConnection(SqliteConnectionString);
@@ -787,6 +787,7 @@ namespace ADIX
             cmd.Parameters.AddWithValue("@id", itemID);
             cmd.ExecuteNonQuery();
         }
+
         private static void RecalculateInventoryOnBothDatabases(SqliteConnection sqliteConn, SqlConnection azureConn)
         {
             Console.WriteLine("Recalculating inventory from transactions on both databases...");
@@ -799,6 +800,7 @@ namespace ADIX
 
             Console.WriteLine("Inventory recalculation completed for both databases");
         }
+
         private static void RecalculateInventoryForDatabase(DbConnection connection, bool isAzure)
         {
             var items = new DataTable();
@@ -886,6 +888,7 @@ namespace ADIX
                 throw new Exception($"Failed to recalculate inventory: {ex.Message}", ex);
             }
         }
+
         private static void SyncMasterData(SqliteConnection sqliteConn, SqlConnection azureConn, string tableName, string[] columns)
         {
             // Get data from both databases
@@ -960,12 +963,11 @@ namespace ADIX
             }
         }
 
-
         private static void SyncTransactions(SqliteConnection sqliteConn, SqlConnection azureConn)
         {
             // Sync unsynced invoices
             var localInvoices = new DataTable();
-            using (var cmd = new SqliteCommand("SELECT * FROM INVOICEQUOTE WHERE synced = 0", sqliteConn))
+            using (var cmd = new SqliteCommand("SELECT * FROM INVOICEQUOTE WHERE synced = 0 ORDER BY date ASC", sqliteConn))
             using (var reader = cmd.ExecuteReader())
             {
                 localInvoices.Load(reader);
@@ -984,22 +986,27 @@ namespace ADIX
 
                     if (!exists)
                     {
-                        // Insert invoice
-                        var insertSql = @"INSERT INTO INVOICEQUOTE (invoiceQuoteID, date, type, totalAmount, customerID, staffID) 
-                                         VALUES (@id, @date, @type, @amount, @custID, @staffID)";
+                        // Insert invoice header
+                        var insertSql = @"INSERT INTO INVOICEQUOTE 
+                    (invoiceQuoteID, date, type, totalAmount, customerID, staffID, paymentMethod, paymentStatus, lastModified) 
+                    VALUES (@id, @date, @type, @amount, @custID, @staffID, @paymentMethod, @paymentStatus, @lastModified)";
+
                         using var insertCmd = new SqlCommand(insertSql, azureConn, transaction);
                         insertCmd.Parameters.AddWithValue("@id", invoice["invoiceQuoteID"]);
                         insertCmd.Parameters.AddWithValue("@date", invoice["date"]);
                         insertCmd.Parameters.AddWithValue("@type", invoice["type"]);
                         insertCmd.Parameters.AddWithValue("@amount", invoice["totalAmount"]);
-                        insertCmd.Parameters.AddWithValue("@custID", invoice["customerID"] == DBNull.Value ? null : invoice["customerID"]);
+                        insertCmd.Parameters.AddWithValue("@custID", invoice["customerID"] == DBNull.Value ? (object)DBNull.Value : invoice["customerID"]);
                         insertCmd.Parameters.AddWithValue("@staffID", invoice["staffID"]);
+                        insertCmd.Parameters.AddWithValue("@paymentMethod", invoice["paymentMethod"] == DBNull.Value ? (object)DBNull.Value : invoice["paymentMethod"]);
+                        insertCmd.Parameters.AddWithValue("@paymentStatus", invoice["paymentStatus"] == DBNull.Value ? (object)DBNull.Value : invoice["paymentStatus"]);
+                        insertCmd.Parameters.AddWithValue("@lastModified", invoice["lastModified"]);
                         insertCmd.ExecuteNonQuery();
 
                         Console.WriteLine($"[INVOICE] Synced invoice {invoice["invoiceQuoteID"]} to Azure");
 
-                        // Sync invoice items
-                        SyncInvoiceItems(sqliteConn, azureConn, transaction, (long)invoice["invoiceQuoteID"]);
+                        // Sync invoice items only (NO inventory adjustment here)
+                        SyncInvoiceItemsOnly(sqliteConn, azureConn, transaction, Convert.ToInt64(invoice["invoiceQuoteID"]));
 
                         // Mark as synced locally
                         using var updateCmd = new SqliteCommand("UPDATE INVOICEQUOTE SET synced = 1 WHERE invoiceQuoteID = @id", sqliteConn);
@@ -1009,11 +1016,59 @@ namespace ADIX
                 }
 
                 transaction.Commit();
+                Console.WriteLine($"[SYNC] Successfully synced {localInvoices.Rows.Count} invoice(s). Inventory will be recalculated next.");
             }
             catch (Exception ex)
             {
                 transaction.Rollback();
                 throw new Exception($"Failed to sync transactions: {ex.Message}", ex);
+            }
+        }
+
+        // New method - just sync invoice items without touching inventory
+        private static void SyncInvoiceItemsOnly(
+            SqliteConnection sqliteConn,
+            SqlConnection azureConn,
+            SqlTransaction transaction,
+            long invoiceQuoteID)
+        {
+            // Get invoice items for this invoice
+            var invoiceItems = new DataTable();
+            using (var cmd = new SqliteCommand(
+                "SELECT * FROM INVOICEITEM WHERE invoiceQuoteID = @id",
+                sqliteConn))
+            {
+                cmd.Parameters.AddWithValue("@id", invoiceQuoteID);
+                using var reader = cmd.ExecuteReader();
+                invoiceItems.Load(reader);
+            }
+
+            foreach (DataRow item in invoiceItems.Rows)
+            {
+                // Check if invoice item already exists in Azure
+                var checkItemSql = "SELECT COUNT(*) FROM INVOICEITEM WHERE invoiceItemID = @itemID";
+                using var checkItemCmd = new SqlCommand(checkItemSql, azureConn, transaction);
+                checkItemCmd.Parameters.AddWithValue("@itemID", item["invoiceItemID"]);
+                var itemExists = (int)checkItemCmd.ExecuteScalar() > 0;
+
+                if (!itemExists)
+                {
+                    // Insert the invoice item only - NO inventory changes
+                    var insertItemSql = @"INSERT INTO INVOICEITEM 
+                (invoiceItemID, quantity, priceAtSale, itemID, invoiceQuoteID, lastModified)
+                VALUES (@itemID, @quantity, @price, @productID, @invoiceID, @lastModified)";
+
+                    using var insertItemCmd = new SqlCommand(insertItemSql, azureConn, transaction);
+                    insertItemCmd.Parameters.AddWithValue("@itemID", item["invoiceItemID"]);
+                    insertItemCmd.Parameters.AddWithValue("@quantity", item["quantity"]);
+                    insertItemCmd.Parameters.AddWithValue("@price", item["priceAtSale"]);
+                    insertItemCmd.Parameters.AddWithValue("@productID", item["itemID"]);
+                    insertItemCmd.Parameters.AddWithValue("@invoiceID", invoiceQuoteID);
+                    insertItemCmd.Parameters.AddWithValue("@lastModified", item["lastModified"]);
+                    insertItemCmd.ExecuteNonQuery();
+
+                    Console.WriteLine($"  [INVOICEITEM] Synced invoice item {item["invoiceItemID"]} for item {item["itemID"]} (qty: {item["quantity"]})");
+                }
             }
         }
 
@@ -1063,7 +1118,6 @@ namespace ADIX
                 }
             }
         }
-
 
         private static DataTable GetTableData(SqliteConnection connection, string tableName, string[] columns)
         {
@@ -1126,6 +1180,7 @@ namespace ADIX
             }
             cmd.ExecuteNonQuery();
         }
+
         private static void InsertToLocal(SqliteConnection connection, string tableName, string[] columns, DataRow row)
         {
             var columnList = string.Join(", ", columns);
@@ -1139,6 +1194,7 @@ namespace ADIX
             }
             cmd.ExecuteNonQuery();
         }
+
         public static void MarkSyncRequired()
         {
             _syncRequired = true;
@@ -1252,8 +1308,5 @@ namespace ADIX
             MarkSyncRequired();
             Console.WriteLine($"Processed sale for invoice {invoiceID}");
         }
-
-
-        
     }
 }
