@@ -133,7 +133,7 @@ namespace ADIX
         {
 
             CsvImporter.ImportFromCsv();
-
+            Database.MarkSyncRequired();
         }
 
         private void Delete_Click(object sender, RoutedEventArgs e)

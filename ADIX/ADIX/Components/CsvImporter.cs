@@ -149,22 +149,31 @@ namespace ADIX.Components
             {
                 foreach (var product in products)
                 {
-                    var checkCmd = new SqliteCommand("SELECT COUNT(*) FROM ITEM WHERE description = @desc", conn, transaction);
+                    // Check by description instead of exact match
+                    var checkCmd = new SqliteCommand(
+                        "SELECT itemID FROM ITEM WHERE LOWER(description) = LOWER(@desc)",
+                        conn, transaction);
                     checkCmd.Parameters.AddWithValue("@desc", product.Description);
-                    var exists = Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
+                    var existingId = checkCmd.ExecuteScalar();
 
-                    if (exists)
+                    if (existingId != null)
                     {
-                        Console.WriteLine($"Product '{product.Description}' already exists, skipping...");
+                        Console.WriteLine($"Product '{product.Description}' already exists with ID {existingId}, skipping...");
                         continue;
                     }
 
-                    var insertCmd = new SqliteCommand(@"
-                        INSERT INTO ITEM 
-                        (SKU, itemGroup, description, retailPrice, costPrice, stockQuantity, stockRecieved, stockSold, supplierID, sellerID, lastModified)
-                        VALUES 
-                        (@sku, @group, @desc, @retail, @cost, @qty, @received, @sold, @supplier, @seller, CURRENT_TIMESTAMP)", conn, transaction);
+                    // Generate unique timestamp-based ID
+                    long newItemId = Database.GetNextItemID();
+                    System.Threading.Thread.Sleep(1); // Ensure uniqueness
 
+                    var insertCmd = new SqliteCommand(@"
+                INSERT INTO ITEM 
+                (itemID, SKU, itemGroup, description, retailPrice, costPrice, stockQuantity, stockRecieved, stockSold, supplierID, sellerID, lastModified)
+                VALUES 
+                (@itemID, @sku, @group, @desc, @retail, @cost, @qty, @received, @sold, @supplier, @seller, CURRENT_TIMESTAMP)",
+                        conn, transaction);
+
+                    insertCmd.Parameters.AddWithValue("@itemID", newItemId);
                     insertCmd.Parameters.AddWithValue("@sku", product.SKU ?? "");
                     insertCmd.Parameters.AddWithValue("@group", product.ItemGroup ?? "");
                     insertCmd.Parameters.AddWithValue("@desc", product.Description);
@@ -176,6 +185,8 @@ namespace ADIX.Components
                     insertCmd.Parameters.AddWithValue("@supplier", product.SupplierID);
                     insertCmd.Parameters.AddWithValue("@seller", product.SellerID);
                     insertCmd.ExecuteNonQuery();
+
+                    Console.WriteLine($"Imported item '{product.Description}' with ID {newItemId}");
                     importedCount++;
                 }
 

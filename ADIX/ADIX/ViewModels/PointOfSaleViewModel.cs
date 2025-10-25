@@ -25,7 +25,7 @@ namespace ADIX.ViewModels
         private decimal _totalBill;
         private decimal _totalExcludingDiscount;
         private string? _currentDate;
-        private int _invoiceNumber;
+        private long _invoiceNumber;
 
         public ObservableCollection<POSItem> CartItems { get; set; }
         public ObservableCollection<StaffMember> StaffMembers { get; set; }
@@ -114,8 +114,8 @@ namespace ADIX.ViewModels
                     }
                 }
 
-                // Create refund invoice (type = 1 for sale/refund, but with negative amounts handled in sync)
-                int refundId = _repository.CreateRefund(
+                // Create refund invoice - now returns long
+                long refundId = _repository.CreateRefund(
                     CustomerName ?? "",
                     SelectedStaff?.StaffID ?? 0,
                     VATAmount,
@@ -214,7 +214,7 @@ namespace ADIX.ViewModels
         }
 
         // Method to reset transaction without confirmation dialog
-      
+
         private void ResetTransaction()
         {
             // Only reset the transaction-specific data, not the entire cart
@@ -365,7 +365,7 @@ namespace ADIX.ViewModels
             set { _currentDate = value; OnPropertyChanged(nameof(CurrentDate)); }
         }
 
-        public int InvoiceNumber
+        public long InvoiceNumber
         {
             get => _invoiceNumber;
             set { _invoiceNumber = value; OnPropertyChanged(nameof(InvoiceNumber)); }
@@ -472,9 +472,8 @@ namespace ADIX.ViewModels
                     }
                 }
 
-                
-                // Create invoice (type = 1 for sale)
-                int invoiceId = _repository.CreateInvoice(
+                // Create invoice (type = 1 for sale) - now returns long
+                long invoiceId = _repository.CreateInvoice(
                     CustomerName ?? "",
                     SelectedStaff?.StaffID ?? 0,
                     SelectedPaymentMethod ?? "",
@@ -506,8 +505,8 @@ namespace ADIX.ViewModels
         {
             try
             {
-                // Create quote (type = 2 for quote)
-                int quoteId = _repository.CreateInvoice(
+                // Create quote (type = 2 for quote) - now returns long
+                long quoteId = _repository.CreateInvoice(
                     CustomerName ?? "",
                     SelectedStaff?.StaffID ?? 0,
                     SelectedPaymentMethod ?? "",
