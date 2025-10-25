@@ -16,6 +16,8 @@ namespace ADIX
         public int StockReceived { get; set; }
         public int StockSold { get; set; }
         public int BalanceStock { get; set; }
+        public double CostPrice { get; set; }
+        public double RetailPrice { get; set; }
         public int StockReturned { get; set; }
         public int StockRefunded { get; set; }
         public double CostOfBusinessWorkings { get; set; }

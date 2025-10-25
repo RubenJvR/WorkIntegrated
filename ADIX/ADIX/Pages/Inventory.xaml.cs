@@ -40,15 +40,17 @@ namespace ADIX
                 using var conn = new SqliteConnection(ConnStr);
                 await conn.OpenAsync();
 
-                // Get item data with proper ItemID mapping
                 string query = @"
             SELECT 
+                sku,
                 itemID,
+                itemGroup,
                 description,
                 costPrice,
                 retailPrice,
                 stockQuantity,
-                stockSold
+                stockSold,
+                stockRecieved
             FROM ITEM;
         ";
 
@@ -59,25 +61,39 @@ namespace ADIX
 
                 while (await reader.ReadAsync())
                 {
-                    // Extract itemID from SKU or get it directly if available
-                    var itemId = Convert.ToInt32(reader["itemID"]);
-                    var skuValue = reader["itemID"]?.ToString();
+                    double ParseDouble(object o) =>
+                        o == DBNull.Value ? 0 : Convert.ToDouble(o);
+
+                    int ParseInt(object o) =>
+                        o == DBNull.Value ? 0 : Convert.ToInt32(o);
 
                     var item = new InventoryItem
                     {
-                        ItemID = itemId, // This is crucial for deletion
-                        ItemGroup = "New",
+                        ItemID = Convert.ToInt32(reader["itemID"]),
+
+                        ItemGroup = reader["itemGroup"]?.ToString() ?? "N/A",
+
+                        SKU = reader["sku"] == DBNull.Value
+                            ? "SKU-UNKNOWN"
+                            : $"SKU-{reader["sku"]}",
+
                         ItemName = reader["description"]?.ToString() ?? "Unknown",
-                        SKU = $"SKU-{skuValue}",
+
                         OpeningStockQuantity = Convert.ToInt32(reader["stockQuantity"]),
                         StockSold = Convert.ToInt32(reader["stockSold"]),
-                        StockReceived = 0,
+                        StockReceived = Convert.ToInt32(reader["stockRecieved"]),
+
+                        CostPrice = ParseDouble(reader["costPrice"]),
+                        RetailPrice = ParseDouble(reader["retailPrice"]),
+
                         StockReturned = 0,
                         StockRefunded = 0,
+
                         CostOfBusinessWorkings = Convert.ToDouble(reader["costPrice"]),
                         ReturnedStockUnusable = 0
                     };
 
+                    //Calculations
                     item.BalanceStock = item.OpeningStockQuantity - item.StockSold;
                     item.Loss = item.CostOfBusinessWorkings * item.ReturnedStockUnusable;
 
@@ -88,7 +104,12 @@ namespace ADIX
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading inventory: {ex.Message}", "Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(
+                    $"Error loading inventory: {ex.Message}",
+                    "Database Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error
+                );
             }
         }
 
