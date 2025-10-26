@@ -127,6 +127,9 @@ namespace ADIX.ViewModels
                 var itemsToRefund = CartItems.Where(i => i.Quantity > 0).ToList();
                 _repository.AddRefundItems(refundId, itemsToRefund);
 
+                
+                Database.ProcessSale(refundId); // This will handle negative quantities for returns
+
                 MessageBox.Show($"Refund processed successfully!\nRefund #: {refundId}\nRefund Amount: R {Math.Abs(TotalBill):F2}",
                     "Refund Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
@@ -487,6 +490,9 @@ namespace ADIX.ViewModels
                 // Add items to invoice
                 var itemsToAdd = CartItems.Where(i => i.Quantity > 0).ToList();
                 _repository.AddInvoiceItems(invoiceId, itemsToAdd);
+
+                
+                Database.ProcessSale(invoiceId);
 
                 MessageBox.Show($"Sale completed successfully!\nInvoice #: {invoiceId}\nTotal: R {TotalBill:F2}",
                     "Success", MessageBoxButton.OK, MessageBoxImage.Information);

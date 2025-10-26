@@ -27,8 +27,21 @@ namespace ADIX
         }
 
 
-        private void PointOfSale_Loaded(object sender, RoutedEventArgs e)
+        private async void PointOfSale_Loaded(object sender, RoutedEventArgs e)
         {
+            // Always check for sync when page loads
+            if (Database.IsInternetAvailable() && Database.IsSyncRequired())
+            {
+                try
+                {
+                    await Database.CheckAndSyncAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Background sync on load failed: {ex.Message}");
+                }
+            }
+
             _viewModel.ReloadItemsFromDatabase();
             _refreshTimer.Start(); // Start auto-refresh when page loads
         }
@@ -54,6 +67,7 @@ namespace ADIX
                 }
             }
         }
+       
         private void Quote_Click(object sender, RoutedEventArgs e)
         {
             // Get cart items with quantity > 0
@@ -71,6 +85,42 @@ namespace ADIX
             var quotePage = new Qoute(cartItems, customerName, selectedStaff, vatAmount, paymentMethod, customerAddress, overallDiscountPercent);
             var mainWindow = Window.GetWindow(this) as MainWindow;
             mainWindow?.MainFrame.Navigate(quotePage);
+        }
+
+        private async void ManualSync_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            if (button != null)
+            {
+                button.IsEnabled = false;
+                button.Content = "Syncing...";
+            }
+
+            try
+            {
+                if (Database.IsInternetAvailable())
+                {
+                    await Database.CheckAndSyncAsync();
+                    _viewModel.ReloadItemsFromDatabase();
+                    MessageBox.Show("Sync completed!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show("No internet connection", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Sync failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                if (button != null)
+                {
+                    button.IsEnabled = true;
+                    button.Content = "Sync Now";
+                }
+            }
         }
 
         private void Invoice_Click(object sender, RoutedEventArgs e)

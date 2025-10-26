@@ -486,7 +486,14 @@ Click="Delete_Click"/>
                 <Button Content="Force" Width="150" Height="40"
 Background="Red" Foreground="White" Margin="5"
 Click="ForceSync_Click"/>
-
+                <Button x:Name="ShowAllDataBtn" 
+        Content="Show All Data Comparison" 
+        Click="ShowAllData_Click" 
+        Margin="5" 
+        Padding="10,5"
+        Background="#FF9B59B6"
+        Foreground="White"
+        FontWeight="Bold"/>
             </StackPanel>
 
         </Grid>

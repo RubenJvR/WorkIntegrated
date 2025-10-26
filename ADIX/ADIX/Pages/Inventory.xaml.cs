@@ -27,13 +27,180 @@ namespace ADIX
     public partial class Inventory : Page
     {
         private const string ConnStr = "Data Source=ADIX.db";
-
+        private System.Windows.Threading.DispatcherTimer _inventoryRefreshTimer;
         public Inventory()
         {
             InitializeComponent();
             LoadInventoryAsync();
-            DebugLocalItems();
-            CheckAzureItems();
+
+            // Setup auto-refresh timer for inventory
+            _inventoryRefreshTimer = new System.Windows.Threading.DispatcherTimer();
+            _inventoryRefreshTimer.Interval = TimeSpan.FromSeconds(30);
+            _inventoryRefreshTimer.Tick += async (s, e) =>
+            {
+                if (Database.IsInternetAvailable())
+                {
+                    try
+                    {
+                        await Database.CheckAndSyncAsync();
+                        LoadInventoryAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Inventory auto-refresh failed: {ex.Message}");
+                    }
+                }
+            };
+
+            this.Loaded += Inventory_Loaded;
+            this.Unloaded += (s, e) => _inventoryRefreshTimer.Stop();
+        }
+
+        private void ShowAllData_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                StringBuilder allData = new StringBuilder();
+                allData.AppendLine("=== COMPLETE DATABASE COMPARISON ===\n");
+
+                // LOCAL DATABASE
+                allData.AppendLine("📍 LOCAL DATABASE (SQLite):");
+                allData.AppendLine("─────────────────────────────");
+
+                using (var localConn = new SqliteConnection("Data Source=ADIX.db"))
+                {
+                    localConn.Open();
+
+                    // Get all items from local
+                    var localCmd = new SqliteCommand(
+                        "SELECT itemID, description, stockQuantity, stockSold, stockRecieved, lastModified FROM ITEM ORDER BY itemID",
+                        localConn);
+
+                    using (var localReader = localCmd.ExecuteReader())
+                    {
+                        bool hasLocalItems = false;
+                        while (localReader.Read())
+                        {
+                            hasLocalItems = true;
+                            allData.AppendLine($"ID: {localReader["itemID"]}");
+                            allData.AppendLine($"  Name: {localReader["description"]}");
+                            allData.AppendLine($"  Stock: {localReader["stockQuantity"]}");
+                            allData.AppendLine($"  Sold: {localReader["stockSold"]}");
+                            allData.AppendLine($"  Received: {localReader["stockRecieved"]}");
+                            allData.AppendLine($"  Modified: {localReader["lastModified"]}");
+                            allData.AppendLine();
+                        }
+
+                        if (!hasLocalItems)
+                        {
+                            allData.AppendLine("No items found in local database");
+                        }
+                    }
+
+                    // Count totals
+                    var countCmd = new SqliteCommand("SELECT COUNT(*) FROM ITEM", localConn);
+                    int localCount = Convert.ToInt32(countCmd.ExecuteScalar());
+                    allData.AppendLine($"TOTAL LOCAL ITEMS: {localCount}");
+                }
+
+                allData.AppendLine("\n" + new string('=', 50) + "\n");
+
+                // AZURE DATABASE
+                allData.AppendLine("☁️ AZURE DATABASE:");
+                allData.AppendLine("──────────────────");
+
+                if (!string.IsNullOrEmpty(Database.AzureSqlConnectionString))
+                {
+                    try
+                    {
+                        using (var azureConn = new SqlConnection(Database.AzureSqlConnectionString))
+                        {
+                            azureConn.Open();
+
+                            // Get all items from Azure
+                            var azureCmd = new SqlCommand(
+                                "SELECT itemID, description, stockQuantity, stockSold, stockRecieved, lastModified FROM ITEM ORDER BY itemID",
+                                azureConn);
+
+                            using (var azureReader = azureCmd.ExecuteReader())
+                            {
+                                bool hasAzureItems = false;
+                                while (azureReader.Read())
+                                {
+                                    hasAzureItems = true;
+                                    allData.AppendLine($"ID: {azureReader["itemID"]}");
+                                    allData.AppendLine($"  Name: {azureReader["description"]}");
+                                    allData.AppendLine($"  Stock: {azureReader["stockQuantity"]}");
+                                    allData.AppendLine($"  Sold: {azureReader["stockSold"]}");
+                                    allData.AppendLine($"  Received: {azureReader["stockRecieved"]}");
+                                    allData.AppendLine($"  Modified: {azureReader["lastModified"]}");
+                                    allData.AppendLine();
+                                }
+
+                                if (!hasAzureItems)
+                                {
+                                    allData.AppendLine("No items found in Azure database");
+                                }
+                            }
+
+                            // Count totals
+                            var countCmd = new SqlCommand("SELECT COUNT(*) FROM ITEM", azureConn);
+                            int azureCount = Convert.ToInt32(countCmd.ExecuteScalar());
+                            allData.AppendLine($"TOTAL AZURE ITEMS: {azureCount}");
+                        }
+                    }
+                    catch (Exception azureEx)
+                    {
+                        allData.AppendLine($"❌ ERROR CONNECTING TO AZURE:");
+                        allData.AppendLine($"   {azureEx.Message}");
+                    }
+                }
+                else
+                {
+                    allData.AppendLine("Azure connection string not configured");
+                }
+
+                allData.AppendLine("\n=== END COMPARISON ===");
+
+                // Show in scrollable message box if too long
+                string data = allData.ToString();
+
+                // Create a scrollable text window
+                var scrollViewer = new ScrollViewer
+                {
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    MaxHeight = 600,
+                    MaxWidth = 800
+                };
+
+                var textBlock = new TextBlock
+                {
+                    Text = data,
+                    FontFamily = new FontFamily("Consolas, Courier New"),
+                    FontSize = 12,
+                    TextWrapping = TextWrapping.NoWrap
+                };
+
+                scrollViewer.Content = textBlock;
+
+                var window = new Window
+                {
+                    Title = "Complete Database Comparison",
+                    Content = scrollViewer,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    SizeToContent = SizeToContent.WidthAndHeight,
+                    MaxWidth = 1000,
+                    MaxHeight = 800
+                };
+
+                window.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading data: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
         private async void ForceSync_Click(object sender, RoutedEventArgs e)
         {
@@ -247,7 +414,23 @@ namespace ADIX
                 DeleteItemFromDatabase(selectedItem.ItemID, selectedItem.ItemName);
             }
         }
+        private async void Inventory_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Sync when inventory page loads
+            if (Database.IsInternetAvailable() && Database.IsSyncRequired())
+            {
+                try
+                {
+                    await Database.CheckAndSyncAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Inventory sync failed: {ex.Message}");
+                }
+            }
 
+            LoadInventoryAsync();
+        }
         private void DeleteItemFromDatabase(int itemId, string itemName)
         {
             try
