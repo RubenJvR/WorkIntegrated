@@ -23,6 +23,9 @@ namespace ADIX
         public double CostOfBusinessWorkings { get; set; }
         public int ReturnedStockUnusable { get; set; }
         public double Loss { get; set; }
+        public int MinStock { get; set; } = 0;
+        public bool IsLowStock => BalanceStock < MinStock;
+
 
     }
 

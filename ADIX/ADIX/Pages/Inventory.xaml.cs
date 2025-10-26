@@ -27,6 +27,14 @@ namespace ADIX
     {
         private const string ConnStr = "Data Source=ADIX.db";
 
+        //Declaration fo which items are low stock
+        private Dictionary<string, int> minStockRules = new Dictionary<string, int>()
+        {
+            { "SKU-1001", 16 },
+            { "SKU-2003", 21 },
+            { "SKU-3001", 26 }
+        };
+
         public Inventory()
         {
             InitializeComponent();
@@ -89,13 +97,20 @@ namespace ADIX
                         StockReturned = 0,
                         StockRefunded = 0,
 
-                        CostOfBusinessWorkings = Convert.ToDouble(reader["costPrice"]),
+                        CostOfBusinessWorkings = ParseDouble(reader["costPrice"]),
                         ReturnedStockUnusable = 0
                     };
 
-                    //Calculations
+                    // Calculations
                     item.BalanceStock = item.OpeningStockQuantity - item.StockSold;
                     item.Loss = item.CostOfBusinessWorkings * item.ReturnedStockUnusable;
+
+                    // Low Stock
+                    if (minStockRules.ContainsKey(item.SKU))
+                        item.MinStock = minStockRules[item.SKU];
+
+                    if (item.IsLowStock)
+                        item.ItemGroup += "LOW STOCK";
 
                     inventoryList.Add(item);
                 }

@@ -331,7 +331,7 @@
                     <DataGrid.RowStyle>
                         <Style TargetType="DataGridRow">
                             <Setter Property="Background" Value="#4F4F4F"/>
-                            <Setter Property="Foreground" Value="White"/>
+                            <!--<Setter Property="Foreground" Value="White"/>-->
                             <Style.Triggers>
                                 <Trigger Property="IsSelected" Value="True">
                                     <Setter Property="Background" Value="#6A6A6A"/>
@@ -339,6 +339,10 @@
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter Property="Background" Value="#5A5A5A"/>
                                 </Trigger>
+                                <DataTrigger Binding="{Binding IsLowStock}" Value="True">
+                                    <Setter Property="Background" Value="#B22020"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </DataGrid.RowStyle>
@@ -472,8 +476,10 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
                     </DataGrid.Columns>
+                    
                 </DataGrid>
-            </Border>
+                
+               </Border>
             <StackPanel Grid.Row="14" Orientation="Horizontal"
             HorizontalAlignment="Center" Margin="0,10,0,0">
 
