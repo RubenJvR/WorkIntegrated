@@ -617,8 +617,7 @@
 
                 <Button Content="Invoice" Width="150" Height="40"
  Background="Blue" Foreground="White" FontWeight="Bold" Margin="5" Click="ManualSync_Click"/>
-                <Button Content="🐛 Debug Item" Click="Debug_Click" />
-                <Button Content="🧪 Test Sync" Click="TestSync_Click" />
+                
             </StackPanel>
         </Grid>
     </Grid>
