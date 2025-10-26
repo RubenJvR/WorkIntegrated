@@ -27,7 +27,7 @@ namespace ADIX
             POSButton.Tag = null;
             InventoryButton.Tag = null;
             ProductsButton.Tag = null;
-            ItemGroupButton.Tag = null;
+           
             SupplierButton.Tag = null;
             FinanceButton.Tag = null;
             MonthlyReportButton.Tag = null;
@@ -48,9 +48,6 @@ namespace ADIX
                     break;
                 case "Products":
                     ProductsButton.Tag = "Active";
-                    break;
-                case "ItemGroup":
-                    ItemGroupButton.Tag = "Active";
                     break;
                 case "Suppliers":
                     SupplierButton.Tag = "Active";
@@ -82,7 +79,7 @@ namespace ADIX
                 POSText.Visibility = Visibility.Collapsed;
                 InventoryText.Visibility = Visibility.Collapsed;
                 ProductsText.Visibility = Visibility.Collapsed;
-                ItemGroupText.Visibility = Visibility.Collapsed;
+                
                 SupplierText.Visibility = Visibility.Collapsed;
                 FinanceText.Visibility = Visibility.Collapsed;
                 MonthlyReportText.Visibility = Visibility.Collapsed;
@@ -95,7 +92,6 @@ namespace ADIX
                 POSButton.Padding = new Thickness(0);
                 InventoryButton.Padding = new Thickness(0);
                 ProductsButton.Padding = new Thickness(0);
-                ItemGroupButton.Padding = new Thickness(0);
                 SupplierButton.Padding = new Thickness(0);
                 FinanceButton.Padding = new Thickness(0);
                 MonthlyReportButton.Padding = new Thickness(0);
@@ -106,7 +102,6 @@ namespace ADIX
                 POSButton.HorizontalContentAlignment = HorizontalAlignment.Center;
                 InventoryButton.HorizontalContentAlignment = HorizontalAlignment.Center;
                 ProductsButton.HorizontalContentAlignment = HorizontalAlignment.Center;
-                ItemGroupButton.HorizontalContentAlignment = HorizontalAlignment.Center;
                 SupplierButton.HorizontalContentAlignment = HorizontalAlignment.Center;
                 FinanceButton.HorizontalContentAlignment = HorizontalAlignment.Center;
                 MonthlyReportButton.HorizontalContentAlignment = HorizontalAlignment.Center;
@@ -118,7 +113,7 @@ namespace ADIX
                 ToolTipService.SetToolTip(POSButton, "POS");
                 ToolTipService.SetToolTip(InventoryButton, "Inventory");
                 ToolTipService.SetToolTip(ProductsButton, "Products");
-                ToolTipService.SetToolTip(ItemGroupButton, "ItemGroup");
+               
                 ToolTipService.SetToolTip(SupplierButton, "Supplier");
                 ToolTipService.SetToolTip(FinanceButton, "Finance");
                 ToolTipService.SetToolTip(MonthlyReportButton, "MonthlyReport");
@@ -133,7 +128,7 @@ namespace ADIX
                 POSText.Visibility = Visibility.Visible;
                 InventoryText.Visibility = Visibility.Visible;
                 ProductsText.Visibility = Visibility.Visible;
-                ItemGroupText.Visibility = Visibility.Visible;
+                
                 SupplierText.Visibility = Visibility.Visible;
                 FinanceText.Visibility = Visibility.Visible;
                 MonthlyReportText.Visibility = Visibility.Visible;
@@ -146,7 +141,7 @@ namespace ADIX
                 POSButton.Padding = new Thickness(15, 0, 0, 0);
                 InventoryButton.Padding = new Thickness(15, 0, 0, 0);
                 ProductsButton.Padding = new Thickness(15, 0, 0, 0);
-                ItemGroupButton.Padding = new Thickness(15, 0, 0, 0);
+                
                 SupplierButton.Padding = new Thickness(15, 0, 0, 0);
                 FinanceButton.Padding = new Thickness(15, 0, 0, 0);
                 MonthlyReportButton.Padding = new Thickness(15, 0, 0, 0);
@@ -157,7 +152,7 @@ namespace ADIX
                 POSButton.HorizontalContentAlignment = HorizontalAlignment.Left;
                 InventoryButton.HorizontalContentAlignment = HorizontalAlignment.Left;
                 ProductsButton.HorizontalContentAlignment = HorizontalAlignment.Left;
-                ItemGroupButton.HorizontalContentAlignment = HorizontalAlignment.Left;
+              
                 SupplierButton.HorizontalContentAlignment = HorizontalAlignment.Left;
                 FinanceButton.HorizontalContentAlignment = HorizontalAlignment.Left;
                 MonthlyReportButton.HorizontalContentAlignment = HorizontalAlignment.Left;
@@ -169,7 +164,7 @@ namespace ADIX
                 ToolTipService.SetToolTip(POSButton, null);
                 ToolTipService.SetToolTip(InventoryButton, null);
                 ToolTipService.SetToolTip(ProductsButton, null);
-                ToolTipService.SetToolTip(ItemGroupButton, null);
+               
                 ToolTipService.SetToolTip(SupplierButton, null);
                 ToolTipService.SetToolTip(FinanceButton, null);
                 ToolTipService.SetToolTip(MonthlyReportButton, null);
@@ -205,11 +200,6 @@ namespace ADIX
             NavigationRequested?.Invoke(this, "Products");
         }
 
-        private void ItemGroup_button_click(object sender, RoutedEventArgs e)
-        {
-            SetActiveButton("ItemGroup");
-            NavigationRequested?.Invoke(this, "ItemGroup");
-        }
 
         private void Supplier_button_click(object sender, RoutedEventArgs e)
         {

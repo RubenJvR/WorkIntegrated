@@ -134,9 +134,6 @@ namespace ADIX
                 case "Products":
                     MainFrame.Navigate(new Products());
                     break;
-                case "ItemGroup":
-                    MainFrame.Navigate(new ItemGroup());
-                    break;
                 case "Suppliers":
                     MainFrame.Navigate(new SupplierPage());
                     break;

@@ -119,12 +119,7 @@
                     </StackPanel>
                 </Button>
 
-                <Button x:Name="ItemGroupButton" Margin="10,5" Height="45" Style="{StaticResource MenuButtonStyle}" Click="ItemGroup_button_click">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                        <Image Source="/icons/itemgroup_White.png" Width="24" Height="24" Margin="0,0,12,0"/>
-                        <TextBlock x:Name="ItemGroupText" Text="ItemGroup" Foreground="White" VerticalAlignment="Center" FontSize="14"/>
-                    </StackPanel>
-                </Button>
+                
 
                 <Button x:Name="SupplierButton" Margin="10,5" Height="45" Style="{StaticResource MenuButtonStyle}" Click="Supplier_button_click">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">

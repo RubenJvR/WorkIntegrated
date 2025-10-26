@@ -4,10 +4,12 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:ADIX"
+      xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
       mc:Ignorable="d" 
       d:DesignHeight="696.331" d:DesignWidth="800"
       Title="Dashboard"
       Background="#878787">
+
     <Page.Resources>
         <Style x:Key="FocusVisual">
             <Setter Property="Control.Template">
@@ -18,6 +20,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
         <SolidColorBrush x:Key="Button.Static.Background" Color="#FFDDDDDD"/>
         <SolidColorBrush x:Key="Button.Static.Border" Color="#FF707070"/>
         <SolidColorBrush x:Key="Button.MouseOver.Background" Color="#FFBEE6FD"/>
@@ -27,6 +30,7 @@
         <SolidColorBrush x:Key="Button.Disabled.Background" Color="#FFF4F4F4"/>
         <SolidColorBrush x:Key="Button.Disabled.Border" Color="#FFADB2B5"/>
         <SolidColorBrush x:Key="Button.Disabled.Foreground" Color="#FF838383"/>
+
         <Style TargetType="{x:Type Button}">
             <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
             <Setter Property="Background" Value="{StaticResource Button.Static.Background}"/>
@@ -64,16 +68,32 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Chart Styles -->
+        <Style x:Key="PieChartBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#4AA902"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Margin" Value="10"/>
+            <Setter Property="Padding" Value="10"/>
+        </Style>
+
+        <Style x:Key="ChartTitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
     </Page.Resources>
 
-
     <Grid>
-        <!-- Main Content -->
-        <ScrollViewer Grid.Column="1">
+        <ScrollViewer>
             <StackPanel Margin="20">
                 <!-- Dashboard Header -->
-                <Border Background="#4AA902"  Padding="10" CornerRadius="5" Margin="0 0 0 10">
-                    <TextBlock Text="Dashboard" FontSize="20" FontWeight="Bold" TextAlignment="Center" Foreground="white"/>
+                <Border Background="#4AA902" Padding="10" CornerRadius="5" Margin="0 0 0 10" >
+                    <TextBlock Text="Dashboard" FontSize="20" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
                 </Border>
 
                 <!-- Total Stock / Sales / Recent Sale -->
@@ -84,29 +104,30 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Left Nav -->
-                    <Button Grid.Column="0" Content="&lt;" Width="30" Height="30" Margin="5" Background="DarkGray"/>
-
+                    <!-- Simple Background Container -->
+                    <Border Grid.Column="1" 
+            Background="#4F4F4F" 
+            CornerRadius="20" 
+            Margin="5"
+            BorderBrush="LightGreen"/>
                     <!-- Cards -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Border Width="150" Height="100" Background="White" Margin="10" CornerRadius="5" BorderBrush="Gray" BorderThickness="1">
-                            <TextBlock Text="Total Stock" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        <Button Grid.Column="0" Content="&lt;" Width="30" Height="30" Margin="5" Background="#4F4F4F" BorderBrush="white"/>
+                        <Border Width="150" Height="100" Background="#4F4F4F" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
+                            <TextBlock Text="{Binding TotalStock}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold"/>
                         </Border>
-                        <Border Width="150" Height="100" Background="White" Margin="10" CornerRadius="5" BorderBrush="Gray" BorderThickness="1">
-                            <TextBlock Text="Total Sales" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        <Border Width="150" Height="100" Background="#4F4F4F" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
+                            <TextBlock Text="{Binding TotalSales}" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White"/>
                         </Border>
-                        <Border Width="150" Height="100" Background="White" Margin="10" CornerRadius="5" BorderBrush="Gray" BorderThickness="1">
-                            <TextBlock Text="Recent Sale" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        <Border Width="150" Height="100" Background="#4F4F4F" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
+                            <TextBlock Text="{Binding RecentSale}" FontWeight="Bold"  VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White"/>
                         </Border>
+                        <Button Grid.Column="2" Content="&gt;" Width="30" Height="30" Margin="5" Background="#4F4F4F" BorderBrush="white"/>
                     </StackPanel>
-
-                    <!-- Right Nav -->
-                    <Button Grid.Column="2" Content=">" Width="30" Height="30" Margin="5" Background="DarkGray"/>
                 </Grid>
-
                 <!-- Inventory Summary -->
                 <Border Background="#4AA902" Padding="10" CornerRadius="5" Margin="0 0 0 10">
-                    <TextBlock Text="Inventory Summary" FontSize="16" FontWeight="Bold" Foreground="white" TextAlignment="Center"/>
+                    <TextBlock Text="Inventory Summary" FontSize="16" FontWeight="Bold" Foreground="White" TextAlignment="Center"/>
                 </Border>
 
                 <!-- Inventory Alert + Sales Trend -->
@@ -118,32 +139,69 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Left Nav -->
-                    <Button Grid.Column="0" Content="&lt;" Width="30" Height="30" Margin="5" Background="DarkGray"/>
+                    <Button Grid.Column="0" Content="&lt;" Width="30" Height="30" Margin="5" Background="#4F4F4F" BorderBrush="white"/>
 
                     <!-- Cards -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Border Width="200" Height="120" Background="White" Margin="10" CornerRadius="5" BorderBrush="Gray" BorderThickness="1">
-                            <TextBlock Text="Inventory Alert" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        <Border Width="200" Height="120" Background="#4F4F4F" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
+                            <TextBlock  Text="{Binding InventoryAlert}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White"/>
                         </Border>
-                        <Border Width="200" Height="120" Background="White" Margin="10" CornerRadius="5" BorderBrush="Gray" BorderThickness="1">
-                            <TextBlock Text="Sales Trend" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        <Border Width="200" Height="120" Background="#4F4F4F" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
+                            <TextBlock Text="{Binding SalesTrend}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" TextWrapping="Wrap" TextAlignment="Center"/>
                         </Border>
                     </StackPanel>
 
                     <!-- Right Nav -->
-                    <Button Grid.Column="2" Content=">" Width="30" Height="30" Margin="5" />
+                    <Button Grid.Column="2" Content="&gt;" Width="30" Height="30" Margin="5" Background="#4F4F4F" BorderBrush="white"/>
                 </Grid>
 
-                <!-- Finance Summary -->
-                <Border Background="#4AA902" Padding="10" CornerRadius="5">
-                    <TextBlock Text="Finance Summary" Foreground="white" FontSize="16" FontWeight="Bold" TextAlignment="Center"/>
+                <!-- Finance Summary --> 
+                <Border Background="#4AA902" Padding="10" CornerRadius="5" Margin="0 0 10 0">
+                    <TextBlock Text="Finance Summary" Foreground="White" FontSize="16" FontWeight="Bold" TextAlignment="Center"/>
                 </Border>
-                <StackPanel Grid.Row="1" Orientation="Horizontal">
-                    <Border Width="200" Height="120" Background="White" Margin="10" CornerRadius="5" BorderBrush="Gray" BorderThickness="1">
-                        <TextBlock Text="Total Expenses this month" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                    </Border>
-                    <Border Width="200" Height="120" Background="White" Margin="10" CornerRadius="5" BorderBrush="Gray" BorderThickness="1">
-                        <TextBlock Text="Biggest Expense Category" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+
+                <!-- Finance Cards + Pie Chart -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <!-- Finance Cards -->
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="200" Height="120" Background="#4F4F4F" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
+                            <TextBlock Text="{Binding TotalExpenses}" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White"/>
+                        </Border>
+                        <Border Width="200" Height="120" Background="#4F4F4F" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
+                            <TextBlock Text="{Binding BiggestExpenseCategory}" FontWeight="Bold"  VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Pie Chart - Added to the right of finance cards -->
+                    <Border Style="{StaticResource PieChartBorderStyle}" Width="300" Height="200" Background="#4F4F4F">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource ChartTitleStyle}" Text="Expense by Category" Foreground="white"/>
+                            <lvc:PieChart Series="{Binding ExpenseSeries}"
+                                         LegendLocation="Bottom"
+                                         Hoverable="True"
+                                         InnerRadius="4"
+                                         Height="150">
+                                <lvc:PieChart.ChartLegend>
+                                    <lvc:DefaultLegend 
+                                        Foreground="Black" 
+                                        FontSize="10"
+                                        Margin="0,5,0,0"/>
+                                </lvc:PieChart.ChartLegend>
+                                <lvc:PieChart.DataTooltip>
+                                    <lvc:DefaultTooltip 
+                                        SelectionMode="OnlySender" 
+                                        ShowTitle="True"
+                                        ShowSeries="True"
+                                        Foreground="White"
+                                        Background="#2D2D2D"
+                                        BorderBrush="#4AA902"
+                                        BorderThickness="2"
+                                        FontSize="11"
+                                        FontWeight="Bold"
+                                        CornerRadius="5"/>
+                                </lvc:PieChart.DataTooltip>
+                            </lvc:PieChart>
+                        </StackPanel>
                     </Border>
                 </StackPanel>
             </StackPanel>
