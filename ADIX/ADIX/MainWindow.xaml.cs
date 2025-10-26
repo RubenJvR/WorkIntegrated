@@ -25,9 +25,6 @@ namespace ADIX
                 // Initialize database (this already syncs if internet is available)
                 await Database.InitializeAsync();
 
-                // REMOVED: Duplicate sync call
-                // Database.InitializeAsync() already handles syncing
-
                 // Show appropriate message based on connection status
                 if (Database.IsInternetAvailable())
                 {
@@ -45,6 +42,18 @@ namespace ADIX
                                       "Success",
                                       MessageBoxButton.OK,
                                       MessageBoxImage.Information);
+                    }
+
+                    // ✅ NEW: Sync all tables (except ITEM) after initialization
+                    try
+                    {
+                        await Task.Run(() => Database.SyncAllTablesFromAzure());
+                        Console.WriteLine("All tables synced successfully during startup");
+                    }
+                    catch (Exception syncEx)
+                    {
+                        Console.WriteLine($"Warning: Full table sync failed during startup: {syncEx.Message}");
+                        // Don't show error message - continue with app startup
                     }
                 }
                 else
@@ -88,10 +97,26 @@ namespace ADIX
             }
         }
 
-        private void NavigateToPage(string pageName)
+        private async void NavigateToPage(string pageName)
         {
             // Update active button in sidebar
             SidebarControl.SetActivePage(pageName);
+
+            // Sync before navigating if needed
+            if (Database.IsInternetAvailable() && Database.IsSyncRequired())
+            {
+                try
+                {
+                    await Database.CheckAndSyncAsync();
+
+                    // ✅ NEW: Also sync all tables during navigation
+                    await Task.Run(() => Database.SyncAllTablesFromAzure());
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Pre-navigation sync failed: {ex.Message}");
+                }
+            }
 
             switch (pageName)
             {
@@ -99,33 +124,12 @@ namespace ADIX
                     MainFrame.Navigate(new Dashboard());
                     break;
                 case "POS":
-                    // Create POS page and refresh items when loaded
                     var posPage = new PointOfSale();
-                    posPage.Loaded += async (s, e) =>
-                    {
-                        // Trigger background sync check when POS loads
-                        if (Database.IsInternetAvailable() && Database.IsSyncRequired())
-                        {
-                            try
-                            {
-                                await Database.CheckAndSyncAsync();
-
-                                // Refresh POS items after sync
-                                if (posPage.DataContext is ViewModels.PointOfSaleViewModel vm)
-                                {
-                                    vm.ReloadItemsFromDatabase();
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Background sync on POS load failed: {ex.Message}");
-                            }
-                        }
-                    };
                     MainFrame.Navigate(posPage);
                     break;
                 case "Inventory":
-                    MainFrame.Navigate(new Inventory());
+                    var inventoryPage = new Inventory();
+                    MainFrame.Navigate(inventoryPage);
                     break;
                 case "Products":
                     MainFrame.Navigate(new Products());
