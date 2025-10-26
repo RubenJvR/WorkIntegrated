@@ -162,7 +162,55 @@ namespace ADIX
                 throw new Exception($"Error getting invoice number: {ex.Message}", ex);
             }
         }
+        private static void DownloadMissingItemsFromAzure(SqliteConnection sqliteConn, SqlConnection azureConn)
+        {
+            try
+            {
+                // Get all Azure items
+                var azureItems = GetTableDataFromAzure(azureConn, "ITEM",
+                    new[] { "itemID", "description", "retailPrice", "costPrice", "stockQuantity", "stockSold", "stockRecieved", "supplierID", "sellerID", "lastModified" });
 
+                // Get all local items
+                var localItems = GetTableData(sqliteConn, "ITEM", new[] { "itemID" });
+
+                var localItemIds = new HashSet<int>(localItems.AsEnumerable().Select(r => Convert.ToInt32(r["itemID"])));
+
+                // Insert missing items from Azure
+                foreach (DataRow azureRow in azureItems.Rows)
+                {
+                    var itemId = Convert.ToInt32(azureRow["itemID"]);
+
+                    if (!localItemIds.Contains(itemId))
+                    {
+                        // This item exists in Azure but not locally - download it
+                        var insertSql = @"
+                    INSERT INTO ITEM 
+                    (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified)
+                    VALUES 
+                    (@itemID, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified)";
+
+                        using var cmd = new SqliteCommand(insertSql, sqliteConn);
+                        cmd.Parameters.AddWithValue("@itemID", itemId);
+                        cmd.Parameters.AddWithValue("@description", azureRow["description"]);
+                        cmd.Parameters.AddWithValue("@retailPrice", azureRow["retailPrice"]);
+                        cmd.Parameters.AddWithValue("@costPrice", azureRow["costPrice"]);
+                        cmd.Parameters.AddWithValue("@stockQuantity", azureRow["stockQuantity"]);
+                        cmd.Parameters.AddWithValue("@stockSold", azureRow["stockSold"]);
+                        cmd.Parameters.AddWithValue("@stockRecieved", azureRow["stockRecieved"]);
+                        cmd.Parameters.AddWithValue("@supplierID", azureRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : azureRow["supplierID"]);
+                        cmd.Parameters.AddWithValue("@sellerID", azureRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : azureRow["sellerID"]);
+                        cmd.Parameters.AddWithValue("@lastModified", azureRow["lastModified"]);
+
+                        cmd.ExecuteNonQuery();
+                        Console.WriteLine($"[SYNC] Downloaded missing item {itemId} from Azure");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error downloading missing items: {ex.Message}");
+            }
+        }
         public static long GetNextItemID()
         {
             try
@@ -724,16 +772,19 @@ namespace ADIX
             SyncMasterData(sqliteConn, azureConn, "CUSTOMER", new[] { "customerID", "name", "phone", "email", "credit", "lastModified" });
             SyncMasterData(sqliteConn, azureConn, "STAFF", new[] { "staffID", "name", "Role", "userName", "passwordHash", "salary", "lastModified" });
 
-            // Step 2: Sync item master data (prices, descriptions) but NOT quantities YET
+            // Step 2: DOWNLOAD MISSING ITEMS FROM AZURE FIRST
+            DownloadMissingItemsFromAzure(sqliteConn, azureConn);
+
+            // Step 3: Sync item master data (prices, descriptions) but NOT quantities YET
             SyncItemMasterDataWithoutInventory(sqliteConn, azureConn);
 
-            // Step 3: Sync transactions FIRST (upload local transactions to Azure)
+            // Step 4: Sync transactions FIRST (upload local transactions to Azure)
             SyncTransactions(sqliteConn, azureConn);
 
-            // Step 4: Recalculate inventory on BOTH databases independently
+            // Step 5: Recalculate inventory on BOTH databases independently
             RecalculateInventoryOnBothDatabases(sqliteConn, azureConn);
 
-            // Step 5: Sync reports
+            // Step 6: Sync reports
             SyncMasterData(sqliteConn, azureConn, "REPORT", new[] { "reportID", "reportType", "date", "staffID", "lastModified" });
 
             Console.WriteLine("Transaction-based sync completed successfully.");

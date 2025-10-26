@@ -483,6 +483,9 @@
                 <Button Content="Delete" Width="150" Height="40"
 Background="Red" Foreground="White" Margin="5"
 Click="Delete_Click"/>
+                <Button Content="Force" Width="150" Height="40"
+Background="Red" Foreground="White" Margin="5"
+Click="ForceSync_Click"/>
 
             </StackPanel>
 
