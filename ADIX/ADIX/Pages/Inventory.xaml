@@ -10,6 +10,43 @@
       d:DesignHeight="700" d:DesignWidth="1000">
 
     <Page.Resources>
+        <!--Minimum stock Buttons-->
+        <Style x:Key="MiniButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="25"/>
+            <Setter Property="Height" Value="25"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#4F4F4F"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="2,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#6A6A6A"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#3E8E41"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Header styles -->
         <Style x:Key="HeaderBorderStyle" TargetType="Border">
             <Setter Property="Background" Value="#4AA902"/>
@@ -426,6 +463,29 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
+
+                        <DataGridTemplateColumn Header="Min Stock" Width="150">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <Button Content="-" Style="{StaticResource MiniButtonStyle}" Click="DecreaseMinStock_Click" CommandParameter="{Binding}" />
+                                        <TextBox Text="{Binding MinimumStock, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         Width="40"
+                         HorizontalContentAlignment="Center"
+                         VerticalContentAlignment="Center"
+                         Background="#4F4F4F"
+                         Foreground="White"
+                         BorderBrush="#4F4F4F"
+                         BorderThickness="1"
+                         Padding="3"
+                                                 LostFocus="MinStockTextBox_LostFocus"/>
+                                        <Button Content="+" Style="{StaticResource MiniButtonStyle}" Click="IncreaseMinStock_Click" CommandParameter="{Binding}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+
 
                         <DataGridTextColumn Header="Cost Price" Binding="{Binding CostPrice}" Width="150" IsReadOnly="False">
                             <DataGridTextColumn.ElementStyle>

@@ -224,6 +224,7 @@ namespace ADIX
                 MessageBox.Show($"Sync failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
         private async void LoadInventoryAsync()
         {
             try
@@ -241,7 +242,8 @@ namespace ADIX
                 retailPrice,
                 stockQuantity,
                 stockSold,
-                stockRecieved
+                stockRecieved,
+                minimumStock
             FROM ITEM;
         ";
 
@@ -281,7 +283,10 @@ namespace ADIX
                         StockRefunded = 0,
 
                         CostOfBusinessWorkings = Convert.ToDouble(reader["costPrice"]),
-                        ReturnedStockUnusable = 0
+                        ReturnedStockUnusable = 0,
+
+                        MinimumStock = GetInt(reader, "minimumStock"),
+
                     };
 
                     //Calculations
@@ -292,6 +297,18 @@ namespace ADIX
                 }
 
                 InventoryGrid.ItemsSource = inventoryList;
+                InventoryGrid.LoadingRow += (s, e) =>
+                {
+                    var rowItem = e.Row.DataContext as InventoryItem;
+                    if (rowItem != null && rowItem.BalanceStock < rowItem.MinimumStock)
+                    {
+                        e.Row.Background = new SolidColorBrush(Colors.IndianRed);
+                    }
+                    else
+                    {
+                        e.Row.Background = new SolidColorBrush(Colors.Transparent);
+                    }
+                };
             }
             catch (Exception ex)
             {
@@ -303,6 +320,66 @@ namespace ADIX
                 );
             }
         }
+
+        private async void IncreaseMinStock_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.CommandParameter is InventoryItem item)
+            {
+                item.MinimumStock++;
+                await UpdateMinimumStockInDB(item);
+                InventoryGrid.Items.Refresh();
+            }
+        }
+
+        private async void DecreaseMinStock_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.CommandParameter is InventoryItem item)
+            {
+                if (item.MinimumStock > 0)
+                    item.MinimumStock--;
+
+                await UpdateMinimumStockInDB(item);
+                InventoryGrid.Items.Refresh();
+            }
+        }
+
+        private async Task UpdateMinimumStockInDB(InventoryItem item)
+        {
+            try
+            {
+                using var conn = new SqliteConnection(ConnStr);
+                await conn.OpenAsync();
+
+                string updateSql =
+                    "UPDATE ITEM SET minimumStock = @min WHERE itemID = @id";
+
+                using var cmd = new SqliteCommand(updateSql, conn);
+                cmd.Parameters.AddWithValue("@min", item.MinimumStock);
+                cmd.Parameters.AddWithValue("@id", item.ItemID);
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"DB update failed: {ex.Message}");
+            }
+        }
+
+        private int GetInt(SqliteDataReader reader, string column)
+        {
+            return reader[column] == DBNull.Value ? 0 : Convert.ToInt32(reader[column]);
+        }
+
+        private void MinStockTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            var textBox = sender as TextBox;
+            if (InventoryGrid.CurrentCell != null)
+            {
+                InventoryGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+            }
+        }
+
+
 
         public class Product
         {
