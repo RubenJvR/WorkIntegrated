@@ -244,8 +244,7 @@ namespace ADIX
             string checkQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name='SELLER'";
             using var checkCmd = new SqliteCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-            CreateSQLiteTables(connection);
-            InsertTestDataSQLite(connection);
+            
             if (result == null)
             {
                 CreateSQLiteTables(connection);
@@ -287,8 +286,7 @@ namespace ADIX
             string checkQuery = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'SELLER'";
             using var checkCmd = new SqlCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-            CreateAzureSQLTables(connection);
-            InsertTestDataAzureSQL(connection);
+
             if (result == null)
             {
                 CreateAzureSQLTables(connection);
@@ -318,16 +316,6 @@ namespace ADIX
         {
             string createTablesSql = @"
 
-            DROP TABLE IF EXISTS SYNC_LOG;
-        DROP TABLE IF EXISTS INVOICEITEM;
-        DROP TABLE IF EXISTS REPORT;
-        DROP TABLE IF EXISTS INVOICEQUOTE;
-        DROP TABLE IF EXISTS STAFF;
-        DROP TABLE IF EXISTS CUSTOMER;
-        DROP TABLE IF EXISTS ITEM;
-        DROP TABLE IF EXISTS SUPPLIER;
-        DROP TABLE IF EXISTS USER;
-        DROP TABLE IF EXISTS SELLER;
         
         CREATE TABLE IF NOT EXISTS SELLER(
             sellerID INTEGER NOT NULL PRIMARY KEY,
@@ -453,14 +441,7 @@ namespace ADIX
         private static void CreateAzureSQLTables(SqlConnection connection)
         {
             string createTablesSql = @"
-         IF OBJECT_ID('dbo.INVOICEITEM', 'U') IS NOT NULL DROP TABLE INVOICEITEM;
-        IF OBJECT_ID('dbo.REPORT', 'U') IS NOT NULL DROP TABLE REPORT;
-        IF OBJECT_ID('dbo.INVOICEQUOTE', 'U') IS NOT NULL DROP TABLE INVOICEQUOTE;
-        IF OBJECT_ID('dbo.STAFF', 'U') IS NOT NULL DROP TABLE STAFF;
-        IF OBJECT_ID('dbo.CUSTOMER', 'U') IS NOT NULL DROP TABLE CUSTOMER;
-        IF OBJECT_ID('dbo.ITEM', 'U') IS NOT NULL DROP TABLE ITEM;
-        IF OBJECT_ID('dbo.SUPPLIER', 'U') IS NOT NULL DROP TABLE SUPPLIER;
-        IF OBJECT_ID('dbo.SELLER', 'U') IS NOT NULL DROP TABLE SELLER;
+
 
 
         CREATE TABLE SELLER(
