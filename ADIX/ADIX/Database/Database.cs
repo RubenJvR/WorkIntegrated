@@ -162,7 +162,55 @@ namespace ADIX
                 throw new Exception($"Error getting invoice number: {ex.Message}", ex);
             }
         }
+        private static void DownloadMissingItemsFromAzure(SqliteConnection sqliteConn, SqlConnection azureConn)
+        {
+            try
+            {
+                // Get all Azure items
+                var azureItems = GetTableDataFromAzure(azureConn, "ITEM",
+                    new[] { "itemID", "description", "retailPrice", "costPrice", "stockQuantity", "stockSold", "stockRecieved", "supplierID", "sellerID", "lastModified" });
 
+                // Get all local items
+                var localItems = GetTableData(sqliteConn, "ITEM", new[] { "itemID" });
+
+                var localItemIds = new HashSet<int>(localItems.AsEnumerable().Select(r => Convert.ToInt32(r["itemID"])));
+
+                // Insert missing items from Azure
+                foreach (DataRow azureRow in azureItems.Rows)
+                {
+                    var itemId = Convert.ToInt32(azureRow["itemID"]);
+
+                    if (!localItemIds.Contains(itemId))
+                    {
+                        // This item exists in Azure but not locally - download it
+                        var insertSql = @"
+                    INSERT INTO ITEM 
+                    (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified)
+                    VALUES 
+                    (@itemID, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified)";
+
+                        using var cmd = new SqliteCommand(insertSql, sqliteConn);
+                        cmd.Parameters.AddWithValue("@itemID", itemId);
+                        cmd.Parameters.AddWithValue("@description", azureRow["description"]);
+                        cmd.Parameters.AddWithValue("@retailPrice", azureRow["retailPrice"]);
+                        cmd.Parameters.AddWithValue("@costPrice", azureRow["costPrice"]);
+                        cmd.Parameters.AddWithValue("@stockQuantity", azureRow["stockQuantity"]);
+                        cmd.Parameters.AddWithValue("@stockSold", azureRow["stockSold"]);
+                        cmd.Parameters.AddWithValue("@stockRecieved", azureRow["stockRecieved"]);
+                        cmd.Parameters.AddWithValue("@supplierID", azureRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : azureRow["supplierID"]);
+                        cmd.Parameters.AddWithValue("@sellerID", azureRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : azureRow["sellerID"]);
+                        cmd.Parameters.AddWithValue("@lastModified", azureRow["lastModified"]);
+
+                        cmd.ExecuteNonQuery();
+                        Console.WriteLine($"[SYNC] Downloaded missing item {itemId} from Azure");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error downloading missing items: {ex.Message}");
+            }
+        }
         public static long GetNextItemID()
         {
             try
@@ -196,7 +244,8 @@ namespace ADIX
             string checkQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name='SELLER'";
             using var checkCmd = new SqliteCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-            
+            CreateSQLiteTables(connection);
+            InsertTestDataSQLite(connection);
             if (result == null)
             {
                 CreateSQLiteTables(connection);
@@ -238,7 +287,8 @@ namespace ADIX
             string checkQuery = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'SELLER'";
             using var checkCmd = new SqlCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-         
+            CreateAzureSQLTables(connection);
+            InsertTestDataAzureSQL(connection);
             if (result == null)
             {
                 CreateAzureSQLTables(connection);
@@ -268,6 +318,17 @@ namespace ADIX
         {
             string createTablesSql = @"
 
+            DROP TABLE IF EXISTS SYNC_LOG;
+        DROP TABLE IF EXISTS INVOICEITEM;
+        DROP TABLE IF EXISTS REPORT;
+        DROP TABLE IF EXISTS INVOICEQUOTE;
+        DROP TABLE IF EXISTS STAFF;
+        DROP TABLE IF EXISTS CUSTOMER;
+        DROP TABLE IF EXISTS ITEM;
+        DROP TABLE IF EXISTS SUPPLIER;
+        DROP TABLE IF EXISTS USER;
+        DROP TABLE IF EXISTS SELLER;
+        
         CREATE TABLE IF NOT EXISTS SELLER(
             sellerID INTEGER NOT NULL PRIMARY KEY,
             name TEXT NOT NULL,
@@ -392,7 +453,14 @@ namespace ADIX
         private static void CreateAzureSQLTables(SqlConnection connection)
         {
             string createTablesSql = @"
-    
+         IF OBJECT_ID('dbo.INVOICEITEM', 'U') IS NOT NULL DROP TABLE INVOICEITEM;
+        IF OBJECT_ID('dbo.REPORT', 'U') IS NOT NULL DROP TABLE REPORT;
+        IF OBJECT_ID('dbo.INVOICEQUOTE', 'U') IS NOT NULL DROP TABLE INVOICEQUOTE;
+        IF OBJECT_ID('dbo.STAFF', 'U') IS NOT NULL DROP TABLE STAFF;
+        IF OBJECT_ID('dbo.CUSTOMER', 'U') IS NOT NULL DROP TABLE CUSTOMER;
+        IF OBJECT_ID('dbo.ITEM', 'U') IS NOT NULL DROP TABLE ITEM;
+        IF OBJECT_ID('dbo.SUPPLIER', 'U') IS NOT NULL DROP TABLE SUPPLIER;
+        IF OBJECT_ID('dbo.SELLER', 'U') IS NOT NULL DROP TABLE SELLER;
 
 
         CREATE TABLE SELLER(
@@ -724,16 +792,19 @@ namespace ADIX
             SyncMasterData(sqliteConn, azureConn, "CUSTOMER", new[] { "customerID", "name", "phone", "email", "credit", "lastModified" });
             SyncMasterData(sqliteConn, azureConn, "STAFF", new[] { "staffID", "name", "Role", "userName", "passwordHash", "salary", "lastModified" });
 
-            // Step 2: Sync item master data (prices, descriptions) but NOT quantities YET
+            // Step 2: DOWNLOAD MISSING ITEMS FROM AZURE FIRST
+            DownloadMissingItemsFromAzure(sqliteConn, azureConn);
+
+            // Step 3: Sync item master data (prices, descriptions) but NOT quantities YET
             SyncItemMasterDataWithoutInventory(sqliteConn, azureConn);
 
-            // Step 3: Sync transactions FIRST (upload local transactions to Azure)
+            // Step 4: Sync transactions FIRST (upload local transactions to Azure)
             SyncTransactions(sqliteConn, azureConn);
 
-            // Step 4: Recalculate inventory on BOTH databases independently
+            // Step 5: Recalculate inventory on BOTH databases independently
             RecalculateInventoryOnBothDatabases(sqliteConn, azureConn);
 
-            // Step 5: Sync reports
+            // Step 6: Sync reports
             SyncMasterData(sqliteConn, azureConn, "REPORT", new[] { "reportID", "reportType", "date", "staffID", "lastModified" });
 
             Console.WriteLine("Transaction-based sync completed successfully.");

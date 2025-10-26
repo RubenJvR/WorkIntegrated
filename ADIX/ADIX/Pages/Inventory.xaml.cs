@@ -1,4 +1,5 @@
 ﻿using ADIX.Components;
+using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using Microsoft.Win32;
 using System;
@@ -31,8 +32,31 @@ namespace ADIX
         {
             InitializeComponent();
             LoadInventoryAsync();
+            DebugLocalItems();
+            CheckAzureItems();
         }
+        private async void ForceSync_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                MessageBox.Show("Starting manual sync...", "Sync", MessageBoxButton.OK, MessageBoxImage.Information);
 
+                if (Database.IsInternetAvailable())
+                {
+                    await Database.CheckAndSyncAsync();
+                    LoadInventoryAsync(); // Refresh the grid
+                    MessageBox.Show("Sync completed!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show("No internet connection", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Sync failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
         private async void LoadInventoryAsync()
         {
             try
@@ -135,6 +159,53 @@ namespace ADIX
             CsvImporter.ImportFromCsv();
             Database.MarkSyncRequired();
         }
+        private void DebugLocalItems()
+        {
+            try
+            {
+                using var conn = new SqliteConnection("Data Source=ADIX.db");
+                conn.Open();
+
+                string query = "SELECT itemID, description, stockQuantity FROM ITEM ORDER BY itemID";
+                using var cmd = new SqliteCommand(query, conn);
+                using var reader = cmd.ExecuteReader();
+
+                Console.WriteLine("=== LOCAL ITEMS ===");
+                while (reader.Read())
+                {
+                    Console.WriteLine($"ID: {reader["itemID"]}, Name: {reader["description"]}, Stock: {reader["stockQuantity"]}");
+                }
+                Console.WriteLine($"Total local items: {reader.HasRows}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Debug error: {ex.Message}");
+            }
+        }
+        private void CheckAzureItems()
+        {
+            try
+            {
+                using var conn = new SqlConnection(Database.AzureSqlConnectionString);
+                conn.Open();
+
+                string query = "SELECT itemID, description, stockQuantity FROM ITEM ORDER BY itemID";
+                using var cmd = new SqlCommand(query, conn);
+                using var reader = cmd.ExecuteReader();
+
+                Console.WriteLine("=== AZURE ITEMS ===");
+                while (reader.Read())
+                {
+                    Console.WriteLine($"ID: {reader["itemID"]}, Name: {reader["description"]}, Stock: {reader["stockQuantity"]}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Azure check error: {ex.Message}");
+            }
+        }
+
+        // Call this in your constructor after LoadInventoryAsync()
 
         private void Delete_Click(object sender, RoutedEventArgs e)
         {
