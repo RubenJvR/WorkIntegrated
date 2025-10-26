@@ -137,8 +137,6 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-       
-
         <!-- Main Content -->
         <Grid Grid.Column="1" Margin="10">
             <Grid.RowDefinitions>
@@ -177,8 +175,9 @@
             <StackPanel Grid.Row="2" Orientation="Vertical">
                 <ComboBox x:Name="MonthSelector"
                           Style="{StaticResource RoundedComboBoxStyle}"
-                          Tag="Select Month"
-                          SelectedIndex="-1">
+                         
+                          SelectedIndex="-1"
+                          SelectionChanged="MonthSelector_SelectionChanged">
                     <ComboBoxItem Content="January"/>
                     <ComboBoxItem Content="February"/>
                     <ComboBoxItem Content="March"/>
@@ -196,9 +195,10 @@
                 <!-- Year Selector -->
                 <ComboBox x:Name="YearSelector"
                           Style="{StaticResource RoundedComboBoxStyle}"
-                          Tag="Select Year"
+                         
                           SelectedIndex="-1"
-                          Margin="0,5,0,0">
+                          Margin="0,5,0,0"
+                          SelectionChanged="YearSelector_SelectionChanged">
                     <!-- Years will be populated in code-behind -->
                 </ComboBox>
             </StackPanel>
@@ -301,7 +301,7 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="Paid" Binding="{Binding Paid, StringFormat={}{0:C}}" Width="100" IsReadOnly="True">
+                        <DataGridTextColumn Header="Paid" Binding="{Binding Paid, StringFormat='R {0:F2}'}" Width="100" IsReadOnly="True">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="White"/>
@@ -309,7 +309,7 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="Purchase Amount" Binding="{Binding PurchaseAmount, StringFormat={}{0:C}}" Width="130" IsReadOnly="True">
+                        <DataGridTextColumn Header="Purchase Amount" Binding="{Binding PurchaseAmount, StringFormat='R {0:F2}'}" Width="130" IsReadOnly="True">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="White"/>
@@ -325,7 +325,7 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="Invoice Number" Binding="{Binding InvoiceNumber}" Width="120" IsReadOnly="True">
+                        <DataGridTextColumn Header="Invoice Number" Binding="{Binding InvoiceNumber}" Width="150" IsReadOnly="True">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="White"/>
@@ -336,6 +336,7 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
+
             <!-- Summary Section -->
             <Grid Grid.Row="7">
                 <Grid.ColumnDefinitions>
@@ -348,78 +349,88 @@
                 <Border Grid.Column="0" Style="{StaticResource SummaryBorderStyle}">
                     <StackPanel>
                         <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="Monthly Turnover"/>
-                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CardAmount, StringFormat='Card: {0:C}'}"/>
-                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CashAmount, StringFormat='Cash: {0:C}'}"/>
-                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding EFTAmount, StringFormat='EFT: {0:C}'}"/>
-                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding ReturnAmount, StringFormat='Return: {0:C}'}"/>
-                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CreditAmount, StringFormat='Credit: {0:C}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CurrentReport.CardAmount, StringFormat='Card: R {0:F2}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CurrentReport.CashAmount, StringFormat='Cash: R {0:F2}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CurrentReport.EFTAmount, StringFormat='EFT: R {0:F2}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CurrentReport.ReturnAmount, StringFormat='Return: R {0:F2}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CurrentReport.CreditAmount, StringFormat='Credit: R {0:F2}'}"/>
                         <Border Background="#2D2D2D" Height="1" Margin="0,5,0,5"/>
-                        <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="{Binding TotalTurnover, StringFormat='Total: {0:C}'}"/>
+                        <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="{Binding CurrentReport.TotalTurnover, StringFormat='Total: R {0:F2}'}"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Monthly Expenses -->
-                <Border Grid.Column="1" Style="{StaticResource SummaryBorderStyle}" Margin="10,0,10,0">
+                <Border Grid.Column="1" Style="{StaticResource SummaryBorderStyle}">
                     <StackPanel>
                         <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="Monthly Expenses"/>
-                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding RentExpense, StringFormat='Rent: {0:C}'}"/>
-                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding UtilitiesExpense, StringFormat='Utilities: {0:C}'}"/>
-                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding SalaryExpense, StringFormat='Salaries: {0:C}'}"/>
-                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding OtherExpense, StringFormat='Other: {0:C}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CurrentReport.RentExpense, StringFormat='Rent: R {0:F2}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CurrentReport.UtilitiesExpense, StringFormat='Utilities: R {0:F2}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CurrentReport.SalaryExpense, StringFormat='Salaries: R {0:F2}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CurrentReport.OtherExpense, StringFormat='Other: R {0:F2}'}"/>
                         <Border Background="#2D2D2D" Height="1" Margin="0,5,0,5"/>
-                        <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="{Binding TotalExpenses, StringFormat='Total: {0:C}'}"/>
+                        <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="{Binding CurrentReport.TotalExpenses, StringFormat='Total: R {0:F2}'}"/>
                     </StackPanel>
                 </Border>
 
-                <!-- Profit & Cost Summary -->
+                <!-- Profit & Loss -->
                 <Border Grid.Column="2" Style="{StaticResource SummaryBorderStyle}">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="Profit &amp; Cost"/>
-                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding MonthlyCostOfBusiness, StringFormat='Cost of Business: {0:C}'}"/>
-                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding GrossProfit, StringFormat='Gross Profit: {0:C}'}"/>
-                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding NetProfit, StringFormat='Net Profit: {0:C}'}"/>
+                        <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="Profit &amp; Loss"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CurrentReport.MonthlyCostOfBusiness, StringFormat='Cost of Business: R {0:F2}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CurrentReport.GrossProfit, StringFormat='Gross Profit: R {0:F2}'}"/>
+                        <TextBlock Style="{StaticResource SummaryTextStyle}" Text="{Binding CurrentReport.NetProfit, StringFormat='Net Profit: R {0:F2}'}"/>
                         <Border Background="#2D2D2D" Height="1" Margin="0,5,0,5"/>
-                        <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="{Binding ProfitMargin, StringFormat='Profit Margin: {0}%'}"/>
+                        <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="{Binding CurrentReport.ProfitMargin, StringFormat='Profit Margin: {0:F2}%'}"/>
                     </StackPanel>
                 </Border>
             </Grid>
 
             <!-- Supplier Stock Section -->
             <Border Grid.Row="9" Style="{StaticResource SummaryBorderStyle}">
-                <StackPanel>
+                <StackPanel Orientation="Vertical">
                     <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="Supplier Stock Reports"/>
-                    <TextBlock Style="{StaticResource SummaryTextStyle}" Text="Save individual supplier stock reports:"/>
 
-                    <!-- Dynamic Supplier Buttons -->
-                    <ItemsControl x:Name="SupplierButtonsContainer" Margin="0,5,0,0">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel Orientation="Horizontal"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Button Content="{Binding DisplayName}" 
-                                        Style="{StaticResource SupplierButtonStyle}"
-                                        Command="{Binding SaveCommand}"/>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,10" VerticalAlignment="Center">
+                     
+
+                        <ComboBox x:Name="SupplierComboBox"
+                      Style="{StaticResource RoundedComboBoxStyle}"
+                      Width="250"
+                      VerticalAlignment="Center"
+                      Tag="Select Supplier"/>
+
+                        <Button x:Name="SaveSupplierReport"
+                    Content="Save Supplier Report"
+                    Style="{StaticResource SupplierButtonStyle}"
+                    Click="SaveSupplierReport_Click"
+                    Margin="20,0,0,0"/>
+                    </StackPanel>
+
+                    <TextBlock Style="{StaticResource SummaryTextStyle}" 
+                   Text="Generate individual supplier reports showing current stock levels and monthly sales performance."
+                   FontStyle="Italic"
+                   TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
-
             <!-- Action Buttons -->
-            <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Center">
-                <Button Content="Generate Report" 
-                        Width="150" Height="40"
-                        Background="#4F4F4F" Foreground="White" FontWeight="Bold" Margin="5"/>
-                <Button Content="Save Full Month Stock Report" 
-                        Width="200" Height="40"
-                        Background="#4AA902" Foreground="White" FontWeight="Bold" Margin="5"
-                        ToolTip="Only click at the end of the month"/>
-                <Button Content="Export as PDF" 
-                        Width="150" Height="40"
-                        Background="#4F4F4F" Foreground="White" FontWeight="Bold" Margin="5"/>
+            <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                <Button x:Name="GenerateReport" 
+                        Content="Generate Report" 
+                        Style="{StaticResource SupplierButtonStyle}" 
+                        Width="150"
+                        Click="GenerateReport_Click"/>
+                <Button x:Name="SaveFullReport" 
+                        Content="Save Full Month Report" 
+                        Style="{StaticResource SupplierButtonStyle}" 
+                        Width="180"
+                        Click="SaveFullReport_Click"
+                        Margin="20,0,0,0"/>
+                <Button x:Name="ExportPdf" 
+                        Content="Export as PDF" 
+                        Style="{StaticResource SupplierButtonStyle}" 
+                        Width="150"
+                        Click="ExportPdf_Click"
+                        Margin="20,0,0,0"/>
             </StackPanel>
         </Grid>
     </Grid>

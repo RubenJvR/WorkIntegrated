@@ -1247,6 +1247,181 @@ namespace ADIX
             }
         }
 
+        // Add these methods to the Database class in Database.cs
+
+        /// <summary>
+        /// Get monthly sales transactions for reporting
+        /// </summary>
+        public static DataTable GetMonthlyTransactions(int month, int year)
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            string query = @"
+        SELECT 
+            iq.date as Date,
+            COALESCE(c.name, 'Walk-in Customer') as CustomerName,
+            s.name as SalesStaff,
+            iq.totalAmount as Paid,
+            iq.totalAmount as PurchaseAmount,
+            COALESCE(iq.paymentMethod, 'Cash') as PaymentMethod,
+            iq.invoiceQuoteID as InvoiceNumber,
+            iq.type as TransactionType
+        FROM INVOICEQUOTE iq
+        LEFT JOIN CUSTOMER c ON iq.customerID = c.customerID
+        INNER JOIN STAFF s ON iq.staffID = s.staffID
+        WHERE strftime('%m', iq.date) = @month 
+        AND strftime('%Y', iq.date) = @year
+        ORDER BY iq.date";
+
+            using var cmd = new SqliteCommand(query, connection);
+            cmd.Parameters.AddWithValue("@month", month.ToString("00"));
+            cmd.Parameters.AddWithValue("@year", year.ToString());
+
+            var dataTable = new DataTable();
+            using var reader = cmd.ExecuteReader();
+            dataTable.Load(reader);
+
+            return dataTable;
+        }
+
+        /// <summary>
+        /// Get monthly financial summary
+        /// </summary>
+        public static (decimal cardAmount, decimal cashAmount, decimal eftAmount,
+                       decimal returnAmount, decimal creditAmount, decimal totalTurnover)
+            GetMonthlyFinancialSummary(int month, int year)
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            // Sales by payment method
+            string salesQuery = @"
+        SELECT 
+            COALESCE(paymentMethod, 'Cash') as PaymentMethod,
+            SUM(totalAmount) as TotalAmount
+        FROM INVOICEQUOTE 
+        WHERE strftime('%m', date) = @month 
+        AND strftime('%Y', date) = @year
+        AND type = 1  -- Sales
+        GROUP BY COALESCE(paymentMethod, 'Cash')";
+
+            using var salesCmd = new SqliteCommand(salesQuery, connection);
+            salesCmd.Parameters.AddWithValue("@month", month.ToString("00"));
+            salesCmd.Parameters.AddWithValue("@year", year.ToString());
+
+            decimal cardAmount = 0, cashAmount = 0, eftAmount = 0, creditAmount = 0;
+
+            using var salesReader = salesCmd.ExecuteReader();
+            while (salesReader.Read())
+            {
+                var method = salesReader["PaymentMethod"].ToString().ToLower();
+                var amount = Convert.ToDecimal(salesReader["TotalAmount"]);
+
+                switch (method)
+                {
+                    case "card":
+                        cardAmount = amount;
+                        break;
+                    case "cash":
+                        cashAmount = amount;
+                        break;
+                    case "eft":
+                        eftAmount = amount;
+                        break;
+                    case "credit":
+                        creditAmount = amount;
+                        break;
+                }
+            }
+
+            // Returns (negative amounts from invoice items)
+            string returnsQuery = @"
+        SELECT COALESCE(SUM(ii.quantity * ii.priceAtSale), 0) as ReturnAmount
+        FROM INVOICEITEM ii
+        INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
+        WHERE strftime('%m', iq.date) = @month 
+        AND strftime('%Y', iq.date) = @year
+        AND ii.quantity < 0";
+
+            using var returnsCmd = new SqliteCommand(returnsQuery, connection);
+            returnsCmd.Parameters.AddWithValue("@month", month.ToString("00"));
+            returnsCmd.Parameters.AddWithValue("@year", year.ToString());
+
+            decimal returnAmount = Math.Abs(Convert.ToDecimal(returnsCmd.ExecuteScalar() ?? 0m));
+
+            decimal totalTurnover = cardAmount + cashAmount + eftAmount + creditAmount - returnAmount;
+
+            return (cardAmount, cashAmount, eftAmount, returnAmount, creditAmount, totalTurnover);
+        }
+
+        /// <summary>
+        /// Get cost of goods sold for the month
+        /// </summary>
+        public static decimal GetMonthlyCOGS(int month, int year)
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            string query = @"
+        SELECT COALESCE(SUM(ii.quantity * i.costPrice), 0) as COGS
+        FROM INVOICEITEM ii
+        INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
+        INNER JOIN ITEM i ON ii.itemID = i.itemID
+        WHERE strftime('%m', iq.date) = @month 
+        AND strftime('%Y', iq.date) = @year
+        AND iq.type = 1  -- Sales only
+        AND ii.quantity > 0";  // Positive quantities only (exclude returns)
+
+            using var cmd = new SqliteCommand(query, connection);
+            cmd.Parameters.AddWithValue("@month", month.ToString("00"));
+            cmd.Parameters.AddWithValue("@year", year.ToString());
+
+            var result = cmd.ExecuteScalar();
+            return result != DBNull.Value ? Convert.ToDecimal(result) : 0m;
+        }
+
+        /// <summary>
+        /// Create expenses table if it doesn't exist
+        /// </summary>
+        public static void InitializeExpensesTable()
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            string createTableSql = @"
+        CREATE TABLE IF NOT EXISTS EXPENSES (
+            expenseID INTEGER PRIMARY KEY AUTOINCREMENT,
+            expenseType TEXT NOT NULL,
+            amount DECIMAL(10,2) NOT NULL,
+            date TEXT NOT NULL,
+            description TEXT,
+            lastModified TEXT DEFAULT CURRENT_TIMESTAMP
+        )";
+
+            using var cmd = new SqliteCommand(createTableSql, connection);
+            cmd.ExecuteNonQuery();
+
+            // Insert sample expenses if table is empty
+            string checkDataSql = "SELECT COUNT(*) FROM EXPENSES";
+            using var checkCmd = new SqliteCommand(checkDataSql, connection);
+            var count = Convert.ToInt32(checkCmd.ExecuteScalar());
+
+            if (count == 0)
+            {
+                string insertSampleData = @"
+            INSERT INTO EXPENSES (expenseType, amount, date, description) VALUES
+            ('Rent', 15000.00, date('now', 'start of month'), 'Monthly rent payment'),
+            ('Utilities', 2500.00, date('now', 'start of month'), 'Electricity, water, internet'),
+            ('Salaries', 45000.00, date('now', 'start of month'), 'Staff salaries'),
+            ('Other', 5000.00, date('now', 'start of month'), 'Miscellaneous expenses')";
+
+                using var insertCmd = new SqliteCommand(insertSampleData, connection);
+                insertCmd.ExecuteNonQuery();
+            }
+        }
+
+
         private static void SyncInvoiceItems(SqliteConnection sqliteConn, SqlConnection azureConn, SqlTransaction transaction, long invoiceID)
         {
             var items = new DataTable();
@@ -1483,5 +1658,7 @@ namespace ADIX
             MarkSyncRequired();
             Console.WriteLine($"Processed sale for invoice {invoiceID}");
         }
+
+
     }
 }
