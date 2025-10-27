@@ -352,7 +352,7 @@ namespace ADIX
         stockSold INTEGER NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
         supplierID INTEGER,
         sellerID INTEGER,
-        minimumStock INTEGER,
+        
         lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
         FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
@@ -474,7 +474,7 @@ namespace ADIX
         stockSold INT NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
         supplierID INT,
         sellerID INT,
-        minimumStock INT,
+        
         lastModified DATETIME DEFAULT GETUTCDATE(),
         FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
         FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
