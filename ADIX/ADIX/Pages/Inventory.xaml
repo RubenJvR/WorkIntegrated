@@ -5,6 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:sys="clr-namespace:System;assembly=mscorlib"
+      xmlns:converters="clr-namespace:ADIX"
       mc:Ignorable="d"
       Title="Inventory"
       d:DesignHeight="700" d:DesignWidth="1000">
@@ -75,8 +76,8 @@
         </Style>
 
         <!-- Converters -->
-        <local:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
-        <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <converters:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
 
         <!-- Rounded ComboBox with placeholder -->
         <Style x:Key="RoundedComboBoxStyle" TargetType="ComboBox">
