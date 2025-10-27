@@ -650,12 +650,18 @@ namespace ADIX
                     deleteCmd.Parameters.AddWithValue("@itemID", itemId);
                     int rowsAffected = deleteCmd.ExecuteNonQuery();
 
+                    // LOG THE DELETION FOR SYNC
+                    string logDeletionSql = "INSERT INTO DELETION_LOG (tableName, recordID) VALUES ('ITEM', @itemID)";
+                    using var logCmd = new SqliteCommand(logDeletionSql, conn, transaction);
+                    logCmd.Parameters.AddWithValue("@itemID", itemId);
+                    logCmd.ExecuteNonQuery();
+
                     transaction.Commit();
 
                     if (rowsAffected > 0)
                     {
                         MessageBox.Show(
-                            $"Item '{itemName}' deleted successfully!",
+                            $"Item '{itemName}' deleted successfully! Sync will propagate to other devices.",
                             "Delete Success",
                             MessageBoxButton.OK,
                             MessageBoxImage.Information);
