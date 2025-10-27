@@ -113,13 +113,13 @@
                     <!-- Cards -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
                         <Button Grid.Column="0" Content="&lt;" Width="30" Height="30" Margin="5" Background="#4F4F4F" BorderBrush="white"/>
-                        <Border Width="150" Height="100" Background="#4F4F4F" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
+                        <Border Width="150" Height="100" Background="Green" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
                             <TextBlock Text="{Binding TotalStock}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold"/>
                         </Border>
-                        <Border Width="150" Height="100" Background="#4F4F4F" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
+                        <Border Width="150" Height="100" Background="blue" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
                             <TextBlock Text="{Binding TotalSales}" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White"/>
                         </Border>
-                        <Border Width="150" Height="100" Background="#4F4F4F" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
+                        <Border Width="150" Height="100" Background="purple" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
                             <TextBlock Text="{Binding RecentSale}" FontWeight="Bold"  VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White"/>
                         </Border>
                         <Button Grid.Column="2" Content="&gt;" Width="30" Height="30" Margin="5" Background="#4F4F4F" BorderBrush="white"/>
@@ -143,10 +143,10 @@
 
                     <!-- Cards -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Border Width="200" Height="120" Background="#4F4F4F" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
+                        <Border Width="267" Height="136" Background="OrangeRed" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
                             <TextBlock  Text="{Binding InventoryAlert}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White"/>
                         </Border>
-                        <Border Width="200" Height="120" Background="#4F4F4F" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
+                        <Border Width="200" Height="120" Background="Green" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
                             <TextBlock Text="{Binding SalesTrend}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" TextWrapping="Wrap" TextAlignment="Center"/>
                         </Border>
                     </StackPanel>
@@ -155,7 +155,7 @@
                     <Button Grid.Column="2" Content="&gt;" Width="30" Height="30" Margin="5" Background="#4F4F4F" BorderBrush="white"/>
                 </Grid>
 
-                <!-- Finance Summary --> 
+                <!-- Finance Summary -->
                 <Border Background="#4AA902" Padding="10" CornerRadius="5" Margin="0 0 10 0">
                     <TextBlock Text="Finance Summary" Foreground="White" FontSize="16" FontWeight="Bold" TextAlignment="Center"/>
                 </Border>
@@ -164,10 +164,10 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <!-- Finance Cards -->
                     <StackPanel Orientation="Horizontal">
-                        <Border Width="200" Height="120" Background="#4F4F4F" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
+                        <Border Width="200" Height="120" Background="Green" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
                             <TextBlock Text="{Binding TotalExpenses}" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White"/>
                         </Border>
-                        <Border Width="200" Height="120" Background="#4F4F4F" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
+                        <Border Width="200" Height="120" Background="red" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
                             <TextBlock Text="{Binding BiggestExpenseCategory}" FontWeight="Bold"  VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White"/>
                         </Border>
                     </StackPanel>

@@ -97,13 +97,13 @@ FontWeight="Medium"
  Height="30"
  VerticalContentAlignment="Center"
  Margin="0,5,0,0" />
-            
+
 
 
         </StackPanel>
 
-        <ui:Button  Content="Login" Click="Login_button" Margin="316,259,256,13" Height="30" Width="228" Grid.ColumnSpan="2" />
-        <ui:Button  Content="Cancel" Click="Cancel_button" Margin="316,294,256,-22" Height="30" Width="228" Grid.ColumnSpan="2" />
+        <ui:Button  Content="Login" Click="Login_button" Margin="316,259,295,13" Height="30" Grid.ColumnSpan="2" />
+        <ui:Button  Content="Cancel" Click="Cancel_button" Margin="316,294,295,-23" Grid.ColumnSpan="2" />
 
     </Grid>
 </Window>

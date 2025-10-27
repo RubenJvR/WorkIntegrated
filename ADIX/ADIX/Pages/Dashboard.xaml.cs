@@ -94,21 +94,21 @@ namespace ADIX
                 var recentSale = recentCmd.ExecuteScalar();
                 RecentSale = recentSale != DBNull.Value ? $"RECENT SALE : R {Convert.ToDouble(recentSale):N0}" : "RECENT SALE : 0";
 
-                // Load Inventory Alerts (items with low stock)
+                // Load Inventory Alerts (items with low stock) // counts all rows with stockQuantity > 10
                 var alertCmd = new SqliteCommand(@"
             SELECT COUNT(*) 
             FROM ITEM 
             WHERE stockQuantity <= 10", connection);
                 var alertCount = alertCmd.ExecuteScalar();
                 InventoryAlert = Convert.ToInt32(alertCount) > 0 ?
-                    $" STOCK ALERT:   {alertCount} remaining" : "ALL STOCK OK";
+                    $" STOCK ALERT: Low stock items {alertCount} remaining" : "ALL STOCK OK";
 
-                // Load Total Expenses
-                var expenseCmd = new SqliteCommand(@"
-            SELECT SUM(costPrice * stockSold) 
-            FROM ITEM", connection);
-                var totalExpenses = expenseCmd.ExecuteScalar();
-                TotalExpenses = totalExpenses != DBNull.Value ? $"TOTAL EXPENSES : R {Convert.ToDouble(totalExpenses):N0}" : "TOTAL EXPENSES : R 0";
+                // Load Total Profit from Stock Sold
+                var profitCmd = new SqliteCommand(@"
+SELECT SUM((retailPrice - costPrice) * stockSold) 
+FROM ITEM", connection);
+                var totalProfit = profitCmd.ExecuteScalar();
+                TotalExpenses = totalProfit != DBNull.Value ? $"TOTAL PROFIT : R {Convert.ToDouble(totalProfit):N0}" : "TOTAL PROFIT : R 0";
 
                 // Biggest Expense Category
                 BiggestExpenseCategory = $"BIGGEST EXPENSE : {GetBiggestExpenseCategory(connection)}";
@@ -139,51 +139,32 @@ namespace ADIX
         {
             try
             {
-                // Get current month sales
-                var currentMonthSalesCmd = new SqliteCommand(@"
-            SELECT COALESCE(SUM(totalAmount), 0) 
+                // Simple test - just count sales invoices
+                var testCmd = new SqliteCommand(@"
+            SELECT COUNT(*) as SalesCount,
+                   COALESCE(SUM(totalAmount), 0) as TotalSales
             FROM INVOICEQUOTE 
-            WHERE type = 1 
-            AND date >= date('now', 'start of month')", connection);
-                var currentMonthSales = Convert.ToDouble(currentMonthSalesCmd.ExecuteScalar());
+            WHERE type = 1", connection);
 
-                // Get previous month sales
-                var previousMonthSalesCmd = new SqliteCommand(@"
-            SELECT COALESCE(SUM(totalAmount), 0) 
-            FROM INVOICEQUOTE 
-            WHERE type = 1 
-            AND date >= date('now', 'start of month', '-1 month') 
-            AND date < date('now', 'start of month')", connection);
-                var previousMonthSales = Convert.ToDouble(previousMonthSalesCmd.ExecuteScalar());
-
-                // Calculate trend percentage
-                if (previousMonthSales > 0)
+                using (var reader = testCmd.ExecuteReader())
                 {
-                    double trendPercentage = ((currentMonthSales - previousMonthSales) / previousMonthSales) * 100;
+                    if (reader.Read())
+                    {
+                        int salesCount = Convert.ToInt32(reader["SalesCount"]);
+                        double totalSales = Convert.ToDouble(reader["TotalSales"]);
 
-                    if (trendPercentage > 0)
-                    {
-                        return $"SALES TREND: ↗ {trendPercentage:0}% UP";
-                    }
-                    else if (trendPercentage < 0)
-                    {
-                        return $"SALES TREND: ↘ {Math.Abs(trendPercentage):0}% DOWN";
-                    }
-                    else
-                    {
-                        return "SALES TREND: → STABLE";
+                        if (salesCount > 0)
+                        {
+                            return $"ACTIVE: {salesCount} sales\nTOTAL: R {totalSales:N0}";
+                        }
                     }
                 }
-                else
-                {
-                    // If no previous data, show a positive trend to encourage
-                    return "SALES TREND: ↗ 12% UP";
-                }
+
+                return "SALES TREND: NO DATA";
             }
-            catch
+            catch (Exception ex)
             {
-                // Fallback trend if calculation fails
-                return "SALES TREND: ↗ 12% UP";
+                return $"ERROR: {ex.Message}";
             }
         }
 
