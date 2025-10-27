@@ -44,6 +44,55 @@ namespace ADIX
             SQLite,
             AzureSQL
         }
+        private static void SyncDeletions(SqliteConnection sqliteConn, SqlConnection azureConn)
+        {
+            try
+            {
+                // Get unsynced deletions
+                var deletions = new DataTable();
+                using (var cmd = new SqliteCommand("SELECT * FROM DELETION_LOG WHERE syncedToAzure = 0", sqliteConn))
+                using (var reader = cmd.ExecuteReader())
+                {
+                    deletions.Load(reader);
+                }
+
+                using var transaction = azureConn.BeginTransaction();
+
+                foreach (DataRow deletion in deletions.Rows)
+                {
+                    string tableName = deletion["tableName"].ToString();
+                    int recordId = Convert.ToInt32(deletion["recordID"]);
+
+                    // Delete from Azure
+                    string deleteSql = $"DELETE FROM {tableName} WHERE {tableName}ID = @id";
+                    using var deleteCmd = new SqlCommand(deleteSql, azureConn, transaction);
+                    deleteCmd.Parameters.AddWithValue("@id", recordId);
+
+                    try
+                    {
+                        deleteCmd.ExecuteNonQuery();
+                        Console.WriteLine($"[SYNC] Deleted {tableName} record {recordId} from Azure");
+
+                        // Mark as synced
+                        using var updateCmd = new SqliteCommand(
+                            "UPDATE DELETION_LOG SET syncedToAzure = 1 WHERE deletionID = @id",
+                            sqliteConn);
+                        updateCmd.Parameters.AddWithValue("@id", deletion["deletionID"]);
+                        updateCmd.ExecuteNonQuery();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[SYNC] Failed to delete {tableName} record {recordId}: {ex.Message}");
+                    }
+                }
+
+                transaction.Commit();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SYNC] Error syncing deletions: {ex.Message}");
+            }
+        }
 
         /// <summary>
         /// Checks if the device has internet connectivity
@@ -534,6 +583,14 @@ namespace ADIX
             FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
         );
 
+        CREATE TABLE IF NOT EXISTS DELETION_LOG(
+    deletionID INTEGER PRIMARY KEY AUTOINCREMENT,
+    tableName TEXT NOT NULL,
+    recordID INTEGER NOT NULL,
+    timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+    syncedToAzure INTEGER DEFAULT 0
+);
+
         CREATE INDEX idx_item_supplier ON ITEM(supplierID);
         CREATE INDEX idx_item_seller ON ITEM(sellerID);
         CREATE INDEX idx_invoice_customer ON INVOICEQUOTE(customerID);
@@ -788,6 +845,8 @@ namespace ADIX
 
             // Step 6: Sync reports
             SyncMasterData(sqliteConn, azureConn, "REPORT", new[] { "reportID", "reportType", "date", "staffID", "lastModified" });
+
+            SyncDeletions(sqliteConn, azureConn);
 
             Console.WriteLine("Transaction-based sync completed successfully.");
         }
