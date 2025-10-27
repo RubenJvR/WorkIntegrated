@@ -55,7 +55,66 @@ namespace ADIX
             this.Loaded += Inventory_Loaded;
             this.Unloaded += (s, e) => _inventoryRefreshTimer.Stop();
         }
+        private async void SyncAllData_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var button = sender as Button;
+                if (button != null)
+                {
+                    button.IsEnabled = false;
+                    button.Content = "Syncing All Data...";
+                }
 
+                MessageBox.Show("Starting comprehensive data sync. This may take a while...",
+                              "Sync All Data",
+                              MessageBoxButton.OK,
+                              MessageBoxImage.Information);
+
+                if (Database.IsInternetAvailable())
+                {
+                    bool success = await Database.SyncAllMissingDataAsync();
+                    if (success)
+                    {
+                        LoadInventoryAsync(); // Refresh the grid
+                        MessageBox.Show("All data synchronized successfully!",
+                                      "Success",
+                                      MessageBoxButton.OK,
+                                      MessageBoxImage.Information);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Sync completed with some issues. Check console for details.",
+                                      "Partial Success",
+                                      MessageBoxButton.OK,
+                                      MessageBoxImage.Warning);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("No internet connection",
+                                  "Error",
+                                  MessageBoxButton.OK,
+                                  MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Comprehensive sync failed: {ex.Message}",
+                              "Error",
+                              MessageBoxButton.OK,
+                              MessageBoxImage.Error);
+            }
+            finally
+            {
+                var button = sender as Button;
+                if (button != null)
+                {
+                    button.IsEnabled = true;
+                    button.Content = "Sync All Data";
+                }
+            }
+        }
         private void ShowAllData_Click(object sender, RoutedEventArgs e)
         {
             try
