@@ -409,14 +409,16 @@ namespace ADIX
                 using var conn = new SqliteConnection(ConnStr);
                 await conn.OpenAsync();
 
-                string updateSql =
-                    "UPDATE ITEM SET minimumStock = @min WHERE itemID = @id";
-
+                string updateSql = "UPDATE ITEM SET minimumStock = @min, lastModified = CURRENT_TIMESTAMP WHERE itemID = @id";
                 using var cmd = new SqliteCommand(updateSql, conn);
                 cmd.Parameters.AddWithValue("@min", item.MinimumStock);
                 cmd.Parameters.AddWithValue("@id", item.ItemID);
 
                 await cmd.ExecuteNonQueryAsync();
+
+                // MARK SYNC AS REQUIRED
+                Database.MarkSyncRequired();
+                Console.WriteLine($"Updated minimum stock for item {item.ItemID} to {item.MinimumStock}");
             }
             catch (Exception ex)
             {

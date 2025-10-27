@@ -184,11 +184,10 @@ namespace ADIX
                     {
                         // This item exists in Azure but not locally - download it
                         var insertSql = @"
-                    INSERT INTO ITEM 
-                    (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified)
-                    VALUES 
-                    (@itemID, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified)";
-
+    INSERT INTO ITEM 
+    (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified, minimumStock)
+    VALUES 
+    (@itemID, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified, @minimumStock)";
                         using var cmd = new SqliteCommand(insertSql, sqliteConn);
                         cmd.Parameters.AddWithValue("@itemID", itemId);
                         cmd.Parameters.AddWithValue("@description", azureRow["description"]);
@@ -200,6 +199,7 @@ namespace ADIX
                         cmd.Parameters.AddWithValue("@supplierID", azureRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : azureRow["supplierID"]);
                         cmd.Parameters.AddWithValue("@sellerID", azureRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : azureRow["sellerID"]);
                         cmd.Parameters.AddWithValue("@lastModified", azureRow["lastModified"]);
+                        cmd.Parameters.AddWithValue("@minimumStock", azureRow["minimumStock"]);
 
                         cmd.ExecuteNonQuery();
                         Console.WriteLine($"[SYNC] Downloaded missing item {itemId} from Azure");
