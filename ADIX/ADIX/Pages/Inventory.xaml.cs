@@ -55,7 +55,66 @@ namespace ADIX
             this.Loaded += Inventory_Loaded;
             this.Unloaded += (s, e) => _inventoryRefreshTimer.Stop();
         }
+        private async void SyncAllData_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var button = sender as Button;
+                if (button != null)
+                {
+                    button.IsEnabled = false;
+                    button.Content = "Syncing All Data...";
+                }
 
+                MessageBox.Show("Starting comprehensive data sync. This may take a while...",
+                              "Sync All Data",
+                              MessageBoxButton.OK,
+                              MessageBoxImage.Information);
+
+                if (Database.IsInternetAvailable())
+                {
+                    bool success = await Database.SyncAllMissingDataAsync();
+                    if (success)
+                    {
+                        LoadInventoryAsync(); // Refresh the grid
+                        MessageBox.Show("All data synchronized successfully!",
+                                      "Success",
+                                      MessageBoxButton.OK,
+                                      MessageBoxImage.Information);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Sync completed with some issues. Check console for details.",
+                                      "Partial Success",
+                                      MessageBoxButton.OK,
+                                      MessageBoxImage.Warning);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("No internet connection",
+                                  "Error",
+                                  MessageBoxButton.OK,
+                                  MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Comprehensive sync failed: {ex.Message}",
+                              "Error",
+                              MessageBoxButton.OK,
+                              MessageBoxImage.Error);
+            }
+            finally
+            {
+                var button = sender as Button;
+                if (button != null)
+                {
+                    button.IsEnabled = true;
+                    button.Content = "Sync All Data";
+                }
+            }
+        }
         private void ShowAllData_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -211,7 +270,7 @@ namespace ADIX
                 if (Database.IsInternetAvailable())
                 {
                     await Database.CheckAndSyncAsync();
-                    LoadInventoryAsync(); // Refresh the grid
+                    RefreshAfterSync(); // Refresh the grid after sync
                     MessageBox.Show("Sync completed!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
@@ -342,7 +401,12 @@ namespace ADIX
                 InventoryGrid.Items.Refresh();
             }
         }
-
+        private async void RefreshAfterSync()
+        {
+            // Small delay to ensure sync completes
+            await Task.Delay(1000);
+            LoadInventoryAsync();
+        }
         private async Task UpdateMinimumStockInDB(InventoryItem item)
         {
             try
@@ -350,14 +414,33 @@ namespace ADIX
                 using var conn = new SqliteConnection(ConnStr);
                 await conn.OpenAsync();
 
-                string updateSql =
-                    "UPDATE ITEM SET minimumStock = @min WHERE itemID = @id";
-
+                string updateSql = "UPDATE ITEM SET minimumStock = @min, lastModified = CURRENT_TIMESTAMP WHERE itemID = @id";
                 using var cmd = new SqliteCommand(updateSql, conn);
                 cmd.Parameters.AddWithValue("@min", item.MinimumStock);
                 cmd.Parameters.AddWithValue("@id", item.ItemID);
 
                 await cmd.ExecuteNonQueryAsync();
+
+                // MARK SYNC AS REQUIRED
+                Database.MarkSyncRequired();
+                Console.WriteLine($"Updated minimum stock for item {item.ItemID} to {item.MinimumStock}");
+
+                // Force immediate sync if online
+                if (Database.IsInternetAvailable())
+                {
+                    try
+                    {
+                        await Database.CheckAndSyncAsync();
+
+                        // CRITICAL: Reload the inventory AFTER sync to get any changes from Azure
+                        LoadInventoryAsync();
+                    }
+                    catch (Exception syncEx)
+                    {
+                        Console.WriteLine($"Immediate sync after min stock update failed: {syncEx.Message}");
+                        // Don't show error to user - it will sync eventually
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -567,12 +650,18 @@ namespace ADIX
                     deleteCmd.Parameters.AddWithValue("@itemID", itemId);
                     int rowsAffected = deleteCmd.ExecuteNonQuery();
 
+                    // LOG THE DELETION FOR SYNC
+                    string logDeletionSql = "INSERT INTO DELETION_LOG (tableName, recordID) VALUES ('ITEM', @itemID)";
+                    using var logCmd = new SqliteCommand(logDeletionSql, conn, transaction);
+                    logCmd.Parameters.AddWithValue("@itemID", itemId);
+                    logCmd.ExecuteNonQuery();
+
                     transaction.Commit();
 
                     if (rowsAffected > 0)
                     {
                         MessageBox.Show(
-                            $"Item '{itemName}' deleted successfully!",
+                            $"Item '{itemName}' deleted successfully! Sync will propagate to other devices.",
                             "Delete Success",
                             MessageBoxButton.OK,
                             MessageBoxImage.Information);
@@ -623,5 +712,29 @@ namespace ADIX
             }
         }
 
+
+        private void ClearFilters_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Clear ComboBox selections
+                ItemGroup.SelectedIndex = -1;
+                ItemName.SelectedIndex = -1;
+
+                // Reset Low Stock toggle
+                LowStockToggle.IsChecked = false;
+
+                // Refresh the inventory to show all items
+                LoadInventoryAsync();
+
+                MessageBox.Show("All filters have been cleared.", "Filters Cleared",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error clearing filters: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 }

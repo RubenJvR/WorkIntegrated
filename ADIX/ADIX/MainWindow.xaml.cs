@@ -22,38 +22,29 @@ namespace ADIX
         {
             try
             {
-                // Initialize database (this already syncs if internet is available)
+                // Initialize database
                 await Database.InitializeAsync();
 
-                // Show appropriate message based on connection status
+                // Perform comprehensive sync to get all missing data
                 if (Database.IsInternetAvailable())
                 {
-                    var lastSync = Database.GetLastSyncTime();
-                    if (lastSync != DateTime.MinValue)
-                    {
-                        MessageBox.Show($"Database initialized and synced with Azure SQL.\nLast sync: {lastSync:yyyy-MM-dd HH:mm:ss}",
-                                      "Success",
-                                      MessageBoxButton.OK,
-                                      MessageBoxImage.Information);
-                    }
-                    else
-                    {
-                        MessageBox.Show("Database initialized successfully.",
-                                      "Success",
-                                      MessageBoxButton.OK,
-                                      MessageBoxImage.Information);
-                    }
-
-                    // ✅ NEW: Sync all tables (except ITEM) after initialization
                     try
                     {
-                        
-                        Console.WriteLine("All tables synced successfully during startup");
+                        await Database.SyncAllMissingDataAsync();
+                        var lastSync = Database.GetLastSyncTime();
+
+                        MessageBox.Show($"Database initialized and fully synced with Azure SQL.\nLast sync: {lastSync:yyyy-MM-dd HH:mm:ss}",
+                                      "Success",
+                                      MessageBoxButton.OK,
+                                      MessageBoxImage.Information);
                     }
                     catch (Exception syncEx)
                     {
-                        Console.WriteLine($"Warning: Full table sync failed during startup: {syncEx.Message}");
-                        // Don't show error message - continue with app startup
+                        Console.WriteLine($"Warning: Comprehensive sync failed: {syncEx.Message}");
+                        MessageBox.Show("Database initialized but sync incomplete. Some data may be missing.",
+                                      "Partial Sync",
+                                      MessageBoxButton.OK,
+                                      MessageBoxImage.Warning);
                     }
                 }
                 else
@@ -64,7 +55,7 @@ namespace ADIX
                                   MessageBoxImage.Warning);
                 }
 
-                // Navigate to main page AFTER initialization
+                // Navigate to main page
                 MainFrame.Navigate(new Dashboard());
             }
             catch (Exception ex)
@@ -73,8 +64,6 @@ namespace ADIX
                               "Error",
                               MessageBoxButton.OK,
                               MessageBoxImage.Error);
-
-                // Still navigate to dashboard even if initialization fails
                 MainFrame.Navigate(new Dashboard());
             }
         }
@@ -99,24 +88,29 @@ namespace ADIX
 
         private async void NavigateToPage(string pageName)
         {
-            // Update active button in sidebar
             SidebarControl.SetActivePage(pageName);
 
-            // Sync before navigating if needed
+            // Use comprehensive sync before navigation if needed
             if (Database.IsInternetAvailable() && Database.IsSyncRequired())
             {
                 try
                 {
-                    await Database.CheckAndSyncAsync();
-                    Console.WriteLine("Sync completed successfully before navigation");
+                    await Database.SyncAllMissingDataAsync();
+                    Console.WriteLine("Comprehensive sync completed before navigation");
                 }
                 catch (Exception syncEx)
                 {
-                    Console.WriteLine($"Warning: Sync failed during navigation: {syncEx.Message}");
-                    // Continue navigation even if sync fails
+                    Console.WriteLine($"Warning: Comprehensive sync failed during navigation: {syncEx.Message}");
+                    // Fall back to basic sync
+                    try
+                    {
+                        await Database.CheckAndSyncAsync();
+                    }
+                    catch { /* Ignore fallback failure */ }
                 }
             }
 
+            // Rest of navigation code remains the same...
             switch (pageName)
             {
                 case "Dashboard":

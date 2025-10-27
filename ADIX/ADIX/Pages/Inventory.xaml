@@ -5,6 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:sys="clr-namespace:System;assembly=mscorlib"
+      xmlns:converters="clr-namespace:ADIX"
       mc:Ignorable="d"
       Title="Inventory"
       d:DesignHeight="700" d:DesignWidth="1000">
@@ -75,8 +76,8 @@
         </Style>
 
         <!-- Converters -->
-        <local:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
-        <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <converters:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
 
         <!-- Rounded ComboBox with placeholder -->
         <Style x:Key="RoundedComboBoxStyle" TargetType="ComboBox">
@@ -172,8 +173,6 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-
-
         <!-- Main Content -->
         <Grid Grid.Column="1" Margin="10">
             <Grid.RowDefinitions>
@@ -207,22 +206,17 @@
             </Border>
 
             <!-- Item Group-->
-
             <ComboBox Grid.Row="2"
           x:Name="ItemGroup"
           Style="{StaticResource RoundedComboBoxStyle}"
-          Tag=" Item Group"
-          SelectedIndex="-1">
-                <ComboBoxItem Content="ItemGroup 1"/>
+          Tag="Filter by Item Group">
             </ComboBox>
 
             <!-- Item Name-->
             <ComboBox Grid.Row="4"
           x:Name="ItemName"
           Style="{StaticResource RoundedComboBoxStyle}"
-          Tag="Item Name"
-          SelectedIndex="-1">
-                <ComboBoxItem Content="ItemName 1"/>
+          Tag="Filter by Item Name">
             </ComboBox>
 
             <!-- Low Stock + Set Min Stock -->
@@ -232,18 +226,19 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Low Stock Toggle (same as Products page) -->
+                <!-- Low Stock Toggle -->
                 <ToggleButton x:Name="LowStockToggle"
-                  Grid.Column="0"
-                  Width="150"
-                  Height="30"
-                  Margin="0,0,10,0"
-                  Background="#4F4F4F"
-                  Foreground="White"
-                  BorderBrush="Black"
-                  BorderThickness="1"
-                  HorizontalContentAlignment="Center"
-                  VerticalContentAlignment="Center">
+              Grid.Column="0"
+              Width="150"
+              Height="30"
+              Margin="0,0,10,0"
+              Background="#4F4F4F"
+              Foreground="White"
+              BorderBrush="Black"
+              BorderThickness="1"
+              HorizontalContentAlignment="Center"
+              VerticalContentAlignment="Center"
+              IsChecked="False">
                     <ToggleButton.Style>
                         <Style TargetType="ToggleButton">
                             <Setter Property="Background" Value="#4F4F4F"/>
@@ -253,34 +248,65 @@
                                 <Setter.Value>
                                     <ControlTemplate TargetType="ToggleButton">
                                         <Border CornerRadius="10"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
                                             <Grid>
+                                                <!-- Background track -->
+                                                <Border x:Name="Track" 
+                                        CornerRadius="10" 
+                                        Background="#4F4F4F"
+                                        Margin="2"/>
+
                                                 <!-- Knob -->
                                                 <Ellipse x:Name="Knob"
-                                             Width="20" Height="20"
-                                             Fill="White"
-                                             HorizontalAlignment="Left"
-                                             Margin="4,0"/>
+                                         Width="20" 
+                                         Height="20"
+                                         Fill="White"
+                                         HorizontalAlignment="Left"
+                                         Margin="4,0">
+                                                    <Ellipse.RenderTransform>
+                                                        <TranslateTransform x:Name="KnobTransform" X="0"/>
+                                                    </Ellipse.RenderTransform>
+                                                </Ellipse>
+
                                                 <!-- State text -->
                                                 <TextBlock x:Name="StateText"
-                                               Text="Low Stock"
-                                               Foreground="White"
-                                               FontWeight="Bold"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"/>
+                                           Text="Low Stock OFF"
+                                           Foreground="White"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
                                             </Grid>
                                         </Border>
 
                                         <!-- Triggers to move knob and change text/color -->
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsChecked" Value="True">
-                                                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
-                                                <Setter Property="Background" Value="Green"/>
+                                                <Trigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="KnobTransform"
+                                                             Storyboard.TargetProperty="X"
+                                                             To="96"
+                                                             Duration="0:0:0.2"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.EnterActions>
+                                                <Setter TargetName="Track" Property="Background" Value="#4AA902"/>
                                                 <Setter TargetName="StateText" Property="Text" Value="Low Stock ON"/>
                                             </Trigger>
                                             <Trigger Property="IsChecked" Value="False">
+                                                <Trigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="KnobTransform"
+                                                             Storyboard.TargetProperty="X"
+                                                             To="0"
+                                                             Duration="0:0:0.2"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.EnterActions>
                                                 <Setter TargetName="StateText" Property="Text" Value="Low Stock OFF"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
@@ -291,7 +317,7 @@
                     </ToggleButton.Style>
                 </ToggleButton>
 
-                <!-- Set Min Stock Button (all the way left like High Value Stock) -->
+                <!-- Set Min Stock Button -->
                 <Button Grid.Column="1"
                         Content="Set Min Stock"
                         Width="150"
@@ -303,7 +329,6 @@
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"/>
             </Grid>
-
 
             <!-- Stock Overview Header -->
             <Border Grid.Row="10" Style="{StaticResource HeaderBorderStyle}">
@@ -485,8 +510,6 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-
-
                         <DataGridTextColumn Header="Cost Price" Binding="{Binding CostPrice}" Width="150" IsReadOnly="False">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
@@ -543,9 +566,16 @@
                 <Button Content="Delete" Width="150" Height="40"
 Background="Red" Foreground="White" Margin="5"
 Click="Delete_Click"/>
-                <Button Content="Force" Width="150" Height="40"
-Background="Red" Foreground="White" Margin="5"
+                <Button Content="Force Sync" Width="150" Height="40"
+Background="Orange" Foreground="White" Margin="5"
 Click="ForceSync_Click"/>
+                <Button Content="Clear Filters" 
+        Width="150" 
+        Height="40"
+        Background="Blue" 
+        Foreground="White" 
+        Margin="5"
+        Click="ClearFilters_Click"/>
                 <Button x:Name="ShowAllDataBtn" 
         Content="Show All Data Comparison" 
         Click="ShowAllData_Click" 

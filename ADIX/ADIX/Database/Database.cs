@@ -1,4 +1,4 @@
-using Microsoft.Data.Sqlite;
+ï»¿using Microsoft.Data.Sqlite;
 using Microsoft.Data.SqlClient;
 using System;
 using System.IO;
@@ -168,7 +168,7 @@ namespace ADIX
             {
                 // Get all Azure items
                 var azureItems = GetTableDataFromAzure(azureConn, "ITEM",
-                    new[] { "itemID", "description", "retailPrice", "costPrice", "stockQuantity", "stockSold", "stockRecieved", "supplierID", "sellerID", "lastModified" });
+                    new[] { "itemID", "sku", "itemGroup", "description", "retailPrice", "costPrice", "stockQuantity", "stockSold", "stockRecieved", "supplierID", "sellerID", "lastModified", "minimumStock" });
 
                 // Get all local items
                 var localItems = GetTableData(sqliteConn, "ITEM", new[] { "itemID" });
@@ -184,25 +184,27 @@ namespace ADIX
                     {
                         // This item exists in Azure but not locally - download it
                         var insertSql = @"
-                    INSERT INTO ITEM 
-                    (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified)
-                    VALUES 
-                    (@itemID, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified)";
-
+INSERT INTO ITEM 
+(itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified, minimumStock)
+VALUES 
+(@itemID, @sku, @itemGroup, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified, @minimumStock)";
                         using var cmd = new SqliteCommand(insertSql, sqliteConn);
                         cmd.Parameters.AddWithValue("@itemID", itemId);
+                        cmd.Parameters.AddWithValue("@sku", azureRow["sku"] == DBNull.Value ? (object)DBNull.Value : azureRow["sku"]);
+                        cmd.Parameters.AddWithValue("@itemGroup", azureRow["itemGroup"] == DBNull.Value ? (object)DBNull.Value : azureRow["itemGroup"]);
                         cmd.Parameters.AddWithValue("@description", azureRow["description"]);
                         cmd.Parameters.AddWithValue("@retailPrice", azureRow["retailPrice"]);
                         cmd.Parameters.AddWithValue("@costPrice", azureRow["costPrice"]);
                         cmd.Parameters.AddWithValue("@stockQuantity", azureRow["stockQuantity"]);
                         cmd.Parameters.AddWithValue("@stockSold", azureRow["stockSold"]);
                         cmd.Parameters.AddWithValue("@stockRecieved", azureRow["stockRecieved"]);
+                        cmd.Parameters.AddWithValue("@minimumStock", azureRow["minimumStock"]);
                         cmd.Parameters.AddWithValue("@supplierID", azureRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : azureRow["supplierID"]);
                         cmd.Parameters.AddWithValue("@sellerID", azureRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : azureRow["sellerID"]);
                         cmd.Parameters.AddWithValue("@lastModified", azureRow["lastModified"]);
 
                         cmd.ExecuteNonQuery();
-                        Console.WriteLine($"[SYNC] Downloaded missing item {itemId} from Azure");
+                        Console.WriteLine($"[SYNC] Downloaded missing item {itemId} from Azure with itemGroup: {azureRow["itemGroup"]}");
                     }
                 }
             }
@@ -244,7 +246,8 @@ namespace ADIX
             string checkQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name='SELLER'";
             using var checkCmd = new SqliteCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-
+            CreateSQLiteTables(connection);
+            InsertTestDataSQLite(connection);
             if (result == null)
             {
                 CreateSQLiteTables(connection);
@@ -286,7 +289,8 @@ namespace ADIX
             string checkQuery = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'SELLER'";
             using var checkCmd = new SqlCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-
+            CreateAzureSQLTables(connection);
+            InsertTestDataAzureSQL(connection);
             if (result == null)
             {
                 CreateAzureSQLTables(connection);
@@ -315,7 +319,18 @@ namespace ADIX
         private static void CreateSQLiteTables(SqliteConnection connection)
         {
             string createTablesSql = @"
-
+DROP TABLE IF EXISTS INVOICEITEM;
+DROP TABLE IF EXISTS INVOICEQUOTE;
+DROP TABLE IF EXISTS REPORT;
+DROP TABLE IF EXISTS ITEM;
+DROP TABLE IF EXISTS CUSTOMER;
+DROP TABLE IF EXISTS STAFF;
+DROP TABLE IF EXISTS SUPPLIER;
+DROP TABLE IF EXISTS SELLER;
+DROP TABLE IF EXISTS USER;
+DROP TABLE IF EXISTS SYNC_LOG;
+DROP TABLE IF EXISTS DELETION_LOG;
+DROP TABLE IF EXISTS EXPENSES;
 
         CREATE TABLE IF NOT EXISTS SELLER(
             sellerID INTEGER NOT NULL PRIMARY KEY,
@@ -350,9 +365,9 @@ namespace ADIX
         stockQuantity INTEGER NOT NULL DEFAULT 0 CHECK(stockQuantity >= 0),
         stockRecieved INTEGER NOT NULL,
         stockSold INTEGER NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
+        minimumStock INTEGER NOT NULL DEFAULT 0,
         supplierID INTEGER,
         sellerID INTEGER,
-        minimumStock INTEGER,
         lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
         FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
@@ -442,9 +457,15 @@ namespace ADIX
         private static void CreateAzureSQLTables(SqlConnection connection)
         {
             string createTablesSql = @"
-
-
-
+DROP TABLE IF EXISTS INVOICEITEM;
+DROP TABLE IF EXISTS INVOICEQUOTE;
+DROP TABLE IF EXISTS REPORT;
+DROP TABLE IF EXISTS ITEM;
+DROP TABLE IF EXISTS CUSTOMER;
+DROP TABLE IF EXISTS STAFF;
+DROP TABLE IF EXISTS SUPPLIER;
+DROP TABLE IF EXISTS SELLER;
+DROP TABLE IF EXISTS EXPENSES;
         CREATE TABLE SELLER(
             sellerID INT NOT NULL PRIMARY KEY,
             name NVARCHAR(255) NOT NULL,
@@ -474,8 +495,8 @@ namespace ADIX
         stockSold INT NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
         supplierID INT,
         sellerID INT,
-        minimumStock INT,
         lastModified DATETIME DEFAULT GETUTCDATE(),
+        minimumStock INT NOT NULL DEFAULT 0,
         FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
         FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
     );
@@ -664,38 +685,39 @@ namespace ADIX
         private static void InsertTestDataSQLite(SqliteConnection connection)
         {
             string insertDataSql = @"
-    INSERT INTO SELLER (name, contactInfo, bankDetails, commissionRate) VALUES
-    ('Robin Longbow', 'robin@archersguild.com', 'ACC-9876', 0.05),
-    ('Marian Fletcher', 'marian@archeryworld.com', 'ACC-6543', 0.07);
+  INSERT INTO SELLER (sellerID, name, contactInfo, bankDetails, commissionRate) VALUES
+(1, 'Robin Longbow', 'robin@archersguild.com', 'ACC-9876', 0.05),
+(2, 'Marian Fletcher', 'marian@archeryworld.com', 'ACC-6543', 0.07),
+(3, 'John Archer', 'john@bowpros.co.za', 'ACC-1122', 0.06);
 
-    INSERT INTO SUPPLIER (name, contactInfo, address) VALUES
-    ('Precision Bows Ltd', 'sales@precisionbows.com', '45 Bowstring Lane'),
-    ('Eagle Arrows Co', 'info@eaglearrows.com', '210 Fletching Avenue'),
-    ('TargetCraft Supplies', 'support@targetcraft.com', '33 Range Road');
+    INSERT INTO SUPPLIER (supplierID, name, contactInfo, address) VALUES
+(1, 'Precision Bows Ltd', 'sales@precisionbows.com', '45 Bowstring Lane, Johannesburg'),
+(2, 'Eagle Arrows Co', 'info@eaglearrows.com', '210 Fletching Avenue, Cape Town'),
+(3, 'TargetCraft Supplies', 'support@targetcraft.com', '33 Range Road, Durban'),
+(4, 'African Archery Distributors', 'orders@africanarchery.co.za', '78 Safari Street, Pretoria');
 
-    INSERT INTO ITEM (sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockRecieved, stockSold, supplierID, sellerID) VALUES
-     (1001, 'BOW', 'Longbow Elite', 4500.00, 3000.00, 15, 15, 0, 1, 1),
-     (1002, 'BOW', 'Recurve Bow Pro', 5200.00, 3400.00, 10, 10, 0, 1, 2),
-     (2001, 'ARR', 'Carbon Arrows (Pack of 12)', 850.00, 550.00, 50, 50, 0, 2, 1),
-     (2002, 'ARR', 'Traditional Wooden Arrows', 600.00, 400.00, 40, 40, 0, 2, 2),
-     (3001, 'TAR', 'Foam Target Block', 750.00, 500.00, 25, 25, 0, 3, 1),
-     (3002, 'TAR', '3D Deer Target', 1800.00, 1200.00, 10, 10, 0, 3, 2),
-     (4001, 'ACC', 'Bowstring Wax', 120.00, 60.00, 100, 100, 0, 3, 1),
-     (4002, 'ACC', 'Armguard Leather', 350.00, 200.00, 30, 30, 0, 1, 2),
-     (4003, 'ACC', 'Finger Tab Deluxe', 280.00, 150.00, 45, 45, 0, 1, 1),
-     (2003, 'ACC', 'Stabilizer Carbon Pro', 950.00, 600.00, 20, 20, 0, 2, 2);
+    INSERT INTO ITEM (itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockRecieved, stockSold, supplierID, sellerID, minimumStock) VALUES
+(1001, 1001, 'BOW', 'Longbow Elite', 4500.00, 3000.00, 15, 15, 0, 1, 1, 5),
+(1002, 1002, 'BOW', 'Recurve Bow Pro', 5200.00, 3400.00, 10, 10, 0, 1, 2, 3),
+(2001, 2001, 'ARR', 'Carbon Arrows (Pack of 12)', 850.00, 550.00, 50, 50, 0, 2, 1, 20),
+(2002, 2002, 'ARR', 'Traditional Wooden Arrows', 600.00, 400.00, 40, 40, 0, 2, 2, 15),
+(3001, 3001, 'TAR', 'Foam Target Block', 750.00, 500.00, 25, 25, 0, 3, 1, 10),
+(3002, 3002, 'TAR', '3D Deer Target', 1800.00, 1200.00, 10, 10, 0, 3, 2, 3);
 
 
-    INSERT INTO STAFF (name, Role, userName, passwordHash, salary) VALUES
-    ('Ruben Janse', 'Admin', 'ruben', 'hashedpassword1', 15000),
-    ('Sarah Ndlovu', 'Cashier', 'sarah', 'hashedpassword2', 9000),
-    ('Michael Smith', 'Manager', 'michael', 'hashedpassword3', 12000),
-    ('Emily Johnson', 'Cashier', 'emily', 'hashedpassword4', 9000);
+    INSERT INTO STAFF (staffID, name, Role, userName, passwordHash, salary) VALUES
+(1, 'Ruben Janse', 'Admin', 'ruben', 'hashedpassword1', 15000.00),
+(2, 'Sarah Ndlovu', 'Cashier', 'sarah', 'hashedpassword2', 9000.00),
+(3, 'Michael Smith', 'Manager', 'michael', 'hashedpassword3', 12000.00),
+(4, 'Emily Johnson', 'Cashier', 'emily', 'hashedpassword4', 9000.00),
+(5, 'David Brown', 'Sales', 'david', 'hashedpassword5', 8000.00);
 
-    INSERT INTO CUSTOMER (name, phone, email, credit) VALUES
-    ('Alice Archer', '0712345678', 'alice@archerymail.com', 100),
-    ('Bob Bowman', '0723456789', 'bob@archerymail.com', 50),
-    ('Charlie Fletcher', '0734567890', 'charlie@archerymail.com', 75);
+   INSERT INTO CUSTOMER (customerID, name, phone, email, credit) VALUES
+(1, 'Alice Archer', '0712345678', 'alice@archerymail.com', 100.00),
+(2, 'Bob Bowman', '0723456789', 'bob@archerymail.com', 50.00),
+(3, 'Charlie Fletcher', '0734567890', 'charlie@archerymail.com', 75.00),
+(4, 'Diana Huntress', '0745678901', 'diana@bowhunt.co.za', 0.00),
+(5, 'Edward Marksman', '0756789012', 'edward@targetpro.com', 120.00);
 ";
 
 
@@ -708,37 +730,39 @@ namespace ADIX
             string insertDataSql = @"
 
 
-    INSERT INTO SELLER (name, contactInfo, bankDetails, commissionRate) VALUES
-    ('Robin Longbow', 'robin@archersguild.com', 'ACC-9876', 0.05),
-    ('Marian Fletcher', 'marian@archeryworld.com', 'ACC-6543', 0.07);
+      INSERT INTO SELLER (sellerID, name, contactInfo, bankDetails, commissionRate) VALUES
+(1, 'Robin Longbow', 'robin@archersguild.com', 'ACC-9876', 0.05),
+(2, 'Marian Fletcher', 'marian@archeryworld.com', 'ACC-6543', 0.07),
+(3, 'John Archer', 'john@bowpros.co.za', 'ACC-1122', 0.06);
 
-    INSERT INTO SUPPLIER (name, contactInfo, address) VALUES
-    ('Precision Bows Ltd', 'sales@precisionbows.com', '45 Bowstring Lane'),
-    ('Eagle Arrows Co', 'info@eaglearrows.com', '210 Fletching Avenue'),
-    ('TargetCraft Supplies', 'support@targetcraft.com', '33 Range Road');
+    INSERT INTO SUPPLIER (supplierID, name, contactInfo, address) VALUES
+(1, 'Precision Bows Ltd', 'sales@precisionbows.com', '45 Bowstring Lane, Johannesburg'),
+(2, 'Eagle Arrows Co', 'info@eaglearrows.com', '210 Fletching Avenue, Cape Town'),
+(3, 'TargetCraft Supplies', 'support@targetcraft.com', '33 Range Road, Durban'),
+(4, 'African Archery Distributors', 'orders@africanarchery.co.za', '78 Safari Street, Pretoria');
 
-    INSERT INTO ITEM (sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockRecieved, stockSold, supplierID, sellerID) VALUES
-     (1001, 'BOW', 'Longbow Elite', 4500.00, 3000.00, 15, 15, 0, 1, 1),
-     (1002, 'BOW', 'Recurve Bow Pro', 5200.00, 3400.00, 10, 10, 0, 1, 2),
-     (2001, 'ARR', 'Carbon Arrows (Pack of 12)', 850.00, 550.00, 50, 50, 0, 2, 1),
-     (2002, 'ARR', 'Traditional Wooden Arrows', 600.00, 400.00, 40, 40, 0, 2, 2),
-     (3001, 'TAR', 'Foam Target Block', 750.00, 500.00, 25, 25, 0, 3, 1),
-     (3002, 'TAR', '3D Deer Target', 1800.00, 1200.00, 10, 10, 0, 3, 2),
-     (4001, 'ACC', 'Bowstring Wax', 120.00, 60.00, 100, 100, 0, 3, 1),
-     (4002, 'ACC', 'Armguard Leather', 350.00, 200.00, 30, 30, 0, 1, 2),
-     (4003, 'ACC', 'Finger Tab Deluxe', 280.00, 150.00, 45, 45, 0, 1, 1),
-     (2003, 'ACC', 'Stabilizer Carbon Pro', 950.00, 600.00, 20, 20, 0, 2, 2);
+    INSERT INTO ITEM (itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockRecieved, stockSold, supplierID, sellerID, minimumStock) VALUES
+(1001, 1001, 'BOW', 'Longbow Elite', 4500.00, 3000.00, 15, 15, 0, 1, 1, 5),
+(1002, 1002, 'BOW', 'Recurve Bow Pro', 5200.00, 3400.00, 10, 10, 0, 1, 2, 3),
+(2001, 2001, 'ARR', 'Carbon Arrows (Pack of 12)', 850.00, 550.00, 50, 50, 0, 2, 1, 20),
+(2002, 2002, 'ARR', 'Traditional Wooden Arrows', 600.00, 400.00, 40, 40, 0, 2, 2, 15),
+(3001, 3001, 'TAR', 'Foam Target Block', 750.00, 500.00, 25, 25, 0, 3, 1, 10),
+(3002, 3002, 'TAR', '3D Deer Target', 1800.00, 1200.00, 10, 10, 0, 3, 2, 3);
 
-    INSERT INTO STAFF (name, Role, userName, passwordHash, salary) VALUES
-    ('Ruben Janse', 'Admin', 'ruben', 'hashedpassword1', 15000),
-    ('Sarah Ndlovu', 'Cashier', 'sarah', 'hashedpassword2', 9000),
-    ('Michael Smith', 'Manager', 'michael', 'hashedpassword3', 12000),
-    ('Emily Johnson', 'Cashier', 'emily', 'hashedpassword4', 9000);
 
-    INSERT INTO CUSTOMER (name, phone, email, credit) VALUES
-    ('Alice Archer', '0712345678', 'alice@archerymail.com', 100),
-    ('Bob Bowman', '0723456789', 'bob@archerymail.com', 50),
-    ('Charlie Fletcher', '0734567890', 'charlie@archerymail.com', 75);
+    INSERT INTO STAFF (staffID, name, Role, userName, passwordHash, salary) VALUES
+(1, 'Ruben Janse', 'Admin', 'ruben', 'hashedpassword1', 15000.00),
+(2, 'Sarah Ndlovu', 'Cashier', 'sarah', 'hashedpassword2', 9000.00),
+(3, 'Michael Smith', 'Manager', 'michael', 'hashedpassword3', 12000.00),
+(4, 'Emily Johnson', 'Cashier', 'emily', 'hashedpassword4', 9000.00),
+(5, 'David Brown', 'Sales', 'david', 'hashedpassword5', 8000.00);
+
+   INSERT INTO CUSTOMER (customerID, name, phone, email, credit) VALUES
+(1, 'Alice Archer', '0712345678', 'alice@archerymail.com', 100.00),
+(2, 'Bob Bowman', '0723456789', 'bob@archerymail.com', 50.00),
+(3, 'Charlie Fletcher', '0734567890', 'charlie@archerymail.com', 75.00),
+(4, 'Diana Huntress', '0745678901', 'diana@bowhunt.co.za', 0.00),
+(5, 'Edward Marksman', '0756789012', 'edward@targetpro.com', 120.00);
 ";
 
 
@@ -792,14 +816,312 @@ namespace ADIX
 
             Console.WriteLine("Transaction-based sync completed successfully.");
         }
+        /// <summary>
+        /// Comprehensive sync that ensures all missing data is downloaded from Azure
+        /// </summary>
+        public static async Task<bool> SyncAllMissingDataAsync()
+        {
+            if (string.IsNullOrEmpty(AzureSqlConnectionString))
+            {
+                Console.WriteLine("Azure SQL connection string not configured. Skipping sync.");
+                return false;
+            }
 
+            if (!IsInternetAvailable())
+            {
+                Console.WriteLine("No internet connection. Sync skipped.");
+                _syncRequired = true;
+                return false;
+            }
+
+            try
+            {
+                await Task.Run(() => SyncAllMissingData());
+                _syncRequired = false;
+                _lastSyncTime = DateTime.UtcNow;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Comprehensive sync failed: {ex.Message}");
+                _syncRequired = true;
+                return false;
+            }
+        }
+
+        private static void SyncAllMissingData()
+        {
+            using var sqliteConn = new SqliteConnection(SqliteConnectionString);
+            using var azureConn = new SqlConnection(AzureSqlConnectionString);
+
+            sqliteConn.Open();
+            azureConn.Open();
+
+            Console.WriteLine("Starting comprehensive data sync...");
+
+            // Step 1: Download all missing master data tables
+            DownloadAllMissingMasterData(sqliteConn, azureConn);
+
+            // Step 2: Download all missing items
+            DownloadAllMissingItems(sqliteConn, azureConn);
+
+            // Step 3: Download all missing transactions
+            DownloadAllMissingTransactions(sqliteConn, azureConn);
+
+            // Step 4: Upload any local data that's missing from Azure
+            UploadMissingLocalData(sqliteConn, azureConn);
+
+            Console.WriteLine("Comprehensive data sync completed successfully.");
+        }
+
+        private static void DownloadAllMissingMasterData(SqliteConnection sqliteConn, SqlConnection azureConn)
+        {
+            var masterTables = new[]
+            {
+        new { Table = "SELLER", Columns = new[] { "sellerID", "name", "contactInfo", "bankDetails", "commissionRate", "lastModified" } },
+        new { Table = "SUPPLIER", Columns = new[] { "supplierID", "name", "contactInfo", "address", "lastModified" } },
+        new { Table = "CUSTOMER", Columns = new[] { "customerID", "name", "phone", "email", "credit", "lastModified" } },
+        new { Table = "STAFF", Columns = new[] { "staffID", "name", "Role", "userName", "passwordHash", "salary", "lastModified" } }
+    };
+
+            foreach (var table in masterTables)
+            {
+                DownloadMissingTableData(sqliteConn, azureConn, table.Table, table.Columns);
+            }
+        }
+
+        private static void DownloadMissingTableData(SqliteConnection sqliteConn, SqlConnection azureConn, string tableName, string[] columns)
+        {
+            try
+            {
+                Console.WriteLine($"[SYNC] Downloading missing {tableName} data...");
+
+                // Get Azure data
+                var azureData = GetTableDataFromAzure(azureConn, tableName, columns);
+
+                // Get local data IDs
+                var localData = GetTableData(sqliteConn, tableName, new[] { columns[0] });
+                var localIds = new HashSet<string>(localData.AsEnumerable().Select(r => r[columns[0]].ToString()));
+
+                // Insert missing records
+                foreach (DataRow azureRow in azureData.Rows)
+                {
+                    var primaryKey = azureRow[columns[0]].ToString();
+
+                    if (!localIds.Contains(primaryKey))
+                    {
+                        InsertToLocal(sqliteConn, tableName, columns, azureRow);
+                        Console.WriteLine($"[SYNC] Downloaded {tableName} record {primaryKey} from Azure");
+                    }
+                }
+
+                Console.WriteLine($"[SYNC] Completed {tableName} sync");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SYNC] Error downloading {tableName}: {ex.Message}");
+            }
+        }
+
+        private static void DownloadAllMissingItems(SqliteConnection sqliteConn, SqlConnection azureConn)
+        {
+            try
+            {
+                Console.WriteLine("[SYNC] Downloading all missing items...");
+
+                // Get all Azure items
+                var azureItems = GetTableDataFromAzure(azureConn, "ITEM",
+             new[] { "itemID", "sku", "itemGroup", "description", "retailPrice", "costPrice", "stockQuantity", "stockSold", "stockRecieved", "supplierID", "sellerID", "lastModified", "minimumStock" });
+
+                // Get all local item IDs
+                var localItems = GetTableData(sqliteConn, "ITEM", new[] { "itemID" });
+                var localItemIds = new HashSet<string>(localItems.AsEnumerable().Select(r => r["itemID"].ToString()));
+
+                // Insert missing items
+                foreach (DataRow azureRow in azureItems.Rows)
+                {
+                    var itemId = azureRow["itemID"].ToString();
+
+                    if (!localItemIds.Contains(itemId))
+                    {
+                        var insertSql = @"
+INSERT INTO ITEM 
+(itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified, minimumStock)
+VALUES 
+(@itemID, @sku, @itemGroup, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified, @minimumStock)";
+
+                        using var cmd = new SqliteCommand(insertSql, sqliteConn);
+
+                        cmd.Parameters.AddWithValue("@itemID", azureRow["itemID"]);
+                        cmd.Parameters.AddWithValue("@sku", azureRow["sku"] == DBNull.Value ? (object)DBNull.Value : azureRow["sku"]);
+                        cmd.Parameters.AddWithValue("@itemGroup", azureRow["itemGroup"] == DBNull.Value ? (object)DBNull.Value : azureRow["itemGroup"]);
+                        cmd.Parameters.AddWithValue("@description", azureRow["description"]);
+                        cmd.Parameters.AddWithValue("@retailPrice", azureRow["retailPrice"]);
+                        cmd.Parameters.AddWithValue("@costPrice", azureRow["costPrice"]);
+                        cmd.Parameters.AddWithValue("@stockQuantity", azureRow["stockQuantity"]);
+                        cmd.Parameters.AddWithValue("@stockSold", azureRow["stockSold"]);
+                        cmd.Parameters.AddWithValue("@stockRecieved", azureRow["stockRecieved"]);
+                        cmd.Parameters.AddWithValue("@minimumStock", azureRow["minimumStock"]);
+                        cmd.Parameters.AddWithValue("@supplierID", azureRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : azureRow["supplierID"]);
+                        cmd.Parameters.AddWithValue("@sellerID", azureRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : azureRow["sellerID"]);
+                        cmd.Parameters.AddWithValue("@lastModified", azureRow["lastModified"]);
+
+                        cmd.ExecuteNonQuery();
+                        Console.WriteLine($"[SYNC] Downloaded missing item {itemId} from Azure");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SYNC] Error downloading items: {ex.Message}");
+            }
+        }
+
+        private static void DownloadAllMissingTransactions(SqliteConnection sqliteConn, SqlConnection azureConn)
+        {
+            try
+            {
+                Console.WriteLine("[SYNC] Downloading missing transactions...");
+
+                // Download missing invoices
+                var azureInvoices = GetTableDataFromAzure(azureConn, "INVOICEQUOTE",
+                    new[] { "invoiceQuoteID", "date", "type", "totalAmount", "customerID", "staffID", "paymentMethod", "paymentStatus", "lastModified" });
+
+                var localInvoices = GetTableData(sqliteConn, "INVOICEQUOTE", new[] { "invoiceQuoteID" });
+                var localInvoiceIds = new HashSet<string>(localInvoices.AsEnumerable().Select(r => r["invoiceQuoteID"].ToString()));
+
+                foreach (DataRow azureRow in azureInvoices.Rows)
+                {
+                    var invoiceId = azureRow["invoiceQuoteID"].ToString();
+
+                    if (!localInvoiceIds.Contains(invoiceId))
+                    {
+                        // Insert invoice
+                        var insertInvoiceSql = @"
+                INSERT INTO INVOICEQUOTE 
+                (invoiceQuoteID, date, type, totalAmount, customerID, staffID, paymentMethod, paymentStatus, lastModified, synced)
+                VALUES 
+                (@invoiceQuoteID, @date, @type, @totalAmount, @customerID, @staffID, @paymentMethod, @paymentStatus, @lastModified, 1)";
+
+                        using var cmd = new SqliteCommand(insertInvoiceSql, sqliteConn);
+
+                        cmd.Parameters.AddWithValue("@invoiceQuoteID", azureRow["invoiceQuoteID"]);
+                        cmd.Parameters.AddWithValue("@date", azureRow["date"]);
+                        cmd.Parameters.AddWithValue("@type", azureRow["type"]);
+                        cmd.Parameters.AddWithValue("@totalAmount", azureRow["totalAmount"]);
+                        cmd.Parameters.AddWithValue("@customerID", azureRow["customerID"] == DBNull.Value ? (object)DBNull.Value : azureRow["customerID"]);
+                        cmd.Parameters.AddWithValue("@staffID", azureRow["staffID"]);
+                        cmd.Parameters.AddWithValue("@paymentMethod", azureRow["paymentMethod"] == DBNull.Value ? (object)DBNull.Value : azureRow["paymentMethod"]);
+                        cmd.Parameters.AddWithValue("@paymentStatus", azureRow["paymentStatus"] == DBNull.Value ? (object)DBNull.Value : azureRow["paymentStatus"]);
+                        cmd.Parameters.AddWithValue("@lastModified", azureRow["lastModified"]);
+
+                        cmd.ExecuteNonQuery();
+
+                        // Download invoice items for this invoice
+                        DownloadInvoiceItemsForInvoice(sqliteConn, azureConn, Convert.ToInt64(azureRow["invoiceQuoteID"]));
+
+                        Console.WriteLine($"[SYNC] Downloaded invoice {invoiceId} from Azure");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SYNC] Error downloading transactions: {ex.Message}");
+            }
+        }
+
+        private static void DownloadInvoiceItemsForInvoice(SqliteConnection sqliteConn, SqlConnection azureConn, long invoiceId)
+        {
+            try
+            {
+                var azureItems = GetTableDataFromAzure(azureConn, "INVOICEITEM",
+                    new[] { "invoiceItemID", "quantity", "priceAtSale", "itemID", "invoiceQuoteID", "lastModified" },
+                    $"WHERE invoiceQuoteID = {invoiceId}");
+
+                var localItems = GetTableData(sqliteConn, "INVOICEITEM", new[] { "invoiceItemID" }, $"WHERE invoiceQuoteID = {invoiceId}");
+                var localItemIds = new HashSet<string>(localItems.AsEnumerable().Select(r => r["invoiceItemID"].ToString()));
+
+                foreach (DataRow azureRow in azureItems.Rows)
+                {
+                    var itemId = azureRow["invoiceItemID"].ToString();
+
+                    if (!localItemIds.Contains(itemId))
+                    {
+                        var insertSql = @"
+                INSERT INTO INVOICEITEM 
+                (invoiceItemID, quantity, priceAtSale, itemID, invoiceQuoteID, lastModified, synced)
+                VALUES 
+                (@invoiceItemID, @quantity, @priceAtSale, @itemID, @invoiceQuoteID, @lastModified, 1)";
+
+                        using var cmd = new SqliteCommand(insertSql, sqliteConn);
+
+                        cmd.Parameters.AddWithValue("@invoiceItemID", azureRow["invoiceItemID"]);
+                        cmd.Parameters.AddWithValue("@quantity", azureRow["quantity"]);
+                        cmd.Parameters.AddWithValue("@priceAtSale", azureRow["priceAtSale"]);
+                        cmd.Parameters.AddWithValue("@itemID", azureRow["itemID"]);
+                        cmd.Parameters.AddWithValue("@invoiceQuoteID", azureRow["invoiceQuoteID"]);
+                        cmd.Parameters.AddWithValue("@lastModified", azureRow["lastModified"]);
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SYNC] Error downloading invoice items for invoice {invoiceId}: {ex.Message}");
+            }
+        }
+
+        private static void UploadMissingLocalData(SqliteConnection sqliteConn, SqlConnection azureConn)
+        {
+            // This will use your existing SyncTransactionBased method to upload local data
+            SyncTransactions(sqliteConn, azureConn);
+        }
+
+        // Helper method to get table data with WHERE clause
+        private static DataTable GetTableDataFromAzure(SqlConnection connection, string tableName, string[] columns, string whereClause = "")
+        {
+            var dataTable = new DataTable();
+            var columnList = string.Join(", ", columns);
+            var sql = $"SELECT {columnList} FROM {tableName}";
+
+            if (!string.IsNullOrEmpty(whereClause))
+            {
+                sql += " " + whereClause;
+            }
+
+            using var cmd = new SqlCommand(sql, connection);
+            using var reader = cmd.ExecuteReader();
+            dataTable.Load(reader);
+            return dataTable;
+        }
+
+        private static DataTable GetTableData(SqliteConnection connection, string tableName, string[] columns, string whereClause = "")
+        {
+            var dataTable = new DataTable();
+            var columnList = string.Join(", ", columns);
+            var sql = $"SELECT {columnList} FROM {tableName}";
+
+            if (!string.IsNullOrEmpty(whereClause))
+            {
+                sql += " " + whereClause;
+            }
+
+            using var cmd = new SqliteCommand(sql, connection);
+            using var reader = cmd.ExecuteReader();
+            dataTable.Load(reader);
+            return dataTable;
+        }
         private static void SyncItemMasterDataWithoutInventory(SqliteConnection sqliteConn, SqlConnection azureConn)
         {
             string[] columns = {
         "itemID",
+        "sku",           // Add this
+        "itemGroup",     // Add this
         "description",
         "retailPrice",
         "costPrice",
+        "minimumStock",
         "supplierID",
         "sellerID",
         "lastModified"
@@ -819,22 +1141,24 @@ namespace ADIX
 
                     if (azureRow == null)
                     {
-                        // New item – insert with initial inventory from local
+                        // New item - insert with initial inventory from local
                         var localInventory = GetLocalInventory(sqliteConn, itemID);
                         var insertSql = @"
-                    INSERT INTO ITEM 
-                    (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified)
-                    VALUES 
-                    (@itemID, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified)";
-
+INSERT INTO ITEM 
+(itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified, minimumStock)
+VALUES 
+(@itemID, @sku, @itemGroup, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified, @minimumStock)";
                         using var cmd = new SqlCommand(insertSql, azureConn, transaction);
                         cmd.Parameters.AddWithValue("@itemID", itemID);
+                        cmd.Parameters.AddWithValue("@sku", localRow["sku"] == DBNull.Value ? (object)DBNull.Value : localRow["sku"]);
+                        cmd.Parameters.AddWithValue("@itemGroup", localRow["itemGroup"] == DBNull.Value ? (object)DBNull.Value : localRow["itemGroup"]);
                         cmd.Parameters.AddWithValue("@description", localRow["description"]);
                         cmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
                         cmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
                         cmd.Parameters.AddWithValue("@stockQuantity", localInventory.stockQuantity);
                         cmd.Parameters.AddWithValue("@stockSold", localInventory.stockSold);
                         cmd.Parameters.AddWithValue("@stockRecieved", localInventory.stockRecieved);
+                        cmd.Parameters.AddWithValue("@minimumStock", localRow["minimumStock"]);
                         cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
                         cmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
                         cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
@@ -844,84 +1168,36 @@ namespace ADIX
                     }
                     else
                     {
-                        // CONFLICT DETECTION: Check if it's the same item or different items with same ID
-                        string localDesc = localRow["description"]?.ToString() ?? "";
-                        string azureDesc = azureRow["description"]?.ToString() ?? "";
-
+                        // CONFLICT DETECTION and update logic...
                         var localModified = DateTime.Parse(localRow["lastModified"].ToString());
                         var azureModified = DateTime.Parse(azureRow["lastModified"].ToString());
 
-                        // If descriptions are significantly different, this is a collision!
-                        if (!localDesc.Equals(azureDesc, StringComparison.OrdinalIgnoreCase))
+                        if (localModified > azureModified)
                         {
-                            Console.WriteLine($"[CONFLICT] Item ID {itemID} collision detected!");
-                            Console.WriteLine($"  Local: {localDesc}");
-                            Console.WriteLine($"  Azure: {azureDesc}");
-
-                            // Get local inventory for the conflicting item
-                            var conflictInventory = GetLocalInventory(sqliteConn, itemID);
-
-                            // Generate new ID for local item
-                            int newItemId = Convert.ToInt32(GetNextItemID());
-
-                            // Update local item with new ID
-                            using var updateLocalCmd = new SqliteCommand(
-                                "UPDATE ITEM SET itemID = @newId WHERE itemID = @oldId",
-                                sqliteConn);
-                            updateLocalCmd.Parameters.AddWithValue("@newId", newItemId);
-                            updateLocalCmd.Parameters.AddWithValue("@oldId", itemID);
-                            updateLocalCmd.ExecuteNonQuery();
-
-                            // Update any invoice items referencing this item
-                            using var updateInvoiceItemsCmd = new SqliteCommand(
-                                "UPDATE INVOICEITEM SET itemID = @newId WHERE itemID = @oldId",
-                                sqliteConn);
-                            updateInvoiceItemsCmd.Parameters.AddWithValue("@newId", newItemId);
-                            updateInvoiceItemsCmd.Parameters.AddWithValue("@oldId", itemID);
-                            updateInvoiceItemsCmd.ExecuteNonQuery();
-
-                            // Now insert with new ID
-                            var insertConflictSql = @"
-                        INSERT INTO ITEM 
-                        (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified)
-                        VALUES 
-                        (@itemID, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified)";
-
-                            using var conflictCmd = new SqlCommand(insertConflictSql, azureConn, transaction);
-                            conflictCmd.Parameters.AddWithValue("@itemID", newItemId);
-                            conflictCmd.Parameters.AddWithValue("@description", localRow["description"]);
-                            conflictCmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
-                            conflictCmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
-                            conflictCmd.Parameters.AddWithValue("@stockQuantity", conflictInventory.stockQuantity);
-                            conflictCmd.Parameters.AddWithValue("@stockSold", conflictInventory.stockSold);
-                            conflictCmd.Parameters.AddWithValue("@stockRecieved", conflictInventory.stockRecieved);
-                            conflictCmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
-                            conflictCmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
-                            conflictCmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
-                            conflictCmd.ExecuteNonQuery();
-
-                            Console.WriteLine($"[CONFLICT RESOLVED] Reassigned local item to new ID: {newItemId}");
-                        }
-                        else if (localModified > azureModified)
-                        {
-                            // Same item, local is newer - update Azure (prices, etc.)
+                            // Same item, local is newer - update Azure (including itemGroup and sku)
                             var updateSql = @"
-                        UPDATE ITEM 
-                        SET description=@description, 
-                            retailPrice=@retailPrice, 
-                            costPrice=@costPrice, 
-                            supplierID=@supplierID, 
-                            sellerID=@sellerID,
-                            lastModified=@lastModified
-                        WHERE itemID=@itemID";
+UPDATE ITEM 
+SET description=@description, 
+    sku=@sku,
+    itemGroup=@itemGroup,
+    retailPrice=@retailPrice, 
+    costPrice=@costPrice, 
+    supplierID=@supplierID, 
+    sellerID=@sellerID,
+    minimumStock=@minimumStock,
+    lastModified=@lastModified
+WHERE itemID=@itemID";
 
                             using var cmd = new SqlCommand(updateSql, azureConn, transaction);
                             cmd.Parameters.AddWithValue("@itemID", itemID);
                             cmd.Parameters.AddWithValue("@description", localRow["description"]);
+                            cmd.Parameters.AddWithValue("@sku", localRow["sku"] == DBNull.Value ? (object)DBNull.Value : localRow["sku"]);
+                            cmd.Parameters.AddWithValue("@itemGroup", localRow["itemGroup"] == DBNull.Value ? (object)DBNull.Value : localRow["itemGroup"]);
                             cmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
                             cmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
                             cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
                             cmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
+                            cmd.Parameters.AddWithValue("@minimumStock", localRow["minimumStock"]);
                             cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
                             cmd.ExecuteNonQuery();
 
@@ -936,6 +1212,56 @@ namespace ADIX
             {
                 transaction.Rollback();
                 throw new Exception($"Failed to sync ITEM master data: {ex.Message}", ex);
+            }
+
+            Console.WriteLine("[ITEM] Downloading changes from Azure to Local...");
+
+            foreach (DataRow azureRow in azureData.Rows)
+            {
+                var itemID = Convert.ToInt32(azureRow["itemID"]);
+                var localRow = localData.AsEnumerable()
+                    .FirstOrDefault(r => r["itemID"].ToString() == itemID.ToString());
+
+                if (localRow == null)
+                {
+                    // Item exists in Azure but not locally - this is handled by DownloadMissingItemsFromAzure
+                    continue;
+                }
+
+                var localModified = DateTime.Parse(localRow["lastModified"].ToString());
+                var azureModified = DateTime.Parse(azureRow["lastModified"].ToString());
+
+                // Azure is newer - update local
+                if (azureModified > localModified)
+                {
+                    var updateLocalSql = @"
+UPDATE ITEM 
+SET description=@description, 
+    sku=@sku,
+    itemGroup=@itemGroup,
+    retailPrice=@retailPrice, 
+    costPrice=@costPrice, 
+    supplierID=@supplierID, 
+    sellerID=@sellerID,
+    minimumStock=@minimumStock,
+    lastModified=@lastModified
+WHERE itemID=@itemID";
+
+                    using var cmd = new SqliteCommand(updateLocalSql, sqliteConn);
+                    cmd.Parameters.AddWithValue("@itemID", itemID);
+                    cmd.Parameters.AddWithValue("@description", azureRow["description"]);
+                    cmd.Parameters.AddWithValue("@sku", azureRow["sku"] == DBNull.Value ? (object)DBNull.Value : azureRow["sku"]);
+                    cmd.Parameters.AddWithValue("@itemGroup", azureRow["itemGroup"] == DBNull.Value ? (object)DBNull.Value : azureRow["itemGroup"]);
+                    cmd.Parameters.AddWithValue("@retailPrice", azureRow["retailPrice"]);
+                    cmd.Parameters.AddWithValue("@costPrice", azureRow["costPrice"]);
+                    cmd.Parameters.AddWithValue("@supplierID", azureRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : azureRow["supplierID"]);
+                    cmd.Parameters.AddWithValue("@sellerID", azureRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : azureRow["sellerID"]);
+                    cmd.Parameters.AddWithValue("@minimumStock", azureRow["minimumStock"]);
+                    cmd.Parameters.AddWithValue("@lastModified", azureRow["lastModified"]);
+                    cmd.ExecuteNonQuery();
+
+                    Console.WriteLine($"[ITEM] Updated local item {itemID} from Azure (Azure newer) - itemGroup: {azureRow["itemGroup"]}");
+                }
             }
         }
 
