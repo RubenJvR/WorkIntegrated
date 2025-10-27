@@ -270,7 +270,7 @@ namespace ADIX
                 if (Database.IsInternetAvailable())
                 {
                     await Database.CheckAndSyncAsync();
-                    LoadInventoryAsync(); // Refresh the grid
+                    RefreshAfterSync(); // Refresh the grid after sync
                     MessageBox.Show("Sync completed!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
@@ -401,7 +401,12 @@ namespace ADIX
                 InventoryGrid.Items.Refresh();
             }
         }
-
+        private async void RefreshAfterSync()
+        {
+            // Small delay to ensure sync completes
+            await Task.Delay(1000);
+            LoadInventoryAsync();
+        }
         private async Task UpdateMinimumStockInDB(InventoryItem item)
         {
             try
@@ -409,14 +414,33 @@ namespace ADIX
                 using var conn = new SqliteConnection(ConnStr);
                 await conn.OpenAsync();
 
-                string updateSql =
-                    "UPDATE ITEM SET minimumStock = @min WHERE itemID = @id";
-
+                string updateSql = "UPDATE ITEM SET minimumStock = @min, lastModified = CURRENT_TIMESTAMP WHERE itemID = @id";
                 using var cmd = new SqliteCommand(updateSql, conn);
                 cmd.Parameters.AddWithValue("@min", item.MinimumStock);
                 cmd.Parameters.AddWithValue("@id", item.ItemID);
 
                 await cmd.ExecuteNonQueryAsync();
+
+                // MARK SYNC AS REQUIRED
+                Database.MarkSyncRequired();
+                Console.WriteLine($"Updated minimum stock for item {item.ItemID} to {item.MinimumStock}");
+
+                // Force immediate sync if online
+                if (Database.IsInternetAvailable())
+                {
+                    try
+                    {
+                        await Database.CheckAndSyncAsync();
+
+                        // CRITICAL: Reload the inventory AFTER sync to get any changes from Azure
+                        LoadInventoryAsync();
+                    }
+                    catch (Exception syncEx)
+                    {
+                        Console.WriteLine($"Immediate sync after min stock update failed: {syncEx.Message}");
+                        // Don't show error to user - it will sync eventually
+                    }
+                }
             }
             catch (Exception ex)
             {
