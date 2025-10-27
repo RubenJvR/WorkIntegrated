@@ -47,7 +47,7 @@ namespace ADIX
                     // ✅ NEW: Sync all tables (except ITEM) after initialization
                     try
                     {
-                        await Task.Run(() => Database.SyncAllTablesFromAzure());
+                        
                         Console.WriteLine("All tables synced successfully during startup");
                     }
                     catch (Exception syncEx)
