@@ -270,7 +270,7 @@ namespace ADIX
                 if (Database.IsInternetAvailable())
                 {
                     await Database.CheckAndSyncAsync();
-                    LoadInventoryAsync(); // Refresh the grid
+                    RefreshAfterSync(); // Refresh the grid after sync
                     MessageBox.Show("Sync completed!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
@@ -401,7 +401,12 @@ namespace ADIX
                 InventoryGrid.Items.Refresh();
             }
         }
-
+        private async void RefreshAfterSync()
+        {
+            // Small delay to ensure sync completes
+            await Task.Delay(1000);
+            LoadInventoryAsync();
+        }
         private async Task UpdateMinimumStockInDB(InventoryItem item)
         {
             try
