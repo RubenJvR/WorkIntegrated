@@ -141,7 +141,82 @@ namespace ADIX
             var mainWindow = Window.GetWindow(this) as MainWindow;
             mainWindow?.MainFrame.Navigate(invoicePage);
         }
+        // Autocomplete event handlers
+        private void ProductSearchTextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            // Show suggestions when search box gets focus if there's text
+            if (!string.IsNullOrWhiteSpace(ProductSearchTextBox.Text))
+            {
+                _viewModel.IsAutoCompleteOpen = true;
+            }
+        }
 
-       
+        private void ProductSearchTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Down && _viewModel.IsAutoCompleteOpen && _viewModel.FilteredProducts.Count > 0)
+            {
+                // Move focus to autocomplete list
+                AutoCompleteListBox.Focus();
+                AutoCompleteListBox.SelectedIndex = 0;
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                // Close autocomplete
+                _viewModel.IsAutoCompleteOpen = false;
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Enter && _viewModel.FilteredProducts.Count > 0)
+            {
+                // Select first item on Enter
+                var firstItem = _viewModel.FilteredProducts[0];
+                _viewModel.AddProductToCart(firstItem);
+                _viewModel.ProductSearchText = "";
+                _viewModel.IsAutoCompleteOpen = false;
+                e.Handled = true;
+            }
+        }
+
+        private void AutoCompleteListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (AutoCompleteListBox.SelectedItem != null)
+            {
+                var selectedProduct = AutoCompleteListBox.SelectedItem as ADIX.Models.POSItem;
+                if (selectedProduct != null)
+                {
+                    _viewModel.AddProductToCart(selectedProduct);
+                    _viewModel.ProductSearchText = "";
+                    _viewModel.IsAutoCompleteOpen = false;
+
+                    // Return focus to search box for next item
+                    ProductSearchTextBox.Focus();
+                }
+            }
+        }
+
+        private void AutoCompleteListBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && AutoCompleteListBox.SelectedItem != null)
+            {
+                var selectedProduct = AutoCompleteListBox.SelectedItem as ADIX.Models.POSItem;
+                if (selectedProduct != null)
+                {
+                    _viewModel.AddProductToCart(selectedProduct);
+                    _viewModel.ProductSearchText = "";
+                    _viewModel.IsAutoCompleteOpen = false;
+                    ProductSearchTextBox.Focus();
+                }
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                _viewModel.IsAutoCompleteOpen = false;
+                ProductSearchTextBox.Focus();
+                e.Handled = true;
+            }
+        }
     }
 }
+
+       
+ 

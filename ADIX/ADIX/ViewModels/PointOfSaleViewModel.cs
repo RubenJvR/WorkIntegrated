@@ -1,11 +1,11 @@
-﻿using System;
+﻿using ADIX.Models;
+using ADIX.Repositories;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
-using ADIX.Models;
-using ADIX.Repositories;
 
 namespace ADIX.ViewModels
 {
@@ -25,7 +25,45 @@ namespace ADIX.ViewModels
         private decimal _totalBill;
         private decimal _totalExcludingDiscount;
         private string? _currentDate;
-        private long _invoiceNumber;
+        private int _invoiceNumber;
+
+        // ========== AUTOCOMPLETE PROPERTIES ==========
+        private string? _productSearchText;
+        private bool _isAutoCompleteOpen;
+        private ObservableCollection<POSItem> _filteredProducts;
+        private System.Collections.Generic.List<POSItem> _allProducts;
+
+        public string? ProductSearchText
+        {
+            get => _productSearchText;
+            set
+            {
+                _productSearchText = value;
+                OnPropertyChanged(nameof(ProductSearchText));
+                FilterProducts();
+            }
+        }
+
+        public bool IsAutoCompleteOpen
+        {
+            get => _isAutoCompleteOpen;
+            set
+            {
+                _isAutoCompleteOpen = value;
+                OnPropertyChanged(nameof(IsAutoCompleteOpen));
+            }
+        }
+
+        public ObservableCollection<POSItem> FilteredProducts
+        {
+            get => _filteredProducts;
+            set
+            {
+                _filteredProducts = value;
+                OnPropertyChanged(nameof(FilteredProducts));
+            }
+        }
+        // ========== END AUTOCOMPLETE PROPERTIES ==========
 
         public ObservableCollection<POSItem> CartItems { get; set; }
         public ObservableCollection<StaffMember> StaffMembers { get; set; }
@@ -43,6 +81,8 @@ namespace ADIX.ViewModels
             CartItems = new ObservableCollection<POSItem>();
             StaffMembers = new ObservableCollection<StaffMember>();
             PaymentMethods = new ObservableCollection<string>();
+            FilteredProducts = new ObservableCollection<POSItem>();
+            _allProducts = new System.Collections.Generic.List<POSItem>();
 
             // Initialize commands
             CheckoutCommand = new RelayCommand(Checkout, CanCheckout);
@@ -79,6 +119,91 @@ namespace ADIX.ViewModels
             CartItems.CollectionChanged += (s, e) => CalculateTotals();
         }
 
+        // ========== AUTOCOMPLETE METHODS ==========
+        private void FilterProducts()
+        {
+            if (string.IsNullOrWhiteSpace(ProductSearchText))
+            {
+                IsAutoCompleteOpen = false;
+                FilteredProducts.Clear();
+                return;
+            }
+
+            string searchText = ProductSearchText;
+
+            var filtered = _allProducts
+                .Where(p =>
+                {
+                    if (p.ItemName != null)
+                    {
+                        string itemName = p.ItemName;
+                        if (itemName.IndexOf(searchText, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                            return true;
+                    }
+
+                    // StockControl is an int, so convert to string for searching
+                    string stockControlStr = p.StockControl.ToString();
+                    if (stockControlStr.IndexOf(searchText, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                        return true;
+
+                    return false;
+                })
+                .OrderBy(p =>
+                {
+                    if (p.ItemName == null) return int.MaxValue;
+                    string itemName = p.ItemName;
+                    int index = itemName.IndexOf(searchText, System.StringComparison.OrdinalIgnoreCase);
+                    return index >= 0 ? index : int.MaxValue;
+                })
+                .ThenBy(p => p.ItemName)
+                .Take(20)
+                .ToList();
+
+            FilteredProducts.Clear();
+            foreach (var item in filtered)
+            {
+                FilteredProducts.Add(item);
+            }
+
+            IsAutoCompleteOpen = filtered.Count > 0;
+        }
+
+        public void AddProductToCart(POSItem product)
+        {
+            if (product == null) return;
+
+            // Check if item already exists in cart (matching by ItemID for accuracy)
+            var existingItem = CartItems.FirstOrDefault(item => item.ItemID == product.ItemID);
+
+            if (existingItem != null)
+            {
+                // Increment quantity if item exists
+                existingItem.Quantity += 1;
+            }
+            else
+            {
+                // This shouldn't happen since we load all items, but handle it anyway
+                // Create a new cart item
+                var newCartItem = new POSItem
+                {
+                    ItemID = product.ItemID,
+                    ItemName = product.ItemName,
+                    Quantity = 1,
+                    StockControl = product.StockControl,
+                    Price = product.Price,
+                    InStock = product.InStock,
+                    ItemDiscount = 0
+                };
+
+                newCartItem.PropertyChanged += CartItem_PropertyChanged;
+                CartItems.Add(newCartItem);
+            }
+
+            // Recalculate totals
+            CalculateTotals();
+        }
+        // ========== END AUTOCOMPLETE METHODS ==========
+
         // Method to check if refund can be processed
         private bool CanProcessRefund(object? parameter)
         {
@@ -114,8 +239,8 @@ namespace ADIX.ViewModels
                     }
                 }
 
-                // Create refund invoice - now returns long
-                long refundId = _repository.CreateRefund(
+                // Create refund invoice 
+                int refundId = _repository.CreateRefund(
                     CustomerName ?? "",
                     SelectedStaff?.StaffID ?? 0,
                     VATAmount,
@@ -127,13 +252,11 @@ namespace ADIX.ViewModels
                 var itemsToRefund = CartItems.Where(i => i.Quantity > 0).ToList();
                 _repository.AddRefundItems(refundId, itemsToRefund);
 
-                
                 Database.ProcessSale(refundId); // This will handle negative quantities for returns
 
                 MessageBox.Show($"Refund processed successfully!\nRefund #: {refundId}\nRefund Amount: R {Math.Abs(TotalBill):F2}",
                     "Refund Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                // Reset form after refund without confirmation dialog
                 ResetTransaction();
             }
             catch (Exception ex)
@@ -160,19 +283,32 @@ namespace ADIX.ViewModels
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
         public void RefreshItems()
         {
             try
             {
-                // Clear existing items
-                CartItems.Clear();
+                // Store current quantities before refresh
+                var currentQuantities = CartItems
+                    .Where(i => i.Quantity > 0)
+                    .ToDictionary(i => i.ItemID, i => new { i.Quantity, i.ItemDiscount });
 
-                // Reload all items from database (including newly synced ones)
+                // Clear and reload
+                CartItems.Clear();
+                _allProducts.Clear();
                 LoadAvailableItems();
 
-                // Recalculate totals
-                CalculateTotals();
+                // Restore quantities
+                foreach (var item in CartItems)
+                {
+                    if (currentQuantities.ContainsKey(item.ItemID))
+                    {
+                        item.Quantity = currentQuantities[item.ItemID].Quantity;
+                        item.ItemDiscount = currentQuantities[item.ItemID].ItemDiscount;
+                    }
+                }
 
+                CalculateTotals();
                 OnPropertyChanged(nameof(CartItems));
             }
             catch (Exception ex)
@@ -181,13 +317,21 @@ namespace ADIX.ViewModels
                     MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
+
         private void LoadAvailableItems()
         {
             try
             {
                 var items = _repository.GetAllItems();
 
-                // Add available items to cart with quantity 0
+                // Load all products for autocomplete search
+                _allProducts.Clear();
+                foreach (var item in items)
+                {
+                    _allProducts.Add(item);
+                }
+
+                // Add items to cart with quantity 0 (for display in DataGrid)
                 foreach (var item in items)
                 {
                     item.PropertyChanged += CartItem_PropertyChanged;
@@ -217,7 +361,6 @@ namespace ADIX.ViewModels
         }
 
         // Method to reset transaction without confirmation dialog
-
         private void ResetTransaction()
         {
             // Only reset the transaction-specific data, not the entire cart
@@ -228,6 +371,7 @@ namespace ADIX.ViewModels
             // VATAmount = 15; // Don't reset VAT - it's fixed now
             Address = string.Empty;
             DiscountPercent = 0;
+            ProductSearchText = string.Empty; // Clear search box
 
             // Reset cart quantities but keep items loaded
             foreach (var item in CartItems)
@@ -238,7 +382,6 @@ namespace ADIX.ViewModels
 
             // Refresh stock quantities to reflect changes
             RefreshStockQuantities();
-
             InitializeInvoice();
         }
 
@@ -255,6 +398,17 @@ namespace ADIX.ViewModels
                         // Update stock information without affecting quantity
                         cartItem.InStock = currentItem.InStock;
                         cartItem.StockControl = currentItem.StockControl;
+                    }
+                }
+
+                // Also update _allProducts for search
+                for (int i = 0; i < _allProducts.Count; i++)
+                {
+                    var currentItem = _repository.GetItemById(_allProducts[i].ItemID);
+                    if (currentItem != null)
+                    {
+                        _allProducts[i].InStock = currentItem.InStock;
+                        _allProducts[i].StockControl = currentItem.StockControl;
                     }
                 }
             }
@@ -368,7 +522,7 @@ namespace ADIX.ViewModels
             set { _currentDate = value; OnPropertyChanged(nameof(CurrentDate)); }
         }
 
-        public long InvoiceNumber
+        public int InvoiceNumber
         {
             get => _invoiceNumber;
             set { _invoiceNumber = value; OnPropertyChanged(nameof(InvoiceNumber)); }
@@ -431,24 +585,29 @@ namespace ADIX.ViewModels
                    !string.IsNullOrWhiteSpace(SelectedPaymentMethod) &&
                    CartItems.Any(i => i.Quantity > 0);
         }
+
         public void ReloadItemsFromDatabase()
         {
             try
             {
                 // Clear existing items
                 CartItems.Clear();
+                _allProducts.Clear();
 
-                // Load fresh data from SQLite
                 var items = _repository.GetAllItems();
 
                 foreach (var item in items)
                 {
+                    // Add to all products for search
+                    _allProducts.Add(item);
+
+                    // Add to cart items for display
                     item.PropertyChanged += CartItem_PropertyChanged;
                     CartItems.Add(item);
                 }
 
-                InitializeInvoice(); // Refresh invoice number
-                CalculateTotals();   // Recalculate totals
+                InitializeInvoice();
+                CalculateTotals();
             }
             catch (Exception ex)
             {
@@ -456,6 +615,7 @@ namespace ADIX.ViewModels
                     "Reload Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
         private void Checkout(object? parameter)
         {
             try
@@ -476,14 +636,14 @@ namespace ADIX.ViewModels
                 }
 
                 // Create invoice (type = 1 for sale) - now returns long
-                long invoiceId = _repository.CreateInvoice(
+                int invoiceId = _repository.CreateInvoice(
                     CustomerName ?? "",
                     SelectedStaff?.StaffID ?? 0,
                     SelectedPaymentMethod ?? "",
                     PaymentReceived,
                     VATAmount,
                     Address ?? "",
-                    1, // Type 1 = Sale
+                    1, //Type 1 = Sale
                     TotalBill
                 );
 
@@ -491,13 +651,11 @@ namespace ADIX.ViewModels
                 var itemsToAdd = CartItems.Where(i => i.Quantity > 0).ToList();
                 _repository.AddInvoiceItems(invoiceId, itemsToAdd);
 
-                
                 Database.ProcessSale(invoiceId);
 
                 MessageBox.Show($"Sale completed successfully!\nInvoice #: {invoiceId}\nTotal: R {TotalBill:F2}",
                     "Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                // Reset form without confirmation dialog
                 ResetTransaction();
             }
             catch (Exception ex)
@@ -512,7 +670,7 @@ namespace ADIX.ViewModels
             try
             {
                 // Create quote (type = 2 for quote) - now returns long
-                long quoteId = _repository.CreateInvoice(
+                int quoteId = _repository.CreateInvoice(
                     CustomerName ?? "",
                     SelectedStaff?.StaffID ?? 0,
                     SelectedPaymentMethod ?? "",
@@ -575,8 +733,6 @@ namespace ADIX.ViewModels
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-
-
     }
 
     // Simple RelayCommand implementation with nullable parameters
