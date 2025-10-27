@@ -74,9 +74,7 @@
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
         </Style>
 
-        <!-- Converters -->
-        <local:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
-        <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        
 
         <!-- Rounded ComboBox with placeholder -->
         <Style x:Key="RoundedComboBoxStyle" TargetType="ComboBox">
@@ -214,13 +212,94 @@
           SelectionChanged="Filter_Changed"
           SelectedIndex="-1"/>
 
-            <!-- Item Name Filter -->
-            <ComboBox Grid.Row="4"
-          x:Name="ItemNameFilter"
-          Style="{StaticResource RoundedComboBoxStyle}"
-          Tag="Filter by Item Name"
-          SelectionChanged="Filter_Changed"
-          SelectedIndex="-1"/>
+            <!-- Item Name Search -->
+            <Border Grid.Row="4" Style="{StaticResource InputBorderStyle}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Search TextBox -->
+                    <TextBox
+            x:Name="ProductSearchTextBox"
+            Text="{Binding ProductSearchText, UpdateSourceTrigger=PropertyChanged}"
+            Background="Transparent"
+            BorderThickness="0"
+            Foreground="White"
+            Padding="8,5,8,5"
+            VerticalContentAlignment="Center"
+            KeyDown="ProductSearchTextBox_KeyDown"
+            TextChanged="ProductSearchTextBox_TextChanged"/>
+
+                    <!-- Placeholder -->
+                    <TextBlock
+            Text="Search items..."
+            Foreground="LightGray"
+            Margin="10,0,30,0"
+            VerticalAlignment="Center"
+            IsHitTestVisible="False"
+            Visibility="{Binding Text, ElementName=ProductSearchTextBox, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+
+                    <!-- Autocomplete Popup -->
+                    <Popup
+            x:Name="AutoCompletePopup"
+            PlacementTarget="{Binding ElementName=ProductSearchTextBox}"
+            Placement="Bottom"
+            StaysOpen="False"
+            AllowsTransparency="True"
+            PopupAnimation="Fade"
+            MaxHeight="250">
+
+                        <Border
+                Background="#333"
+                BorderBrush="#222"
+                BorderThickness="1"
+                CornerRadius="6"
+                MinWidth="{Binding ActualWidth, ElementName=ProductSearchTextBox}">
+
+                            <ListBox
+                    x:Name="AutoCompleteListBox"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Foreground="White"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                    SelectionChanged="AutoCompleteListBox_SelectionChanged">
+
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Vertical" Margin="5">
+                                            <TextBlock Text="{Binding ItemName}" FontWeight="Bold" Foreground="White"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="Price: R" Foreground="LightGray" FontSize="11"/>
+                                                <TextBlock Text="{Binding RetailPrice, StringFormat=F2}" Foreground="LightGray" FontSize="11" Margin="2,0,10,0"/>
+                                                <TextBlock Text="Stock: " Foreground="LightGray" FontSize="11"/>
+                                                <TextBlock Text="{Binding BalanceStock}" Foreground="LightGray" FontSize="11"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Padding" Value="5"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#555"/>
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="#666"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                            </ListBox>
+                        </Border>
+                    </Popup>
+                </Grid>
+            </Border>
+
+
 
 
             <!-- Low Stock + Set Min Stock -->

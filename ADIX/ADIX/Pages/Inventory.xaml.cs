@@ -39,7 +39,6 @@ namespace ADIX
             LoadInventoryAsync();
 
             ItemGroupFilter.SelectionChanged += Filter_Changed;
-            ItemNameFilter.SelectionChanged += Filter_Changed;
 
 
             // Setup auto-refresh timer for inventory
@@ -503,18 +502,98 @@ namespace ADIX
 
             ItemGroupFilter.ItemsSource = groups;
             ItemGroupFilter.SelectedIndex = 0;
-
-            var names = FullInventoryList
-                          .Select(i => i.ItemName)
-                          .Distinct()
-                          .OrderBy(x => x)
-                          .ToList();
-            names.Insert(0, "All");
-
-            ItemNameFilter.ItemsSource = names;
-            ItemNameFilter.SelectedIndex = 0;
         }
 
+        // 🔍 Live search typing handler
+        private async void ProductSearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            string query = ProductSearchTextBox.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                AutoCompletePopup.IsOpen = false;
+                InventoryGrid.ItemsSource = FullInventoryList;
+                return;
+            }
+
+            var results = await SearchItemsAsync(query);
+            AutoCompleteListBox.ItemsSource = results;
+            AutoCompletePopup.IsOpen = results.Any();
+        }
+
+        // 🔍 DB search method
+        private async Task<List<InventoryItem>> SearchItemsAsync(string searchTerm)
+        {
+            var list = new List<InventoryItem>();
+            try
+            {
+                using var conn = new SqliteConnection(ConnStr);
+                await conn.OpenAsync();
+
+                string query = @"
+                    SELECT 
+                        itemID,
+                        itemGroup,
+                        description,
+                        costPrice,
+                        retailPrice,
+                        stockQuantity,
+                        stockSold,
+                        stockRecieved,
+                        minimumStock
+                    FROM ITEM
+                    WHERE description LIKE @term;
+                ";
+
+                using var cmd = new SqliteCommand(query, conn);
+                cmd.Parameters.AddWithValue("@term", $"%{searchTerm}%");
+
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var item = new InventoryItem
+                    {
+                        ItemID = Convert.ToInt32(reader["itemID"]),
+                        ItemGroup = reader["itemGroup"]?.ToString() ?? "N/A",
+                        ItemName = reader["description"]?.ToString() ?? "Unknown",
+                        CostPrice = Convert.ToDouble(reader["costPrice"]),
+                        RetailPrice = Convert.ToDouble(reader["retailPrice"]),
+                        OpeningStockQuantity = Convert.ToInt32(reader["stockQuantity"]),
+                        StockSold = Convert.ToInt32(reader["stockSold"]),
+                        StockReceived = Convert.ToInt32(reader["stockRecieved"]),
+                        MinimumStock = Convert.ToInt32(reader["minimumStock"])
+                    };
+                    item.BalanceStock = item.OpeningStockQuantity - item.StockSold;
+                    list.Add(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Search error: {ex.Message}");
+            }
+
+            return list;
+        }
+
+        // Handle selection from popup
+        private void AutoCompleteListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (AutoCompleteListBox.SelectedItem is InventoryItem selected)
+            {
+                ProductSearchTextBox.Text = selected.ItemName;
+                AutoCompletePopup.IsOpen = false;
+                InventoryGrid.ItemsSource = new List<InventoryItem> { selected };
+            }
+        }
+
+        private void ProductSearchTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                AutoCompletePopup.IsOpen = false;
+                ProductSearchTextBox.Clear();
+            }
+        }
         private void InventoryGrid_LoadingRow(object sender, DataGridRowEventArgs e)
         {
             if (e.Row.DataContext is InventoryItem item && item.BalanceStock < item.MinimumStock)
@@ -525,7 +604,6 @@ namespace ADIX
         private void ClearFilters_Click(object sender, RoutedEventArgs e)
         {
             ItemGroupFilter.SelectedIndex = 0;
-            ItemNameFilter.SelectedIndex = 0;
             LowStockToggle.IsChecked = false;
             ApplyFilters();
         }
@@ -538,13 +616,6 @@ namespace ADIX
             if (ItemGroupFilter.SelectedItem is string group && group != "All")
             {
                 if (!string.Equals(item.ItemGroup, group, StringComparison.OrdinalIgnoreCase))
-                    return false;
-            }
-
-            // Item Name filter
-            if (ItemNameFilter.SelectedItem is string name && name != "All")
-            {
-                if (!string.Equals(item.ItemName, name, StringComparison.OrdinalIgnoreCase))
                     return false;
             }
 
