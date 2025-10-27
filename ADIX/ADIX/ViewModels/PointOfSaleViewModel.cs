@@ -25,7 +25,7 @@ namespace ADIX.ViewModels
         private decimal _totalBill;
         private decimal _totalExcludingDiscount;
         private string? _currentDate;
-        private int _invoiceNumber;
+        private long _invoiceNumber;
 
         // ========== AUTOCOMPLETE PROPERTIES ==========
         private string? _productSearchText;
@@ -240,7 +240,7 @@ namespace ADIX.ViewModels
                 }
 
                 // Create refund invoice 
-                int refundId = _repository.CreateRefund(
+                long refundId = _repository.CreateRefund(
                     CustomerName ?? "",
                     SelectedStaff?.StaffID ?? 0,
                     VATAmount,
@@ -522,7 +522,7 @@ namespace ADIX.ViewModels
             set { _currentDate = value; OnPropertyChanged(nameof(CurrentDate)); }
         }
 
-        public int InvoiceNumber
+        public long InvoiceNumber
         {
             get => _invoiceNumber;
             set { _invoiceNumber = value; OnPropertyChanged(nameof(InvoiceNumber)); }
@@ -636,7 +636,7 @@ namespace ADIX.ViewModels
                 }
 
                 // Create invoice (type = 1 for sale) - now returns long
-                int invoiceId = _repository.CreateInvoice(
+                long invoiceId = _repository.CreateInvoice(
                     CustomerName ?? "",
                     SelectedStaff?.StaffID ?? 0,
                     SelectedPaymentMethod ?? "",
@@ -670,7 +670,7 @@ namespace ADIX.ViewModels
             try
             {
                 // Create quote (type = 2 for quote) - now returns long
-                int quoteId = _repository.CreateInvoice(
+                long quoteId = _repository.CreateInvoice(
                     CustomerName ?? "",
                     SelectedStaff?.StaffID ?? 0,
                     SelectedPaymentMethod ?? "",

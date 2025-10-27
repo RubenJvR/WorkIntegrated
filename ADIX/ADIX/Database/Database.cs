@@ -322,7 +322,7 @@ namespace ADIX
             string checkQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name='SELLER'";
             using var checkCmd = new SqliteCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-           
+
             if (result == null)
             {
                 CreateSQLiteTables(connection);
@@ -364,7 +364,7 @@ namespace ADIX
             string checkQuery = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'SELLER'";
             using var checkCmd = new SqlCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
- 
+
             if (result == null)
             {
                 CreateAzureSQLTables(connection);
@@ -523,7 +523,6 @@ namespace ADIX
             string createTablesSql = @"
 
 -- Drop tables in correct order to handle foreign key constraints
-
 
         CREATE TABLE SELLER(
             sellerID INT NOT NULL PRIMARY KEY,
