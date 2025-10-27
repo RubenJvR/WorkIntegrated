@@ -297,27 +297,15 @@ namespace ADIX.ViewModels
         {
             try
             {
-                // Store current quantities before refresh
-                var currentQuantities = CartItems
-                    .Where(i => i.Quantity > 0)
-                    .ToDictionary(i => i.ItemID, i => new { i.Quantity, i.ItemDiscount });
-
-                // Clear and reload
+                // Clear existing items
                 CartItems.Clear();
-                _allProducts.Clear();
+
+                // Reload all items from database (including newly synced ones)
                 LoadAvailableItems();
 
-                // Restore quantities
-                foreach (var item in CartItems)
-                {
-                    if (currentQuantities.ContainsKey(item.ItemID))
-                    {
-                        item.Quantity = currentQuantities[item.ItemID].Quantity;
-                        item.ItemDiscount = currentQuantities[item.ItemID].ItemDiscount;
-                    }
-                }
-
+                // Recalculate totals
                 CalculateTotals();
+
                 OnPropertyChanged(nameof(CartItems));
             }
             catch (Exception ex)
@@ -340,7 +328,7 @@ namespace ADIX.ViewModels
                     _allProducts.Add(item);
                 }
 
-                // Add items to cart with quantity 0 (for display in DataGrid)
+                // Add ALL items to master list with quantity 0 (only items with Qty > 0 will display)
                 foreach (var item in items)
                 {
                     item.PropertyChanged += CartItem_PropertyChanged;
@@ -385,10 +373,12 @@ namespace ADIX.ViewModels
                 item.ItemDiscount = 0;
             }
 
+            // Refresh stock quantities to reflect changes
             RefreshStockQuantities();
             InitializeInvoice();
         }
 
+        // Method to refresh stock quantities without resetting the cart
         private void RefreshStockQuantities()
         {
             try
@@ -463,9 +453,11 @@ namespace ADIX.ViewModels
 
             foreach (var item in CartItems.Where(i => i.Quantity > 0))
             {
+                // Calculate effective discount for this item
                 decimal itemDiscountPercent = item.ItemDiscount + (DiscountPercent * (1 - item.ItemDiscount / 100m));
                 totalEffectiveDiscount = Math.Max(totalEffectiveDiscount, itemDiscountPercent);
 
+                // Check if any single item has excessive discount
                 if (itemDiscountPercent > MAX_TOTAL_DISCOUNT_PERCENT)
                 {
                     MessageBox.Show($"Discount for {item.ItemName} exceeds maximum allowed ({MAX_TOTAL_DISCOUNT_PERCENT}%).\n" +
@@ -620,7 +612,7 @@ namespace ADIX.ViewModels
                     }
                 }
 
-                int invoiceId = _repository.CreateInvoice(
+                long invoiceId = _repository.CreateInvoice(
                     CustomerName ?? "",
                     SelectedStaff?.StaffID ?? 0,
                     SelectedPaymentMethod ?? "",
@@ -650,7 +642,7 @@ namespace ADIX.ViewModels
         {
             try
             {
-                int quoteId = _repository.CreateInvoice(
+                long quoteId = _repository.CreateInvoice(
                     CustomerName ?? "",
                     SelectedStaff?.StaffID ?? 0,
                     SelectedPaymentMethod ?? "",
