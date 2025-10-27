@@ -40,7 +40,6 @@
 		<local:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
 		<local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
 
-		<!-- Add these lines in your Page.Resources section, after the other converters -->
 
 		<local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
 		<local:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
