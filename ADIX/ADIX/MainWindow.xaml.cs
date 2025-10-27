@@ -107,14 +107,13 @@ namespace ADIX
             {
                 try
                 {
-                    await Database.CheckAndSyncAsync();
-
-                    // ✅ NEW: Also sync all tables during navigation
-                    await Task.Run(() => Database.SyncAllTablesFromAzure());
+                    Database.SyncAllTablesFromAzure(); 
+                    Console.WriteLine("All tables synced successfully during startup");
                 }
-                catch (Exception ex)
+                catch (Exception syncEx)
                 {
-                    Console.WriteLine($"Pre-navigation sync failed: {ex.Message}");
+                    Console.WriteLine($"Warning: Full table sync failed during startup: {syncEx.Message}");
+                    
                 }
             }
 
