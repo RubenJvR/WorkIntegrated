@@ -25,7 +25,7 @@ namespace ADIX.ViewModels
         private decimal _totalBill;
         private decimal _totalExcludingDiscount;
         private string? _currentDate;
-        private int _invoiceNumber;
+        private long _invoiceNumber;
 
         // ========== AUTOCOMPLETE PROPERTIES ==========
         private string? _productSearchText;
@@ -520,7 +520,7 @@ namespace ADIX.ViewModels
             set { _currentDate = value; OnPropertyChanged(nameof(CurrentDate)); }
         }
 
-        public int InvoiceNumber
+        public long InvoiceNumber
         {
             get => _invoiceNumber;
             set { _invoiceNumber = value; OnPropertyChanged(nameof(InvoiceNumber)); }
