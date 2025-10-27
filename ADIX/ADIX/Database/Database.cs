@@ -286,7 +286,7 @@ namespace ADIX
             string checkQuery = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'SELLER'";
             using var checkCmd = new SqlCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-           
+
             if (result == null)
             {
                 CreateAzureSQLTables(connection);
@@ -316,7 +316,7 @@ namespace ADIX
         {
             string createTablesSql = @"
 
-
+        
         CREATE TABLE IF NOT EXISTS SELLER(
             sellerID INTEGER NOT NULL PRIMARY KEY,
             name TEXT NOT NULL,
@@ -352,7 +352,6 @@ namespace ADIX
         stockSold INTEGER NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
         supplierID INTEGER,
         sellerID INTEGER,
-        
         lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
         FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
@@ -474,7 +473,6 @@ namespace ADIX
         stockSold INT NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
         supplierID INT,
         sellerID INT,
-        
         lastModified DATETIME DEFAULT GETUTCDATE(),
         FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
         FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
