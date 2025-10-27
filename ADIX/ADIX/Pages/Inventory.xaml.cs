@@ -18,6 +18,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+
 
 namespace ADIX
 {
@@ -31,7 +34,13 @@ namespace ADIX
         public Inventory()
         {
             InitializeComponent();
+
+            InventoryGrid.LoadingRow += InventoryGrid_LoadingRow;
             LoadInventoryAsync();
+
+            ItemGroupFilter.SelectionChanged += Filter_Changed;
+            ItemNameFilter.SelectionChanged += Filter_Changed;
+
 
             // Setup auto-refresh timer for inventory
             _inventoryRefreshTimer = new System.Windows.Threading.DispatcherTimer();
@@ -355,7 +364,23 @@ namespace ADIX
                     inventoryList.Add(item);
                 }
 
-                InventoryGrid.ItemsSource = inventoryList;
+                // Store full list
+                // Clear and refill observable collection
+                FullInventoryList.Clear();
+                foreach (var item in inventoryList)
+                    FullInventoryList.Add(item);
+
+                // Create the view once
+                if (InventoryView == null)
+                {
+                    InventoryView = CollectionViewSource.GetDefaultView(FullInventoryList);
+                    InventoryView.Filter = InventoryFilter;
+                    InventoryGrid.ItemsSource = InventoryView;
+                }
+
+                InventoryView.Refresh();
+
+
                 InventoryGrid.LoadingRow += (s, e) =>
                 {
                     var rowItem = e.Row.DataContext as InventoryItem;
@@ -368,6 +393,8 @@ namespace ADIX
                         e.Row.Background = new SolidColorBrush(Colors.Transparent);
                     }
                 };
+
+                PopulateFilters();
             }
             catch (Exception ex)
             {
@@ -462,6 +489,86 @@ namespace ADIX
             }
         }
 
+        private ObservableCollection<InventoryItem> FullInventoryList = new ObservableCollection<InventoryItem>();
+        private ICollectionView InventoryView;
+
+        private void PopulateFilters()
+        {
+            var groups = FullInventoryList
+                           .Select(i => i.ItemGroup)
+                           .Distinct()
+                           .OrderBy(x => x)
+                           .ToList();
+            groups.Insert(0, "All");
+
+            ItemGroupFilter.ItemsSource = groups;
+            ItemGroupFilter.SelectedIndex = 0;
+
+            var names = FullInventoryList
+                          .Select(i => i.ItemName)
+                          .Distinct()
+                          .OrderBy(x => x)
+                          .ToList();
+            names.Insert(0, "All");
+
+            ItemNameFilter.ItemsSource = names;
+            ItemNameFilter.SelectedIndex = 0;
+        }
+
+        private void InventoryGrid_LoadingRow(object sender, DataGridRowEventArgs e)
+        {
+            if (e.Row.DataContext is InventoryItem item && item.BalanceStock < item.MinimumStock)
+                e.Row.Background = new SolidColorBrush(Colors.IndianRed);
+            else
+                e.Row.Background = Brushes.Transparent;
+        }
+        private void ClearFilters_Click(object sender, RoutedEventArgs e)
+        {
+            ItemGroupFilter.SelectedIndex = 0;
+            ItemNameFilter.SelectedIndex = 0;
+            LowStockToggle.IsChecked = false;
+            ApplyFilters();
+        }
+
+        private bool InventoryFilter(object obj)
+        {
+            if (obj is not InventoryItem item) return true;
+
+            // Item Group filter
+            if (ItemGroupFilter.SelectedItem is string group && group != "All")
+            {
+                if (!string.Equals(item.ItemGroup, group, StringComparison.OrdinalIgnoreCase))
+                    return false;
+            }
+
+            // Item Name filter
+            if (ItemNameFilter.SelectedItem is string name && name != "All")
+            {
+                if (!string.Equals(item.ItemName, name, StringComparison.OrdinalIgnoreCase))
+                    return false;
+            }
+
+            // Low stock toggle
+            if (LowStockToggle.IsChecked == true)
+            {
+                if (!(item.BalanceStock < item.MinimumStock))
+                    return false;
+            }
+
+            return true;
+        }
+        private void ApplyFilters()
+        {
+            InventoryView?.Refresh();
+            InventoryGrid.Items.Refresh();
+        }
+
+
+        private void Filter_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            ApplyFilters();
+        }
+
 
 
         public class Product
@@ -477,6 +584,7 @@ namespace ADIX
             public int StockSold { get; set; }
             public int SupplierID { get; set; }
             public int SellerID { get; set; }
+            public int MinimumStock { get; set; }
         }
 
 

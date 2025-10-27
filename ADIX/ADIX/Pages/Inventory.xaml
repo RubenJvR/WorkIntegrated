@@ -206,24 +206,22 @@
                 <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Inventory"/>
             </Border>
 
-            <!-- Item Group-->
-
+            <!-- Item Group Filter -->
             <ComboBox Grid.Row="2"
-          x:Name="ItemGroup"
+          x:Name="ItemGroupFilter"
           Style="{StaticResource RoundedComboBoxStyle}"
-          Tag=" Item Group"
-          SelectedIndex="-1">
-                <ComboBoxItem Content="ItemGroup 1"/>
-            </ComboBox>
+          Tag="Filter by Item Group"
+          SelectionChanged="Filter_Changed"
+          SelectedIndex="-1"/>
 
-            <!-- Item Name-->
+            <!-- Item Name Filter -->
             <ComboBox Grid.Row="4"
-          x:Name="ItemName"
+          x:Name="ItemNameFilter"
           Style="{StaticResource RoundedComboBoxStyle}"
-          Tag="Item Name"
-          SelectedIndex="-1">
-                <ComboBoxItem Content="ItemName 1"/>
-            </ComboBox>
+          Tag="Filter by Item Name"
+          SelectionChanged="Filter_Changed"
+          SelectedIndex="-1"/>
+
 
             <!-- Low Stock + Set Min Stock -->
             <Grid Grid.Row="6">
