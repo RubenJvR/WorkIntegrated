@@ -184,11 +184,10 @@ namespace ADIX
                     {
                         // This item exists in Azure but not locally - download it
                         var insertSql = @"
-                    INSERT INTO ITEM 
-                    (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified)
-                    VALUES 
-                    (@itemID, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified)";
-
+    INSERT INTO ITEM 
+    (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified, minimumStock)
+    VALUES 
+    (@itemID, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified, @minimumStock)";
                         using var cmd = new SqliteCommand(insertSql, sqliteConn);
                         cmd.Parameters.AddWithValue("@itemID", itemId);
                         cmd.Parameters.AddWithValue("@description", azureRow["description"]);
@@ -200,6 +199,7 @@ namespace ADIX
                         cmd.Parameters.AddWithValue("@supplierID", azureRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : azureRow["supplierID"]);
                         cmd.Parameters.AddWithValue("@sellerID", azureRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : azureRow["sellerID"]);
                         cmd.Parameters.AddWithValue("@lastModified", azureRow["lastModified"]);
+                        cmd.Parameters.AddWithValue("@minimumStock", azureRow["minimumStock"]);
 
                         cmd.ExecuteNonQuery();
                         Console.WriteLine($"[SYNC] Downloaded missing item {itemId} from Azure");
@@ -1234,6 +1234,51 @@ VALUES
             {
                 transaction.Rollback();
                 throw new Exception($"Failed to sync ITEM master data: {ex.Message}", ex);
+            }
+            Console.WriteLine("[ITEM] Downloading changes from Azure to Local...");
+
+            foreach (DataRow azureRow in azureData.Rows)
+            {
+                var itemID = Convert.ToInt32(azureRow["itemID"]);
+                var localRow = localData.AsEnumerable()
+                    .FirstOrDefault(r => r["itemID"].ToString() == itemID.ToString());
+
+                if (localRow == null)
+                {
+                    // Item exists in Azure but not locally - this is handled by DownloadMissingItemsFromAzure
+                    continue;
+                }
+
+                var localModified = DateTime.Parse(localRow["lastModified"].ToString());
+                var azureModified = DateTime.Parse(azureRow["lastModified"].ToString());
+
+                // Azure is newer - update local
+                if (azureModified > localModified)
+                {
+                    var updateLocalSql = @"
+            UPDATE ITEM 
+            SET description=@description, 
+                retailPrice=@retailPrice, 
+                costPrice=@costPrice, 
+                supplierID=@supplierID, 
+                sellerID=@sellerID,
+                minimumStock=@minimumStock,
+                lastModified=@lastModified
+            WHERE itemID=@itemID";
+
+                    using var cmd = new SqliteCommand(updateLocalSql, sqliteConn);
+                    cmd.Parameters.AddWithValue("@itemID", itemID);
+                    cmd.Parameters.AddWithValue("@description", azureRow["description"]);
+                    cmd.Parameters.AddWithValue("@retailPrice", azureRow["retailPrice"]);
+                    cmd.Parameters.AddWithValue("@costPrice", azureRow["costPrice"]);
+                    cmd.Parameters.AddWithValue("@supplierID", azureRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : azureRow["supplierID"]);
+                    cmd.Parameters.AddWithValue("@sellerID", azureRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : azureRow["sellerID"]);
+                    cmd.Parameters.AddWithValue("@minimumStock", azureRow["minimumStock"]);
+                    cmd.Parameters.AddWithValue("@lastModified", azureRow["lastModified"]);
+                    cmd.ExecuteNonQuery();
+
+                    Console.WriteLine($"[ITEM] Updated local item {itemID} from Azure (Azure newer) - minimumStock: {azureRow["minimumStock"]}");
+                }
             }
         }
 
