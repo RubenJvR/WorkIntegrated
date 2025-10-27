@@ -419,6 +419,23 @@ namespace ADIX
                 // MARK SYNC AS REQUIRED
                 Database.MarkSyncRequired();
                 Console.WriteLine($"Updated minimum stock for item {item.ItemID} to {item.MinimumStock}");
+
+                // Force immediate sync if online
+                if (Database.IsInternetAvailable())
+                {
+                    try
+                    {
+                        await Database.CheckAndSyncAsync();
+
+                        // CRITICAL: Reload the inventory AFTER sync to get any changes from Azure
+                        LoadInventoryAsync();
+                    }
+                    catch (Exception syncEx)
+                    {
+                        Console.WriteLine($"Immediate sync after min stock update failed: {syncEx.Message}");
+                        // Don't show error to user - it will sync eventually
+                    }
+                }
             }
             catch (Exception ex)
             {
