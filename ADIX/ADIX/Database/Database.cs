@@ -246,8 +246,7 @@ VALUES
             string checkQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name='SELLER'";
             using var checkCmd = new SqliteCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-            CreateSQLiteTables(connection);
-            InsertTestDataSQLite(connection);
+
             if (result == null)
             {
                 CreateSQLiteTables(connection);
@@ -289,8 +288,7 @@ VALUES
             string checkQuery = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'SELLER'";
             using var checkCmd = new SqlCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-            CreateAzureSQLTables(connection);
-            InsertTestDataAzureSQL(connection);
+      
             if (result == null)
             {
                 CreateAzureSQLTables(connection);
@@ -319,18 +317,7 @@ VALUES
         private static void CreateSQLiteTables(SqliteConnection connection)
         {
             string createTablesSql = @"
-DROP TABLE IF EXISTS INVOICEITEM;
-DROP TABLE IF EXISTS INVOICEQUOTE;
-DROP TABLE IF EXISTS REPORT;
-DROP TABLE IF EXISTS ITEM;
-DROP TABLE IF EXISTS CUSTOMER;
-DROP TABLE IF EXISTS STAFF;
-DROP TABLE IF EXISTS SUPPLIER;
-DROP TABLE IF EXISTS SELLER;
-DROP TABLE IF EXISTS USER;
-DROP TABLE IF EXISTS SYNC_LOG;
-DROP TABLE IF EXISTS DELETION_LOG;
-DROP TABLE IF EXISTS EXPENSES;
+
 
         CREATE TABLE IF NOT EXISTS SELLER(
             sellerID INTEGER NOT NULL PRIMARY KEY,
@@ -457,15 +444,8 @@ DROP TABLE IF EXISTS EXPENSES;
         private static void CreateAzureSQLTables(SqlConnection connection)
         {
             string createTablesSql = @"
-DROP TABLE IF EXISTS INVOICEITEM;
-DROP TABLE IF EXISTS INVOICEQUOTE;
-DROP TABLE IF EXISTS REPORT;
-DROP TABLE IF EXISTS ITEM;
-DROP TABLE IF EXISTS CUSTOMER;
-DROP TABLE IF EXISTS STAFF;
-DROP TABLE IF EXISTS SUPPLIER;
-DROP TABLE IF EXISTS SELLER;
-DROP TABLE IF EXISTS EXPENSES;
+
+
         CREATE TABLE SELLER(
             sellerID INT NOT NULL PRIMARY KEY,
             name NVARCHAR(255) NOT NULL,
