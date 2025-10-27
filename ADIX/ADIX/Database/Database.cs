@@ -244,7 +244,7 @@ namespace ADIX
             string checkQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name='SELLER'";
             using var checkCmd = new SqliteCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-            
+
             if (result == null)
             {
                 CreateSQLiteTables(connection);
@@ -316,7 +316,7 @@ namespace ADIX
         {
             string createTablesSql = @"
 
-        
+
         CREATE TABLE IF NOT EXISTS SELLER(
             sellerID INTEGER NOT NULL PRIMARY KEY,
             name TEXT NOT NULL,
@@ -352,6 +352,7 @@ namespace ADIX
         stockSold INTEGER NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
         supplierID INTEGER,
         sellerID INTEGER,
+        minimumStock INTEGER,
         lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
         FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
@@ -473,6 +474,7 @@ namespace ADIX
         stockSold INT NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
         supplierID INT,
         sellerID INT,
+        minimumStock INT,
         lastModified DATETIME DEFAULT GETUTCDATE(),
         FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
         FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
