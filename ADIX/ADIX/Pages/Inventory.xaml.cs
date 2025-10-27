@@ -28,9 +28,14 @@ namespace ADIX
     {
         private const string ConnStr = "Data Source=ADIX.db";
         private System.Windows.Threading.DispatcherTimer _inventoryRefreshTimer;
+
         public Inventory()
         {
             InitializeComponent();
+
+            // Fix orphaned records first
+            Database.FixOrphanedRecords();
+
             LoadInventoryAsync();
 
             // Setup auto-refresh timer for inventory
@@ -202,11 +207,15 @@ namespace ADIX
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
         private async void ForceSync_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 MessageBox.Show("Starting manual sync...", "Sync", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Fix any orphaned records before sync
+                Database.FixOrphanedRecords();
 
                 if (Database.IsInternetAvailable())
                 {
@@ -263,33 +272,24 @@ namespace ADIX
                     var item = new InventoryItem
                     {
                         ItemID = Convert.ToInt32(reader["itemID"]),
-
                         ItemGroup = reader["itemGroup"]?.ToString() ?? "N/A",
-
                         SKU = reader["sku"] == DBNull.Value
                             ? "SKU-UNKNOWN"
                             : $"SKU-{reader["sku"]}",
-
                         ItemName = reader["description"]?.ToString() ?? "Unknown",
-
                         OpeningStockQuantity = Convert.ToInt32(reader["stockQuantity"]),
                         StockSold = Convert.ToInt32(reader["stockSold"]),
                         StockReceived = Convert.ToInt32(reader["stockRecieved"]),
-
                         CostPrice = ParseDouble(reader["costPrice"]),
                         RetailPrice = ParseDouble(reader["retailPrice"]),
-
                         StockReturned = 0,
                         StockRefunded = 0,
-
-                        CostOfBusinessWorkings = Convert.ToDouble(reader["costPrice"]),
+                        CostOfBusinessWorkings = ParseDouble(reader["costPrice"]),
                         ReturnedStockUnusable = 0,
-
                         MinimumStock = GetInt(reader, "minimumStock"),
-
                     };
 
-                    //Calculations
+                    // Calculations
                     item.BalanceStock = item.OpeningStockQuantity - item.StockSold;
                     item.Loss = item.CostOfBusinessWorkings * item.ReturnedStockUnusable;
 
@@ -297,6 +297,8 @@ namespace ADIX
                 }
 
                 InventoryGrid.ItemsSource = inventoryList;
+
+                // Apply row styling for low stock
                 InventoryGrid.LoadingRow += (s, e) =>
                 {
                     var rowItem = e.Row.DataContext as InventoryItem;
@@ -358,6 +360,9 @@ namespace ADIX
                 cmd.Parameters.AddWithValue("@id", item.ItemID);
 
                 await cmd.ExecuteNonQueryAsync();
+
+                // Mark for sync
+                Database.MarkSyncRequired();
             }
             catch (Exception ex)
             {
@@ -379,8 +384,6 @@ namespace ADIX
             }
         }
 
-
-
         public class Product
         {
             public int ItemID { get; set; }
@@ -396,13 +399,15 @@ namespace ADIX
             public int SellerID { get; set; }
         }
 
-
         private void ImportCSV_Click(object sender, EventArgs e)
         {
-
             CsvImporter.ImportFromCsv();
             Database.MarkSyncRequired();
+
+            // Reload inventory after import
+            LoadInventoryAsync();
         }
+
         private void DebugLocalItems()
         {
             try
@@ -419,13 +424,13 @@ namespace ADIX
                 {
                     Console.WriteLine($"ID: {reader["itemID"]}, Name: {reader["description"]}, Stock: {reader["stockQuantity"]}");
                 }
-                Console.WriteLine($"Total local items: {reader.HasRows}");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Debug error: {ex.Message}");
             }
         }
+
         private void CheckAzureItems()
         {
             try
@@ -448,8 +453,6 @@ namespace ADIX
                 Console.WriteLine($"Azure check error: {ex.Message}");
             }
         }
-
-        // Call this in your constructor after LoadInventoryAsync()
 
         private void Delete_Click(object sender, RoutedEventArgs e)
         {
@@ -491,8 +494,12 @@ namespace ADIX
                 DeleteItemFromDatabase(selectedItem.ItemID, selectedItem.ItemName);
             }
         }
+
         private async void Inventory_Loaded(object sender, RoutedEventArgs e)
         {
+            // Fix any orphaned records first
+            Database.FixOrphanedRecords();
+
             // Sync when inventory page loads
             if (Database.IsInternetAvailable() && Database.IsSyncRequired())
             {
@@ -507,13 +514,17 @@ namespace ADIX
             }
 
             LoadInventoryAsync();
+
+            // Start the refresh timer
+            _inventoryRefreshTimer.Start();
         }
-        private void DeleteItemFromDatabase(int itemId, string itemName)
+
+        private async void DeleteItemFromDatabase(int itemId, string itemName)
         {
             try
             {
                 using var conn = new SqliteConnection("Data Source=ADIX.db");
-                conn.Open();
+                await conn.OpenAsync();
 
                 // Check if item exists
                 string checkItemSql = "SELECT COUNT(*) FROM ITEM WHERE itemID = @itemID";
@@ -549,7 +560,6 @@ namespace ADIX
                 }
 
                 using var transaction = conn.BeginTransaction();
-
                 try
                 {
                     // Delete from INVOICEITEM first (foreign key constraint)
@@ -571,33 +581,33 @@ namespace ADIX
 
                     if (rowsAffected > 0)
                     {
+                        // Try to delete from Azure if online
+                        if (Database.IsInternetAvailable())
+                        {
+                            try
+                            {
+                                await Database.DeleteItemFromAzure(itemId);
+                            }
+                            catch (Exception azureEx)
+                            {
+                                Console.WriteLine($"Azure delete failed: {azureEx.Message}");
+                                // Mark for sync as fallback
+                                Database.MarkSyncRequired();
+                            }
+                        }
+                        else
+                        {
+                            Database.MarkSyncRequired();
+                        }
+
                         MessageBox.Show(
                             $"Item '{itemName}' deleted successfully!",
                             "Delete Success",
                             MessageBoxButton.OK,
                             MessageBoxImage.Information);
 
-                        // Mark sync required
-                        Database.MarkSyncRequired();
-
                         // Refresh the grid
                         LoadInventoryAsync();
-
-                        // Trigger sync if online
-                        if (Database.IsInternetAvailable())
-                        {
-                            Task.Run(async () =>
-                            {
-                                try
-                                {
-                                    await Database.CheckAndSyncAsync();
-                                }
-                                catch (Exception syncEx)
-                                {
-                                    Console.WriteLine($"Sync after delete failed: {syncEx.Message}");
-                                }
-                            });
-                        }
                     }
                     else
                     {
@@ -622,6 +632,5 @@ namespace ADIX
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
     }
 }

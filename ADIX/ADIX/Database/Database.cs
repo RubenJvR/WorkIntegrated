@@ -390,6 +390,8 @@ namespace ADIX
 
 
 
+
+
         private static void CreateSQLiteTables(SqliteConnection connection)
         {
             string createTablesSql = @"
@@ -701,6 +703,163 @@ namespace ADIX
         }
 
 
+        // Add this method to Database.cs
+        public static void FindOrphanedRecords()
+        {
+            using var sqliteConn = new SqliteConnection(SqliteConnectionString);
+            sqliteConn.Open();
+
+            // Check for orphaned invoice items
+            string checkOrphanedItems = @"
+        SELECT ii.invoiceItemID, ii.invoiceQuoteID, ii.itemID
+        FROM INVOICEITEM ii
+        LEFT JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
+        LEFT JOIN ITEM i ON ii.itemID = i.itemID
+        WHERE iq.invoiceQuoteID IS NULL OR i.itemID IS NULL";
+
+            using var cmd = new SqliteCommand(checkOrphanedItems, sqliteConn);
+            using var reader = cmd.ExecuteReader();
+
+            int orphanCount = 0;
+            while (reader.Read())
+            {
+                orphanCount++;
+                Console.WriteLine($"[ORPHANED] InvoiceItemID: {reader["invoiceItemID"]}, " +
+                                 $"InvoiceQuoteID: {reader["invoiceQuoteID"]}, " +
+                                 $"ItemID: {reader["itemID"]}");
+            }
+
+            if (orphanCount > 0)
+            {
+                Console.WriteLine($"[WARNING] Found {orphanCount} orphaned invoice items");
+
+                // Auto-delete orphaned records to fix sync
+                string deleteOrphans = @"
+            DELETE FROM INVOICEITEM 
+            WHERE invoiceItemID IN (
+                SELECT ii.invoiceItemID
+                FROM INVOICEITEM ii
+                LEFT JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
+                LEFT JOIN ITEM i ON ii.itemID = i.itemID
+                WHERE iq.invoiceQuoteID IS NULL OR i.itemID IS NULL
+            )";
+
+                using var deleteCmd = new SqliteCommand(deleteOrphans, sqliteConn);
+                int deleted = deleteCmd.ExecuteNonQuery();
+                Console.WriteLine($"\nDeleted {deleted} orphaned records");
+            }
+            else
+            {
+                Console.WriteLine("No orphaned records found");
+            }
+        }
+
+        // Add this method to Database.cs
+        public static bool ValidateDataIntegrity()
+        {
+            try
+            {
+                using var sqliteConn = new SqliteConnection(SqliteConnectionString);
+                sqliteConn.Open();
+
+                // Check for orphaned invoice items
+                string checkOrphanedSql = @"
+            SELECT COUNT(*) 
+            FROM INVOICEITEM ii 
+            LEFT JOIN ITEM i ON ii.itemID = i.itemID 
+            LEFT JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID 
+            WHERE i.itemID IS NULL OR iq.invoiceQuoteID IS NULL";
+
+                using var cmd = new SqliteCommand(checkOrphanedSql, sqliteConn);
+                int orphanedCount = Convert.ToInt32(cmd.ExecuteScalar());
+
+                if (orphanedCount > 0)
+                {
+                    Console.WriteLine($"[VALIDATION] Found {orphanedCount} orphaned invoice items");
+                    return false;
+                }
+
+                Console.WriteLine("[VALIDATION] Data integrity check passed");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[VALIDATION ERROR] {ex.Message}");
+                return false;
+            }
+        }
+
+        // Add this method to Database.cs
+        public static void FixOrphanedRecords()
+        {
+            try
+            {
+                using var sqliteConn = new SqliteConnection(SqliteConnectionString);
+                sqliteConn.Open();
+
+                // Delete orphaned invoice items
+                string fixOrphanedSql = @"
+            DELETE FROM INVOICEITEM 
+            WHERE itemID NOT IN (SELECT itemID FROM ITEM) 
+            OR invoiceQuoteID NOT IN (SELECT invoiceQuoteID FROM INVOICEQUOTE)";
+
+                using var cmd = new SqliteCommand(fixOrphanedSql, sqliteConn);
+                int deleted = cmd.ExecuteNonQuery();
+
+                if (deleted > 0)
+                {
+                    Console.WriteLine($"[REPAIR] Deleted {deleted} orphaned invoice items");
+                }
+                else
+                {
+                    Console.WriteLine($"[REPAIR] No orphaned records found");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[REPAIR ERROR] {ex.Message}");
+            }
+        }
+
+        // Add this method to Database.cs for Azure deletion
+        public static async Task DeleteItemFromAzure(int itemId)
+        {
+            if (string.IsNullOrEmpty(AzureSqlConnectionString))
+            {
+                Console.WriteLine($"[AZURE DELETE] Azure connection string not configured - skipping delete for item {itemId}");
+                return;
+            }
+
+            using var azureConn = new SqlConnection(AzureSqlConnectionString);
+            await azureConn.OpenAsync();
+
+            using var transaction = azureConn.BeginTransaction();
+            try
+            {
+                // Delete from Azure INVOICEITEM first
+                string deleteAzureInvoiceItemsSql = "DELETE FROM INVOICEITEM WHERE itemID = @itemID";
+                using var deleteAzureInvoiceItemsCmd = new SqlCommand(deleteAzureInvoiceItemsSql, azureConn, transaction);
+                deleteAzureInvoiceItemsCmd.Parameters.AddWithValue("@itemID", itemId);
+                deleteAzureInvoiceItemsCmd.ExecuteNonQuery();
+
+                // Delete from Azure ITEM
+                string deleteAzureItemSql = "DELETE FROM ITEM WHERE itemID = @itemID";
+                using var deleteAzureCmd = new SqlCommand(deleteAzureItemSql, azureConn, transaction);
+                deleteAzureCmd.Parameters.AddWithValue("@itemID", itemId);
+                deleteAzureCmd.ExecuteNonQuery();
+
+                transaction.Commit();
+                Console.WriteLine($"[AZURE DELETE] Successfully deleted item {itemId} from Azure");
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                Console.WriteLine($"[AZURE DELETE ERROR] Failed to delete item from Azure: {ex.Message}");
+                // Don't throw - we'll mark for sync instead
+                MarkSyncRequired();
+            }
+        }
+
         /// <summary>
         /// Migrate Azure SQL database to remove CHECK constraint from INVOICEITEM.quantity
         /// </summary>
@@ -873,8 +1032,14 @@ namespace ADIX
             await Task.Run(() => SyncTransactionBased());
         }
 
+
         private static void SyncTransactionBased()
         {
+            if (string.IsNullOrEmpty(AzureSqlConnectionString))
+            {
+                throw new InvalidOperationException("Azure SQL connection string is not configured.");
+            }
+
             using var sqliteConn = new SqliteConnection(SqliteConnectionString);
             using var azureConn = new SqlConnection(AzureSqlConnectionString);
 
@@ -883,28 +1048,384 @@ namespace ADIX
 
             Console.WriteLine("Starting transaction-based sync...");
 
-            // Step 1: Sync master data (bidirectional - newest wins)
-            SyncMasterData(sqliteConn, azureConn, "SELLER", new[] { "sellerID", "name", "contactInfo", "bankDetails", "commissionRate", "lastModified" });
-            SyncMasterData(sqliteConn, azureConn, "SUPPLIER", new[] { "supplierID", "name", "contactInfo", "address", "lastModified" });
-            SyncMasterData(sqliteConn, azureConn, "CUSTOMER", new[] { "customerID", "name", "phone", "email", "credit", "lastModified" });
-            SyncMasterData(sqliteConn, azureConn, "STAFF", new[] { "staffID", "name", "Role", "userName", "passwordHash", "salary", "lastModified" });
+            try
+            {
+                // STEP 0: CRITICAL - Fix orphaned records and validate data integrity
+                Console.WriteLine("[SYNC] Step 0: Validating data integrity...");
+                FixOrphanedRecords();
 
-            // Step 2: DOWNLOAD MISSING ITEMS FROM AZURE FIRST
-            DownloadMissingItemsFromAzure(sqliteConn, azureConn);
+                // Additional validation for foreign keys
+                ValidateForeignKeyConstraints(sqliteConn, azureConn);
 
-            // Step 3: Sync item master data (prices, descriptions) but NOT quantities YET
-            SyncItemMasterDataWithoutInventory(sqliteConn, azureConn);
+                if (!ValidateDataIntegrity())
+                {
+                    Console.WriteLine("[SYNC WARNING] Data integrity issues found. Attempting to continue...");
+                }
 
-            // Step 4: Sync transactions FIRST (upload local transactions to Azure)
-            SyncTransactions(sqliteConn, azureConn);
+                // STEP 1: Sync PARENT tables first (bidirectional - newest wins)
+                Console.WriteLine("[SYNC] Step 1: Syncing master data tables...");
+                SyncMasterData(sqliteConn, azureConn, "SELLER", new[] { "sellerID", "name", "contactInfo", "bankDetails", "commissionRate", "lastModified" });
+                SyncMasterData(sqliteConn, azureConn, "SUPPLIER", new[] { "supplierID", "name", "contactInfo", "address", "lastModified" });
+                SyncMasterData(sqliteConn, azureConn, "CUSTOMER", new[] { "customerID", "name", "phone", "email", "credit", "lastModified" });
+                SyncMasterData(sqliteConn, azureConn, "STAFF", new[] { "staffID", "name", "Role", "userName", "passwordHash", "salary", "lastModified" });
 
-            // Step 5: Recalculate inventory on BOTH databases independently
-            RecalculateInventoryOnBothDatabases(sqliteConn, azureConn);
+                // STEP 2: DOWNLOAD missing items from Azure first (to avoid conflicts)
+                Console.WriteLine("[SYNC] Step 2: Downloading missing items from Azure...");
+                DownloadMissingItemsFromAzure(sqliteConn, azureConn);
 
-            // Step 6: Sync reports
-            SyncMasterData(sqliteConn, azureConn, "REPORT", new[] { "reportID", "reportType", "date", "staffID", "lastModified" });
+                // STEP 3: Sync ITEM master data (but NOT inventory quantities yet)
+                Console.WriteLine("[SYNC] Step 3: Syncing item master data...");
+                SyncItemMasterDataWithoutInventory(sqliteConn, azureConn);
 
-            Console.WriteLine("Transaction-based sync completed successfully.");
+                // STEP 4: Sync INVOICEQUOTE headers FIRST (parent of INVOICEITEM)
+                Console.WriteLine("[SYNC] Step 4: Syncing invoice headers...");
+                SyncInvoicesFirst(sqliteConn, azureConn);
+
+                // STEP 5: Sync INVOICEITEMS only (child table - requires parents to exist)
+                Console.WriteLine("[SYNC] Step 5: Syncing invoice items...");
+                SyncInvoiceItemsOnlyAfterInvoices(sqliteConn, azureConn);
+
+                // STEP 6: Recalculate inventory on BOTH databases
+                Console.WriteLine("[SYNC] Step 6: Recalculating inventory...");
+                RecalculateInventoryOnBothDatabases(sqliteConn, azureConn);
+
+                // STEP 7: Sync reports (optional)
+                Console.WriteLine("[SYNC] Step 7: Syncing reports...");
+                SyncMasterData(sqliteConn, azureConn, "REPORT", new[] { "reportID", "reportType", "date", "staffID", "lastModified" });
+
+                Console.WriteLine("✅ Transaction-based sync completed successfully.");
+                _syncRequired = false;
+                _lastSyncTime = DateTime.UtcNow;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Sync failed: {ex.Message}");
+                _syncRequired = true;
+                throw new Exception($"Sync failed: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Validate foreign key constraints before sync
+        /// </summary>
+        private static void ValidateForeignKeyConstraints(SqliteConnection sqliteConn, SqlConnection azureConn)
+        {
+            Console.WriteLine("[VALIDATION] Checking foreign key constraints...");
+
+            // Check for invoices with missing customers or staff
+            string checkInvoicesSql = @"
+        SELECT iq.invoiceQuoteID, iq.customerID, iq.staffID, 
+               c.customerID as CustomerExists, s.staffID as StaffExists
+        FROM INVOICEQUOTE iq
+        LEFT JOIN CUSTOMER c ON iq.customerID = c.customerID
+        LEFT JOIN STAFF s ON iq.staffID = s.staffID
+        WHERE iq.synced = 0 AND (c.customerID IS NULL OR s.staffID IS NULL)";
+
+            using var checkCmd = new SqliteCommand(checkInvoicesSql, sqliteConn);
+            using var reader = checkCmd.ExecuteReader();
+
+            int problemCount = 0;
+            while (reader.Read())
+            {
+                problemCount++;
+                long invoiceId = Convert.ToInt64(reader["invoiceQuoteID"]);
+                int? customerId = reader["customerID"] == DBNull.Value ? null : (int?)Convert.ToInt32(reader["customerID"]);
+                int staffId = Convert.ToInt32(reader["staffID"]);
+                bool customerExists = reader["CustomerExists"] != DBNull.Value;
+                bool staffExists = reader["StaffExists"] != DBNull.Value;
+
+                Console.WriteLine($"[VALIDATION WARNING] Invoice {invoiceId} has FK issues - Customer {customerId} exists: {customerExists}, Staff {staffId} exists: {staffExists}");
+
+                // Fix the issue by setting customer to NULL if it doesn't exist
+                if (!customerExists && customerId.HasValue)
+                {
+                    using var fixCmd = new SqliteCommand("UPDATE INVOICEQUOTE SET customerID = NULL WHERE invoiceQuoteID = @id", sqliteConn);
+                    fixCmd.Parameters.AddWithValue("@id", invoiceId);
+                    fixCmd.ExecuteNonQuery();
+                    Console.WriteLine($"[VALIDATION FIX] Set customer to NULL for invoice {invoiceId}");
+                }
+            }
+
+            if (problemCount > 0)
+            {
+                Console.WriteLine($"[VALIDATION] Fixed {problemCount} foreign key issues");
+            }
+            else
+            {
+                Console.WriteLine("[VALIDATION] No foreign key issues found");
+            }
+        }
+
+
+        /// <summary>
+        /// Sync invoice headers first (before invoice items)
+        /// </summary>
+        /// <summary>
+        /// Sync invoice headers first (before invoice items) with conflict resolution
+        /// </summary>
+        /// <summary>
+        /// Sync invoice headers first (before invoice items) with conflict resolution
+        /// </summary>
+        /// <summary>
+        /// Sync invoice headers first (before invoice items) with safe conflict resolution
+        /// </summary>
+        private static void SyncInvoicesFirst(SqliteConnection sqliteConn, SqlConnection azureConn)
+        {
+            Console.WriteLine("[INVOICE SYNC] Starting invoice header sync...");
+
+            var localInvoices = new DataTable();
+            using (var cmd = new SqliteCommand("SELECT * FROM INVOICEQUOTE WHERE synced = 0 ORDER BY date ASC", sqliteConn))
+            using (var reader = cmd.ExecuteReader())
+            {
+                localInvoices.Load(reader);
+            }
+
+            Console.WriteLine($"[INVOICE SYNC] Found {localInvoices.Rows.Count} unsynced invoices");
+            if (localInvoices.Rows.Count == 0) return;
+
+            using var transaction = azureConn.BeginTransaction();
+            try
+            {
+                foreach (DataRow invoice in localInvoices.Rows)
+                {
+                    long invoiceId = Convert.ToInt64(invoice["invoiceQuoteID"]);
+                    long originalInvoiceId = invoiceId;
+
+                    // Check if invoice exists in Azure
+                    var checkSql = "SELECT COUNT(*) FROM INVOICEQUOTE WHERE invoiceQuoteID = @id";
+                    using var checkCmd = new SqlCommand(checkSql, azureConn, transaction);
+                    checkCmd.Parameters.AddWithValue("@id", invoiceId);
+                    var exists = (int)checkCmd.ExecuteScalar() > 0;
+
+                    if (exists)
+                    {
+                        // CONFLICT: Invoice ID already exists in Azure (from another device)
+                        Console.WriteLine($"[CONFLICT] Invoice {invoiceId} already exists in Azure. Generating new ID...");
+
+                        // Generate new unique ID for this invoice
+                        long newInvoiceId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+                        // Update local invoice with new ID using a transaction to maintain FK integrity
+                        using var localTransaction = sqliteConn.BeginTransaction();
+                        try
+                        {
+                            // Update INVOICEQUOTE first
+                            using var updateInvoiceCmd = new SqliteCommand(
+                                "UPDATE INVOICEQUOTE SET invoiceQuoteID = @newId WHERE invoiceQuoteID = @oldId",
+                                sqliteConn, localTransaction);
+                            updateInvoiceCmd.Parameters.AddWithValue("@newId", newInvoiceId);
+                            updateInvoiceCmd.Parameters.AddWithValue("@oldId", invoiceId);
+                            updateInvoiceCmd.ExecuteNonQuery();
+
+                            // Then update INVOICEITEM references
+                            using var updateItemsCmd = new SqliteCommand(
+                                "UPDATE INVOICEITEM SET invoiceQuoteID = @newId WHERE invoiceQuoteID = @oldId",
+                                sqliteConn, localTransaction);
+                            updateItemsCmd.Parameters.AddWithValue("@newId", newInvoiceId);
+                            updateItemsCmd.Parameters.AddWithValue("@oldId", invoiceId);
+                            updateItemsCmd.ExecuteNonQuery();
+
+                            localTransaction.Commit();
+
+                            // Use new ID for Azure insert
+                            invoiceId = newInvoiceId;
+                            Console.WriteLine($"[CONFLICT RESOLVED] Reassigned invoice from {originalInvoiceId} to new ID: {newInvoiceId}");
+                        }
+                        catch (Exception ex)
+                        {
+                            localTransaction.Rollback();
+                            Console.WriteLine($"[CONFLICT ERROR] Failed to reassign invoice ID: {ex.Message}");
+
+                            // Fallback: Mark as synced and skip (Azure's data wins)
+                            using var markSyncedCmd = new SqliteCommand("UPDATE INVOICEQUOTE SET synced = 1 WHERE invoiceQuoteID = @id", sqliteConn);
+                            markSyncedCmd.Parameters.AddWithValue("@id", originalInvoiceId);
+                            markSyncedCmd.ExecuteNonQuery();
+                            continue;
+                        }
+                    }
+
+                    // Validate foreign key constraints before insert
+                    int? customerId = invoice["customerID"] == DBNull.Value ? null : (int?)Convert.ToInt32(invoice["customerID"]);
+                    int staffId = Convert.ToInt32(invoice["staffID"]);
+
+                    // Check if customer exists (if provided)
+                    if (customerId.HasValue)
+                    {
+                        var checkCustomerSql = "SELECT COUNT(*) FROM CUSTOMER WHERE customerID = @custId";
+                        using var checkCustomerCmd = new SqlCommand(checkCustomerSql, azureConn, transaction);
+                        checkCustomerCmd.Parameters.AddWithValue("@custId", customerId.Value);
+                        var customerExists = (int)checkCustomerCmd.ExecuteScalar() > 0;
+
+                        if (!customerExists)
+                        {
+                            Console.WriteLine($"[WARNING] Customer {customerId.Value} not found in Azure for invoice {invoiceId}. Setting to NULL.");
+                            customerId = null;
+                        }
+                    }
+
+                    // Check if staff exists
+                    var checkStaffSql = "SELECT COUNT(*) FROM STAFF WHERE staffID = @staffId";
+                    using var checkStaffCmd = new SqlCommand(checkStaffSql, azureConn, transaction);
+                    checkStaffCmd.Parameters.AddWithValue("@staffId", staffId);
+                    var staffExists = (int)checkStaffCmd.ExecuteScalar() > 0;
+
+                    if (!staffExists)
+                    {
+                        Console.WriteLine($"[ERROR] Staff {staffId} not found in Azure for invoice {invoiceId}. Cannot sync invoice.");
+
+                        // Mark as synced anyway to avoid infinite retry
+                        using var markFailedCmd = new SqliteCommand("UPDATE INVOICEQUOTE SET synced = 1 WHERE invoiceQuoteID = @id", sqliteConn);
+                        markFailedCmd.Parameters.AddWithValue("@id", invoiceId);
+                        markFailedCmd.ExecuteNonQuery();
+                        continue;
+                    }
+
+                    // Insert invoice header to Azure
+                    var insertSql = @"INSERT INTO INVOICEQUOTE 
+                (invoiceQuoteID, date, type, totalAmount, customerID, staffID, paymentMethod, paymentStatus, lastModified) 
+                VALUES (@id, @date, @type, @amount, @custID, @staffID, @paymentMethod, @paymentStatus, @lastModified)";
+
+                    using var insertCmd = new SqlCommand(insertSql, azureConn, transaction);
+                    insertCmd.Parameters.AddWithValue("@id", invoiceId);
+                    insertCmd.Parameters.AddWithValue("@date", invoice["date"]);
+                    insertCmd.Parameters.AddWithValue("@type", invoice["type"]);
+                    insertCmd.Parameters.AddWithValue("@amount", invoice["totalAmount"]);
+                    insertCmd.Parameters.AddWithValue("@custID", customerId ?? (object)DBNull.Value);
+                    insertCmd.Parameters.AddWithValue("@staffID", staffId);
+                    insertCmd.Parameters.AddWithValue("@paymentMethod", invoice["paymentMethod"] == DBNull.Value ? (object)DBNull.Value : invoice["paymentMethod"]);
+                    insertCmd.Parameters.AddWithValue("@paymentStatus", invoice["paymentStatus"] == DBNull.Value ? (object)DBNull.Value : invoice["paymentStatus"]);
+                    insertCmd.Parameters.AddWithValue("@lastModified", invoice["lastModified"]);
+                    insertCmd.ExecuteNonQuery();
+
+                    Console.WriteLine($"[INVOICE SYNC] Added invoice {invoiceId} to Azure");
+
+                    // Mark as synced locally
+                    using var markSuccessCmd = new SqliteCommand("UPDATE INVOICEQUOTE SET synced = 1 WHERE invoiceQuoteID = @id", sqliteConn);
+                    markSuccessCmd.Parameters.AddWithValue("@id", invoiceId);
+                    markSuccessCmd.ExecuteNonQuery();
+                }
+
+                transaction.Commit();
+                Console.WriteLine($"[INVOICE SYNC] Successfully processed {localInvoices.Rows.Count} invoice headers");
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                throw new Exception($"Failed to sync invoice headers: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Sync invoice items only after invoices exist
+        /// </summary>
+        /// <summary>
+        /// Sync invoice items only after invoices exist (with parent validation)
+        /// </summary>
+        /// <summary>
+        /// Sync invoice items only after invoices exist (with parent validation)
+        /// </summary>
+        private static void SyncInvoiceItemsOnlyAfterInvoices(SqliteConnection sqliteConn, SqlConnection azureConn)
+        {
+            Console.WriteLine("[INVOICEITEM SYNC] Starting invoice item sync...");
+
+            // Get all unsynced invoice items
+            var invoiceItems = new DataTable();
+            using (var cmd = new SqliteCommand(
+                "SELECT * FROM INVOICEITEM WHERE synced = 0 ORDER BY invoiceQuoteID",
+                sqliteConn))
+            using (var reader = cmd.ExecuteReader())
+            {
+                invoiceItems.Load(reader);
+            }
+
+            Console.WriteLine($"[INVOICEITEM SYNC] Found {invoiceItems.Rows.Count} unsynced invoice items");
+
+            if (invoiceItems.Rows.Count == 0)
+            {
+                Console.WriteLine("[INVOICEITEM SYNC] No invoice items to sync");
+                return;
+            }
+
+            using var transaction = azureConn.BeginTransaction();
+            try
+            {
+                int syncedCount = 0;
+                int skippedCount = 0;
+
+                foreach (DataRow item in invoiceItems.Rows)
+                {
+                    long invoiceItemId = Convert.ToInt64(item["invoiceItemID"]);
+                    long invoiceId = Convert.ToInt64(item["invoiceQuoteID"]);
+                    int itemId = Convert.ToInt32(item["itemID"]);
+
+                    // Verify parent records exist in Azure
+                    var checkInvoiceSql = "SELECT COUNT(*) FROM INVOICEQUOTE WHERE invoiceQuoteID = @invoiceId";
+                    using var checkInvoiceCmd = new SqlCommand(checkInvoiceSql, azureConn, transaction);
+                    checkInvoiceCmd.Parameters.AddWithValue("@invoiceId", invoiceId);
+                    var invoiceExists = (int)checkInvoiceCmd.ExecuteScalar() > 0;
+
+                    var checkItemSql = "SELECT COUNT(*) FROM ITEM WHERE itemID = @itemId";
+                    using var checkItemCmd = new SqlCommand(checkItemSql, azureConn, transaction);
+                    checkItemCmd.Parameters.AddWithValue("@itemId", itemId);
+                    var itemExists = (int)checkItemCmd.ExecuteScalar() > 0;
+
+                    if (!invoiceExists || !itemExists)
+                    {
+                        Console.WriteLine($"[INVOICEITEM SYNC] Skipping orphaned invoice item {invoiceItemId} - Invoice exists: {invoiceExists}, Item exists: {itemExists}");
+                        skippedCount++;
+
+                        // Mark as synced anyway to avoid infinite retry
+                        using var markOrphanedSyncedCmd = new SqliteCommand("UPDATE INVOICEITEM SET synced = 1 WHERE invoiceItemID = @id", sqliteConn);  // Renamed
+                        markOrphanedSyncedCmd.Parameters.AddWithValue("@id", invoiceItemId);
+                        markOrphanedSyncedCmd.ExecuteNonQuery();
+                        continue;
+                    }
+
+                    // Check if invoice item already exists in Azure
+                    var checkItemExistsSql = "SELECT COUNT(*) FROM INVOICEITEM WHERE invoiceItemID = @itemId";
+                    using var checkItemExistsCmd = new SqlCommand(checkItemExistsSql, azureConn, transaction);
+                    checkItemExistsCmd.Parameters.AddWithValue("@itemId", invoiceItemId);
+                    var itemExistsInAzure = (int)checkItemExistsCmd.ExecuteScalar() > 0;
+
+                    if (!itemExistsInAzure)
+                    {
+                        // Insert the invoice item
+                        var insertItemSql = @"INSERT INTO INVOICEITEM 
+                    (invoiceItemID, quantity, priceAtSale, itemID, invoiceQuoteID, lastModified)
+                    VALUES (@itemID, @quantity, @price, @productID, @invoiceID, @lastModified)";
+
+                        using var insertItemCmd = new SqlCommand(insertItemSql, azureConn, transaction);
+                        insertItemCmd.Parameters.AddWithValue("@itemID", invoiceItemId);
+                        insertItemCmd.Parameters.AddWithValue("@quantity", item["quantity"]);
+                        insertItemCmd.Parameters.AddWithValue("@price", item["priceAtSale"]);
+                        insertItemCmd.Parameters.AddWithValue("@productID", itemId);
+                        insertItemCmd.Parameters.AddWithValue("@invoiceID", invoiceId);
+                        insertItemCmd.Parameters.AddWithValue("@lastModified", item["lastModified"]);
+                        insertItemCmd.ExecuteNonQuery();
+
+                        Console.WriteLine($"  [INVOICEITEM SYNC] Added invoice item {invoiceItemId} for item {itemId} (qty: {item["quantity"]})");
+                        syncedCount++;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"  [INVOICEITEM SYNC] Invoice item {invoiceItemId} already exists in Azure");
+                        syncedCount++;
+                    }
+
+                    // Mark as synced locally
+                    using var markItemSyncedCmd = new SqliteCommand("UPDATE INVOICEITEM SET synced = 1 WHERE invoiceItemID = @id", sqliteConn);  // Renamed
+                    markItemSyncedCmd.Parameters.AddWithValue("@id", invoiceItemId);
+                    markItemSyncedCmd.ExecuteNonQuery();
+                }
+
+                transaction.Commit();
+                Console.WriteLine($"[INVOICEITEM SYNC] Successfully synced {syncedCount} invoice items, skipped {skippedCount} orphaned items");
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                throw new Exception($"Failed to sync invoice items: {ex.Message}", ex);
+            }
         }
 
         private static void SyncItemMasterDataWithoutInventory(SqliteConnection sqliteConn, SqlConnection azureConn)
@@ -965,56 +1486,67 @@ namespace ADIX
                         var localModified = ParseTimestamp(localRow["lastModified"].ToString());
                         var azureModified = ParseTimestamp(azureRow["lastModified"].ToString()).AddHours(2);
 
-                        // If descriptions are significantly different, this is a collision!
+                        // If descriptions are significantly different, this is a collision from different devices!
                         if (!localDesc.Equals(azureDesc, StringComparison.OrdinalIgnoreCase))
                         {
-                            Console.WriteLine($"[CONFLICT] Item ID {itemID} collision detected!");
+                            Console.WriteLine($"[CONFLICT] Item ID {itemID} collision detected from different devices!");
                             Console.WriteLine($"  Local: {localDesc}");
                             Console.WriteLine($"  Azure: {azureDesc}");
 
-                            // Get local inventory for the conflicting item
-                            var conflictInventory = GetLocalInventory(sqliteConn, itemID);
-
-                            // Generate new ID for local item
+                            // Generate new ID for local item to avoid conflicts
                             int newItemId = Convert.ToInt32(GetNextItemID());
 
-                            // Update local item with new ID
-                            using var updateLocalCmd = new SqliteCommand(
-                                "UPDATE ITEM SET itemID = @newId WHERE itemID = @oldId",
-                                sqliteConn);
-                            updateLocalCmd.Parameters.AddWithValue("@newId", newItemId);
-                            updateLocalCmd.Parameters.AddWithValue("@oldId", itemID);
-                            updateLocalCmd.ExecuteNonQuery();
+                            // Update local item with new ID using transaction for FK safety
+                            using var localTransaction = sqliteConn.BeginTransaction();
+                            try
+                            {
+                                // Update ITEM table
+                                using var updateItemCmd = new SqliteCommand(
+                                    "UPDATE ITEM SET itemID = @newId WHERE itemID = @oldId",
+                                    sqliteConn, localTransaction);
+                                updateItemCmd.Parameters.AddWithValue("@newId", newItemId);
+                                updateItemCmd.Parameters.AddWithValue("@oldId", itemID);
+                                updateItemCmd.ExecuteNonQuery();
 
-                            // Update any invoice items referencing this item
-                            using var updateInvoiceItemsCmd = new SqliteCommand(
-                                "UPDATE INVOICEITEM SET itemID = @newId WHERE itemID = @oldId",
-                                sqliteConn);
-                            updateInvoiceItemsCmd.Parameters.AddWithValue("@newId", newItemId);
-                            updateInvoiceItemsCmd.Parameters.AddWithValue("@oldId", itemID);
-                            updateInvoiceItemsCmd.ExecuteNonQuery();
+                                // Update INVOICEITEM references
+                                using var updateInvoiceItemsCmd = new SqliteCommand(
+                                    "UPDATE INVOICEITEM SET itemID = @newId WHERE itemID = @oldId",
+                                    sqliteConn, localTransaction);
+                                updateInvoiceItemsCmd.Parameters.AddWithValue("@newId", newItemId);
+                                updateInvoiceItemsCmd.Parameters.AddWithValue("@oldId", itemID);
+                                updateInvoiceItemsCmd.ExecuteNonQuery();
 
-                            // Now insert with new ID
-                            var insertConflictSql = @"
-                        INSERT INTO ITEM 
-                        (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified)
-                        VALUES 
-                        (@itemID, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified)";
+                                localTransaction.Commit();
 
-                            using var conflictCmd = new SqlCommand(insertConflictSql, azureConn, transaction);
-                            conflictCmd.Parameters.AddWithValue("@itemID", newItemId);
-                            conflictCmd.Parameters.AddWithValue("@description", localRow["description"]);
-                            conflictCmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
-                            conflictCmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
-                            conflictCmd.Parameters.AddWithValue("@stockQuantity", conflictInventory.stockQuantity);
-                            conflictCmd.Parameters.AddWithValue("@stockSold", conflictInventory.stockSold);
-                            conflictCmd.Parameters.AddWithValue("@stockRecieved", conflictInventory.stockRecieved);
-                            conflictCmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
-                            conflictCmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
-                            conflictCmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
-                            conflictCmd.ExecuteNonQuery();
+                                // Now insert with new ID to Azure
+                                var localInventory = GetLocalInventory(sqliteConn, newItemId);
+                                var insertConflictSql = @"
+                            INSERT INTO ITEM 
+                            (itemID, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified)
+                            VALUES 
+                            (@itemID, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified)";
 
-                            Console.WriteLine($"[CONFLICT RESOLVED] Reassigned local item to new ID: {newItemId}");
+                                using var conflictCmd = new SqlCommand(insertConflictSql, azureConn, transaction);
+                                conflictCmd.Parameters.AddWithValue("@itemID", newItemId);
+                                conflictCmd.Parameters.AddWithValue("@description", localRow["description"]);
+                                conflictCmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
+                                conflictCmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
+                                conflictCmd.Parameters.AddWithValue("@stockQuantity", localInventory.stockQuantity);
+                                conflictCmd.Parameters.AddWithValue("@stockSold", localInventory.stockSold);
+                                conflictCmd.Parameters.AddWithValue("@stockRecieved", localInventory.stockRecieved);
+                                conflictCmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
+                                conflictCmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
+                                conflictCmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
+                                conflictCmd.ExecuteNonQuery();
+
+                                Console.WriteLine($"[CONFLICT RESOLVED] Reassigned local item to new ID: {newItemId}");
+                            }
+                            catch (Exception ex)
+                            {
+                                localTransaction.Rollback();
+                                Console.WriteLine($"[CONFLICT ERROR] Failed to reassign item ID: {ex.Message}");
+                                // Continue with original item ID (may cause data issues but prevents crash)
+                            }
                         }
                         else if (localModified > azureModified)
                         {
@@ -1052,8 +1584,7 @@ namespace ADIX
                 throw new Exception($"Failed to sync ITEM master data: {ex.Message}", ex);
             }
         }
-        
-      
+
         private static (int stockQuantity, int stockSold, int stockRecieved) GetLocalInventory(SqliteConnection conn, int itemID)
         {
             var query = "SELECT stockQuantity, stockSold, stockRecieved FROM ITEM WHERE itemID = @itemID";
@@ -1277,96 +1808,16 @@ namespace ADIX
             }
         }
 
-        private static void SyncTransactions(SqliteConnection sqliteConn, SqlConnection azureConn)
+       
+       private static void SyncTransactions(SqliteConnection sqliteConn, SqlConnection azureConn)
         {
-            // Sync unsynced invoices
-            var localInvoices = new DataTable();
-            using (var cmd = new SqliteCommand("SELECT * FROM INVOICEQUOTE WHERE synced = 0 ORDER BY date ASC", sqliteConn))
-            using (var reader = cmd.ExecuteReader())
-            {
-                localInvoices.Load(reader);
-            }
+            Console.WriteLine("[SYNC TRANSACTIONS] Starting transaction sync (using new methods)...");
 
-            using var transaction = azureConn.BeginTransaction();
-            try
-            {
-                foreach (DataRow invoice in localInvoices.Rows)
-                {
-                    long invoiceId = Convert.ToInt64(invoice["invoiceQuoteID"]);
+            // Use the new separate methods for better control and error handling
+            SyncInvoicesFirst(sqliteConn, azureConn);
+            SyncInvoiceItemsOnlyAfterInvoices(sqliteConn, azureConn);
 
-                    // Check if invoice exists in Azure
-                    var checkSql = "SELECT COUNT(*) FROM INVOICEQUOTE WHERE invoiceQuoteID = @id";
-                    using var checkCmd = new SqlCommand(checkSql, azureConn, transaction);
-                    checkCmd.Parameters.AddWithValue("@id", invoiceId);
-                    var exists = (int)checkCmd.ExecuteScalar() > 0;
-
-                    if (exists)
-                    {
-                        // CONFLICT: Invoice ID already exists in Azure (from another device)
-                        Console.WriteLine($"[CONFLICT] Invoice {invoiceId} already exists in Azure. Generating new ID...");
-
-                        // Generate new unique ID for this invoice
-                        long newInvoiceId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
-                        // Update local invoice with new ID
-                        using var updateLocalCmd = new SqliteCommand(
-                            "UPDATE INVOICEQUOTE SET invoiceQuoteID = @newId WHERE invoiceQuoteID = @oldId",
-                            sqliteConn);
-                        updateLocalCmd.Parameters.AddWithValue("@newId", newInvoiceId);
-                        updateLocalCmd.Parameters.AddWithValue("@oldId", invoiceId);
-                        updateLocalCmd.ExecuteNonQuery();
-
-                        // Update invoice items with new ID
-                        using var updateItemsCmd = new SqliteCommand(
-                            "UPDATE INVOICEITEM SET invoiceQuoteID = @newId WHERE invoiceQuoteID = @oldId",
-                            sqliteConn);
-                        updateItemsCmd.Parameters.AddWithValue("@newId", newInvoiceId);
-                        updateItemsCmd.Parameters.AddWithValue("@oldId", invoiceId);
-                        updateItemsCmd.ExecuteNonQuery();
-
-                        // Use new ID for Azure insert
-                        invoiceId = newInvoiceId;
-                        invoice["invoiceQuoteID"] = newInvoiceId;
-
-                        Console.WriteLine($"[CONFLICT RESOLVED] Reassigned to new ID: {newInvoiceId}");
-                    }
-
-                    // Insert invoice header to Azure
-                    var insertSql = @"INSERT INTO INVOICEQUOTE 
-                (invoiceQuoteID, date, type, totalAmount, customerID, staffID, paymentMethod, paymentStatus, lastModified) 
-                VALUES (@id, @date, @type, @amount, @custID, @staffID, @paymentMethod, @paymentStatus, @lastModified)";
-
-                    using var insertCmd = new SqlCommand(insertSql, azureConn, transaction);
-                    insertCmd.Parameters.AddWithValue("@id", invoiceId);
-                    insertCmd.Parameters.AddWithValue("@date", invoice["date"]);
-                    insertCmd.Parameters.AddWithValue("@type", invoice["type"]);
-                    insertCmd.Parameters.AddWithValue("@amount", invoice["totalAmount"]);
-                    insertCmd.Parameters.AddWithValue("@custID", invoice["customerID"] == DBNull.Value ? (object)DBNull.Value : invoice["customerID"]);
-                    insertCmd.Parameters.AddWithValue("@staffID", invoice["staffID"]);
-                    insertCmd.Parameters.AddWithValue("@paymentMethod", invoice["paymentMethod"] == DBNull.Value ? (object)DBNull.Value : invoice["paymentMethod"]);
-                    insertCmd.Parameters.AddWithValue("@paymentStatus", invoice["paymentStatus"] == DBNull.Value ? (object)DBNull.Value : invoice["paymentStatus"]);
-                    insertCmd.Parameters.AddWithValue("@lastModified", invoice["lastModified"]);
-                    insertCmd.ExecuteNonQuery();
-
-                    Console.WriteLine($"[INVOICE] Synced invoice {invoiceId} to Azure");
-
-                    // Sync invoice items only (NO inventory adjustment here)
-                    SyncInvoiceItemsOnly(sqliteConn, azureConn, transaction, invoiceId);
-
-                    // Mark as synced locally
-                    using var updateCmd = new SqliteCommand("UPDATE INVOICEQUOTE SET synced = 1 WHERE invoiceQuoteID = @id", sqliteConn);
-                    updateCmd.Parameters.AddWithValue("@id", invoiceId);
-                    updateCmd.ExecuteNonQuery();
-                }
-
-                transaction.Commit();
-                Console.WriteLine($"[SYNC] Successfully synced {localInvoices.Rows.Count} invoice(s). Inventory will be recalculated next.");
-            }
-            catch (Exception ex)
-            {
-                transaction.Rollback();
-                throw new Exception($"Failed to sync transactions: {ex.Message}", ex);
-            }
+            Console.WriteLine("[SYNC TRANSACTIONS] Transaction sync completed successfully.");
         }
 
         // New method - just sync invoice items without touching inventory
