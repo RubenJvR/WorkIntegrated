@@ -28,9 +28,21 @@ namespace ADIX
     {
         private const string ConnStr = "Data Source=ADIX.db";
         private System.Windows.Threading.DispatcherTimer _inventoryRefreshTimer;
+        private List<InventoryItem> _allInventoryItems;
+        private string _selectedItemGroup = "";
+        private string _selectedItemName = "";
+        private bool _showLowStockOnly = false;
+
         public Inventory()
         {
             InitializeComponent();
+
+            // Attach event handlers
+            ItemGroup.SelectionChanged += ItemGroup_SelectionChanged;
+            ItemName.SelectionChanged += ItemName_SelectionChanged;
+            LowStockToggle.Checked += LowStockToggle_Checked;
+            LowStockToggle.Unchecked += LowStockToggle_Unchecked;
+
             LoadInventoryAsync();
 
             // Setup auto-refresh timer for inventory
@@ -54,6 +66,157 @@ namespace ADIX
 
             this.Loaded += Inventory_Loaded;
             this.Unloaded += (s, e) => _inventoryRefreshTimer.Stop();
+        }
+
+        private void ItemGroup_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ItemGroup.SelectedItem == null) return;
+
+            var selected = ItemGroup.SelectedItem.ToString();
+            _selectedItemGroup = (selected == "Show all Item Group") ? "" : selected;
+            ApplyFilters();
+        }
+
+        private void ItemName_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ItemName.SelectedItem == null) return;
+
+            var selected = ItemName.SelectedItem.ToString();
+            _selectedItemName = (selected == "Show all Item Name") ? "" : selected;
+            ApplyFilters();
+        }
+
+        private void LowStockToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            _showLowStockOnly = true;
+            ApplyFilters();
+        }
+
+        private void LowStockToggle_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _showLowStockOnly = false;
+            ApplyFilters();
+        }
+
+        private void ApplyFilters()
+        {
+            if (_allInventoryItems == null) return;
+
+            var filteredItems = _allInventoryItems.AsEnumerable();
+
+            // Apply Item Group filter (only if not "Show all")
+            if (!string.IsNullOrEmpty(_selectedItemGroup))
+            {
+                filteredItems = filteredItems.Where(item =>
+                    item.ItemGroup == _selectedItemGroup);
+            }
+
+            // Apply Item Name filter (only if not "Show all")
+            if (!string.IsNullOrEmpty(_selectedItemName))
+            {
+                filteredItems = filteredItems.Where(item =>
+                    item.ItemName == _selectedItemName);
+            }
+
+            // Apply Low Stock filter
+            if (_showLowStockOnly)
+            {
+                filteredItems = filteredItems.Where(item =>
+                    item.BalanceStock <= item.MinimumStock);
+            }
+
+            InventoryGrid.ItemsSource = filteredItems.ToList();
+
+            // Update filter status
+            UpdateFilterStatus();
+        }
+
+        private void PopulateFilterDropdowns()
+        {
+            if (_allInventoryItems == null) return;
+
+            // Store current selections to restore after refresh
+            string currentGroup = _selectedItemGroup;
+            string currentName = _selectedItemName;
+
+            // Populate Item Group filter
+            var itemGroups = _allInventoryItems
+                .Select(i => i.ItemGroup)
+                .Where(g => !string.IsNullOrEmpty(g))
+                .Distinct()
+                .OrderBy(g => g)
+                .ToList();
+
+            ItemGroup.Items.Clear();
+            ItemGroup.Items.Add("Show all Item Group"); // Default "all" option
+            foreach (var group in itemGroups)
+            {
+                ItemGroup.Items.Add(group);
+            }
+
+            // Restore or set default selection for Item Group
+            if (!string.IsNullOrEmpty(currentGroup) && ItemGroup.Items.Contains(currentGroup))
+            {
+                ItemGroup.SelectedItem = currentGroup;
+            }
+            else
+            {
+                ItemGroup.SelectedIndex = 0; // Select "Show all Item Group"
+                _selectedItemGroup = "";
+            }
+
+            // Populate Item Name filter
+            var itemNames = _allInventoryItems
+                .Select(i => i.ItemName)
+                .Where(n => !string.IsNullOrEmpty(n))
+                .Distinct()
+                .OrderBy(n => n)
+                .ToList();
+
+            ItemName.Items.Clear();
+            ItemName.Items.Add("Show all Item Name"); // Default "all" option
+            foreach (var name in itemNames)
+            {
+                ItemName.Items.Add(name);
+            }
+
+            // Restore or set default selection for Item Name
+            if (!string.IsNullOrEmpty(currentName) && ItemName.Items.Contains(currentName))
+            {
+                ItemName.SelectedItem = currentName;
+            }
+            else
+            {
+                ItemName.SelectedIndex = 0; // Select "Show all Item Name"
+                _selectedItemName = "";
+            }
+        }
+
+        private void UpdateFilterStatus()
+        {
+            int totalItems = _allInventoryItems?.Count ?? 0;
+            int filteredItems = (InventoryGrid.ItemsSource as IEnumerable<object>)?.Count() ?? 0;
+
+            // You can add this to a status text block if you want
+            // FilterStatusText.Text = $"Showing {filteredItems} of {totalItems} items";
+
+            Console.WriteLine($"Filtered: {filteredItems} of {totalItems} items");
+        }
+
+        private void ClearFilters_Click(object sender, RoutedEventArgs e)
+        {
+            // Reset filters
+            _selectedItemGroup = "";
+            _selectedItemName = "";
+            _showLowStockOnly = false;
+
+            // Reset UI controls to initial state
+            ItemGroup.SelectedIndex = 0; // "Show all Item Group"
+            ItemName.SelectedIndex = 0;  // "Show all Item Name"
+            LowStockToggle.IsChecked = false;
+
+            // Apply filters (which will show all items)
+            ApplyFilters();
         }
 
         private void ShowAllData_Click(object sender, RoutedEventArgs e)
@@ -202,6 +365,7 @@ namespace ADIX
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
         private async void ForceSync_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -263,52 +427,37 @@ namespace ADIX
                     var item = new InventoryItem
                     {
                         ItemID = Convert.ToInt32(reader["itemID"]),
-
                         ItemGroup = reader["itemGroup"]?.ToString() ?? "N/A",
-
                         SKU = reader["sku"] == DBNull.Value
                             ? "SKU-UNKNOWN"
                             : $"SKU-{reader["sku"]}",
-
                         ItemName = reader["description"]?.ToString() ?? "Unknown",
-
                         OpeningStockQuantity = Convert.ToInt32(reader["stockQuantity"]),
                         StockSold = Convert.ToInt32(reader["stockSold"]),
                         StockReceived = Convert.ToInt32(reader["stockRecieved"]),
-
                         CostPrice = ParseDouble(reader["costPrice"]),
                         RetailPrice = ParseDouble(reader["retailPrice"]),
-
                         StockReturned = 0,
                         StockRefunded = 0,
-
                         CostOfBusinessWorkings = Convert.ToDouble(reader["costPrice"]),
                         ReturnedStockUnusable = 0,
-
                         MinimumStock = GetInt(reader, "minimumStock"),
-
                     };
 
-                    //Calculations
+                    // Calculations
                     item.BalanceStock = item.OpeningStockQuantity - item.StockSold;
                     item.Loss = item.CostOfBusinessWorkings * item.ReturnedStockUnusable;
 
                     inventoryList.Add(item);
                 }
 
-                InventoryGrid.ItemsSource = inventoryList;
-                InventoryGrid.LoadingRow += (s, e) =>
-                {
-                    var rowItem = e.Row.DataContext as InventoryItem;
-                    if (rowItem != null && rowItem.BalanceStock < rowItem.MinimumStock)
-                    {
-                        e.Row.Background = new SolidColorBrush(Colors.IndianRed);
-                    }
-                    else
-                    {
-                        e.Row.Background = new SolidColorBrush(Colors.Transparent);
-                    }
-                };
+                _allInventoryItems = inventoryList;
+
+                // Populate filter dropdowns first
+                PopulateFilterDropdowns();
+
+                // Then apply filters
+                ApplyFilters();
             }
             catch (Exception ex)
             {
@@ -379,8 +528,6 @@ namespace ADIX
             }
         }
 
-
-
         public class Product
         {
             public int ItemID { get; set; }
@@ -396,13 +543,12 @@ namespace ADIX
             public int SellerID { get; set; }
         }
 
-
         private void ImportCSV_Click(object sender, EventArgs e)
         {
-
             CsvImporter.ImportFromCsv();
             Database.MarkSyncRequired();
         }
+
         private void DebugLocalItems()
         {
             try
@@ -426,6 +572,7 @@ namespace ADIX
                 Console.WriteLine($"Debug error: {ex.Message}");
             }
         }
+
         private void CheckAzureItems()
         {
             try
@@ -448,8 +595,6 @@ namespace ADIX
                 Console.WriteLine($"Azure check error: {ex.Message}");
             }
         }
-
-        // Call this in your constructor after LoadInventoryAsync()
 
         private void Delete_Click(object sender, RoutedEventArgs e)
         {
@@ -491,6 +636,7 @@ namespace ADIX
                 DeleteItemFromDatabase(selectedItem.ItemID, selectedItem.ItemName);
             }
         }
+
         private async void Inventory_Loaded(object sender, RoutedEventArgs e)
         {
             // Sync when inventory page loads
@@ -508,6 +654,7 @@ namespace ADIX
 
             LoadInventoryAsync();
         }
+
         private void DeleteItemFromDatabase(int itemId, string itemName)
         {
             try
@@ -622,6 +769,5 @@ namespace ADIX
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
     }
 }
