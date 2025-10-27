@@ -1947,18 +1947,28 @@ namespace ADIX
                 sqliteConn.Open();
                 azureConn.Open();
 
-                Console.WriteLine("[SYNC ALL] Starting full Azure to local sync (excluding ITEM table)...");
+                Console.WriteLine("[SYNC ALL] Starting Azure to local sync with proper foreign key order...");
 
-                // Sync each table individually (excluding ITEM since it's handled elsewhere)
+                // CRITICAL: Sync in correct foreign key dependency order
+                // 1. Parent tables first
                 SyncTableFromAzure(sqliteConn, azureConn, "SELLER", new[] { "sellerID", "name", "contactInfo", "bankDetails", "commissionRate", "lastModified" });
                 SyncTableFromAzure(sqliteConn, azureConn, "SUPPLIER", new[] { "supplierID", "name", "contactInfo", "address", "lastModified" });
-                SyncTableFromAzure(sqliteConn, azureConn, "CUSTOMER", new[] { "customerID", "name", "phone", "email", "credit", "lastModified" });
                 SyncTableFromAzure(sqliteConn, azureConn, "STAFF", new[] { "staffID", "name", "Role", "userName", "passwordHash", "salary", "lastModified" });
+                SyncTableFromAzure(sqliteConn, azureConn, "CUSTOMER", new[] { "customerID", "name", "phone", "email", "credit", "lastModified" });
+
+                // 2. ITEM table (depends on SELLER and SUPPLIER)
+                SyncTableFromAzure(sqliteConn, azureConn, "ITEM", new[] { "itemID", "description", "retailPrice", "costPrice", "stockQuantity", "stockSold", "stockRecieved", "supplierID", "sellerID", "lastModified" });
+
+                // 3. INVOICEQUOTE (depends on CUSTOMER and STAFF)
                 SyncTableFromAzure(sqliteConn, azureConn, "INVOICEQUOTE", new[] { "invoiceQuoteID", "date", "type", "totalAmount", "customerID", "staffID", "paymentMethod", "paymentStatus", "lastModified" });
+
+                // 4. INVOICEITEM (depends on INVOICEQUOTE and ITEM)
                 SyncTableFromAzure(sqliteConn, azureConn, "INVOICEITEM", new[] { "invoiceItemID", "quantity", "priceAtSale", "itemID", "invoiceQuoteID", "lastModified" });
+
+                // 5. Other tables
                 SyncTableFromAzure(sqliteConn, azureConn, "REPORT", new[] { "reportID", "reportType", "date", "staffID", "lastModified" });
 
-                Console.WriteLine("[SYNC ALL] Full Azure to local sync completed successfully (ITEM table excluded)");
+                Console.WriteLine("[SYNC ALL] Azure to local sync completed successfully with proper foreign key order");
             }
             catch (Exception ex)
             {
