@@ -101,7 +101,7 @@ namespace ADIX
             WHERE stockQuantity <= 10", connection);
                 var alertCount = alertCmd.ExecuteScalar();
                 InventoryAlert = Convert.ToInt32(alertCount) > 0 ?
-                    $" STOCK ALERT: Low stock items {alertCount} remaining" : "ALL STOCK OK";
+                    $" STOCK ALERT: Low stock on  {alertCount} items" : "ALL STOCK OK";
 
                 // Load Total Profit from Stock Sold
                 var profitCmd = new SqliteCommand(@"
@@ -202,7 +202,7 @@ FROM ITEM", connection);
         {
             // Pie Chart - Expense Distribution
             ExpenseSeries = new SeriesCollection();
-            var colors = new[] { "#FF4AA902", "#FF2D2D2D", "#FF4F4F4F", "#FF878787", "#FFA9A9A9" };
+            var colors = new[] { "RED", "#FF2D2D2D", "#FF4F4F4F", "#FF878787", "#FFA9A9A9" };
             int colorIndex = 0;
 
             foreach (var category in expenseCategories.Where(c => c.Value > 0))
