@@ -388,11 +388,17 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="SKU" Binding="{Binding Quantity}" Width="70" IsReadOnly="False">
+                        <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="70" IsReadOnly="False">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="White"/>
                                     <Setter Property="Padding" Value="5"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="Text" Value="N/A">
+                                            <Setter Property="Foreground" Value="LightGray"/>
+                                            <Setter Property="FontStyle" Value="Italic"/>
+                                        </Trigger>
+                                    </Style.Triggers>
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>

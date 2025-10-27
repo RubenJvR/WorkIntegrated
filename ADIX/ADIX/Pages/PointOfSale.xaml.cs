@@ -14,19 +14,18 @@ namespace ADIX
         public PointOfSale()
         {
             InitializeComponent();
-
             _viewModel = ViewModelManager.PointOfSaleViewModel;
             DataContext = _viewModel;
 
             this.Loaded += PointOfSale_Loaded;
             this.Unloaded += PointOfSale_Unloaded;
 
+
             // Setup auto-refresh timer (every 30 seconds)
             _refreshTimer = new System.Windows.Threading.DispatcherTimer();
             _refreshTimer.Interval = TimeSpan.FromSeconds(30);
             _refreshTimer.Tick += RefreshTimer_Tick;
         }
-
 
         private async void PointOfSale_Loaded(object sender, RoutedEventArgs e)
         {
@@ -68,7 +67,6 @@ namespace ADIX
                 }
             }
         }
-       
         private void Quote_Click(object sender, RoutedEventArgs e)
         {
             // Get cart items with quantity > 0
@@ -142,6 +140,7 @@ namespace ADIX
             var mainWindow = Window.GetWindow(this) as MainWindow;
             mainWindow?.MainFrame.Navigate(invoicePage);
         }
+
         // Autocomplete event handlers
         private void ProductSearchTextBox_GotFocus(object sender, RoutedEventArgs e)
         {
@@ -216,8 +215,34 @@ namespace ADIX
                 e.Handled = true;
             }
         }
+
+        // Quantity adjustment buttons
+        private void IncreaseQuantity_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var item = button?.Tag as ADIX.Models.POSItem;
+            if (item != null)
+            {
+                if (item.Quantity < item.InStock)
+                {
+                    item.Quantity++;
+                }
+                else
+                {
+                    MessageBox.Show($"Cannot exceed available stock ({item.InStock})",
+                        "Stock Limit", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+        }
+
+        private void DecreaseQuantity_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var item = button?.Tag as ADIX.Models.POSItem;
+            if (item != null && item.Quantity > 0)
+            {
+                item.Quantity--;
+            }
+        }
     }
 }
-
-       
- 

@@ -3,7 +3,9 @@ using System.Data;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Data.Sqlite;
+using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ADIX
 {
@@ -21,6 +23,16 @@ namespace ADIX
         {
             LoadSuppliers();
             LoadSupplierData();
+            SetupEventHandlers();
+        }
+
+        private void SetupEventHandlers()
+        {
+            Supplier.SelectionChanged += Supplier_SelectionChanged;
+            StockType.SelectionChanged += StockType_SelectionChanged;
+            PaymentStatus.SelectionChanged += PaymentStatus_SelectionChanged;
+            LowStockToggle.Checked += LowStockToggle_Checked;
+            LowStockToggle.Unchecked += LowStockToggle_Unchecked;
         }
 
         private void LoadSuppliers()
@@ -31,7 +43,7 @@ namespace ADIX
                 connection.Open();
 
                 Supplier.Items.Clear();
-                Supplier.Items.Add(new ComboBoxItem { Content = "All Suppliers", IsSelected = true });
+                Supplier.Items.Add(new ComboBoxItem { Content = "All Suppliers", Tag = "ALL" });
 
                 string sql = "SELECT supplierID, name FROM SUPPLIER ORDER BY name";
                 using var cmd = new SqliteCommand(sql, connection);
@@ -42,9 +54,12 @@ namespace ADIX
                     Supplier.Items.Add(new ComboBoxItem
                     {
                         Content = reader["name"].ToString(),
-                        Tag = reader["supplierID"] // Store ID for filtering
+                        Tag = reader["supplierID"].ToString()
                     });
                 }
+
+                // Select "All Suppliers" by default
+                Supplier.SelectedIndex = 0;
             }
             catch (Exception ex)
             {
@@ -77,31 +92,42 @@ namespace ADIX
                 supplierData.Columns.Add("TotalToPay", typeof(decimal));
                 supplierData.Columns.Add("InvoiceRef", typeof(string));
 
-                // Get actual supplier data from database
-                string sql = @"
-                    SELECT 
-                        s.name as Supplier,
-                        i.sku as SKU,
-                        i.description as Description,
-                        i.stockRecieved as StockReceived,
-                        i.stockQuantity as StockBalance,
-                        i.stockSold as AmountSold,
-                        i.costPrice as CostPrice,
-                        i.retailPrice as SellingPrice,
-                        (i.retailPrice * i.stockSold) as TotalSales,
-                        ((i.retailPrice - i.costPrice) * i.stockSold) as Profit,
-                        CASE 
-                            WHEN i.stockQuantity < 10 THEN 'Low Stock'
-                            ELSE 'In Stock'
-                        END as Status,
-                        (i.costPrice * i.stockRecieved * 0.7) as AmountPaid,
-                        (i.costPrice * i.stockRecieved * 0.3) as TotalToPay,
-                        'INV-' || s.supplierID || '-' || i.itemID as InvoiceRef
-                    FROM ITEM i
-                    INNER JOIN SUPPLIER s ON i.supplierID = s.supplierID
-                    ORDER BY s.name, i.description";
+                // Build the SQL query with filters
+                string sql = BuildFilteredQuery();
 
                 using var cmd = new SqliteCommand(sql, connection);
+
+                // Add parameters for filters
+                if (Supplier.SelectedItem is ComboBoxItem supplierItem && supplierItem.Tag?.ToString() != "ALL")
+                {
+                    cmd.Parameters.AddWithValue("@supplierID", supplierItem.Tag.ToString());
+                }
+
+                if (StockType.SelectedItem is ComboBoxItem stockTypeItem)
+                {
+                    string stockType = stockTypeItem.Content.ToString();
+                    if (stockType == "Adix")
+                    {
+                        // Filter for Adix items (you might need to adjust this logic)
+                        // This is just an example - adjust based on your business logic
+                    }
+                    else if (stockType == "Consignment")
+                    {
+                        // Filter for Consignment items
+                    }
+                }
+
+                if (LowStockToggle.IsChecked == true)
+                {
+                    // Low stock filter - items with less than 10 in stock
+                }
+
+                if (PaymentStatus.SelectedItem is ComboBoxItem paymentItem)
+                {
+                    string paymentStatus = paymentItem.Content.ToString();
+                    // Add payment status filtering logic here
+                }
+
                 using var reader = cmd.ExecuteReader();
 
                 while (reader.Read())
@@ -124,11 +150,11 @@ namespace ADIX
                     );
                 }
 
-                // If no data found, show empty table with message
+                // If no data found, show empty table
                 if (supplierData.Rows.Count == 0)
                 {
                     supplierData.Rows.Add(
-                        "No suppliers found", "N/A", "N/A", 0, 0, 0, 0, 0, 0, 0, "N/A", 0, 0, "N/A"
+                        "No data found", "", "", 0, 0, 0, 0, 0, 0, 0, "No data", 0, 0, ""
                     );
                 }
 
@@ -136,8 +162,66 @@ namespace ADIX
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading supplier data: {ex.Message}\n\nPlease check if the database has been properly initialized with suppliers and items.");
+                MessageBox.Show($"Error loading supplier data: {ex.Message}");
             }
+        }
+
+        private string BuildFilteredQuery()
+        {
+            string baseQuery = @"
+                SELECT 
+                    s.name as Supplier,
+                    i.sku as SKU,
+                    i.description as Description,
+                    i.stockRecieved as StockReceived,
+                    i.stockQuantity as StockBalance,
+                    i.stockSold as AmountSold,
+                    i.costPrice as CostPrice,
+                    i.retailPrice as SellingPrice,
+                    (i.retailPrice * i.stockSold) as TotalSales,
+                    ((i.retailPrice - i.costPrice) * i.stockSold) as Profit,
+                    CASE 
+                        WHEN i.stockQuantity < 10 THEN 'Low Stock'
+                        ELSE 'In Stock'
+                    END as Status,
+                    (i.costPrice * i.stockRecieved * 0.7) as AmountPaid,
+                    (i.costPrice * i.stockRecieved * 0.3) as TotalToPay,
+                    'INV-' || s.supplierID || '-' || i.itemID as InvoiceRef
+                FROM ITEM i
+                INNER JOIN SUPPLIER s ON i.supplierID = s.supplierID
+                WHERE 1=1";
+
+            // Add supplier filter
+            if (Supplier.SelectedItem is ComboBoxItem supplierItem && supplierItem.Tag?.ToString() != "ALL")
+            {
+                baseQuery += " AND s.supplierID = @supplierID";
+            }
+
+            // Add low stock filter
+            if (LowStockToggle.IsChecked == true)
+            {
+                baseQuery += " AND i.stockQuantity < 10";
+            }
+
+            // Add payment status filter (you'll need to adjust this based on your payment tracking)
+            if (PaymentStatus.SelectedItem is ComboBoxItem paymentItem)
+            {
+                string paymentStatus = paymentItem.Content.ToString();
+                // Example - adjust based on your actual payment tracking
+                if (paymentStatus == "Paid")
+                {
+                    baseQuery += " AND (i.costPrice * i.stockRecieved * 0.3) <= 0";
+                }
+                else if (paymentStatus == "Pending")
+                {
+                    baseQuery += " AND (i.costPrice * i.stockRecieved * 0.3) > 0";
+                }
+                // Add other payment status conditions as needed
+            }
+
+            baseQuery += " ORDER BY s.name, i.description";
+
+            return baseQuery;
         }
 
         // Helper methods for safe data reading
@@ -145,7 +229,11 @@ namespace ADIX
         {
             try
             {
-                return reader[column] != DBNull.Value ? reader[column].ToString() : "N/A";
+                if (reader[column] == DBNull.Value)
+                    return "N/A";
+
+                string value = reader[column].ToString();
+                return string.IsNullOrEmpty(value) ? "N/A" : value;
             }
             catch
             {
@@ -221,7 +309,6 @@ namespace ADIX
 
         private void ApplyFilters()
         {
-            // For now, just reload data - you can implement more sophisticated filtering later
             LoadSupplierData();
         }
 
@@ -229,10 +316,10 @@ namespace ADIX
         {
             try
             {
-                // Simple add supplier implementation
-                string supplierName = Microsoft.VisualBasic.Interaction.InputBox("Enter supplier name:", "Add Supplier", "");
+                string supplierName = Microsoft.VisualBasic.Interaction.InputBox(
+                    "Enter supplier name:", "Add Supplier", "");
 
-                if (!string.IsNullOrEmpty(supplierName))
+                if (!string.IsNullOrWhiteSpace(supplierName))
                 {
                     using var connection = new SqliteConnection(ConnectionString);
                     connection.Open();
@@ -251,14 +338,43 @@ namespace ADIX
 
                     using var cmd2 = new SqliteCommand(insertSql, connection);
                     cmd2.Parameters.AddWithValue("@id", newSupplierId);
-                    cmd2.Parameters.AddWithValue("@name", supplierName);
+                    cmd2.Parameters.AddWithValue("@name", supplierName.Trim());
                     cmd2.Parameters.AddWithValue("@contact", "");
                     cmd2.Parameters.AddWithValue("@address", "");
-                    cmd2.ExecuteNonQuery();
 
-                    MessageBox.Show("Supplier added successfully!");
-                    LoadSuppliers();
-                    LoadSupplierData();
+                    int rowsAffected = cmd2.ExecuteNonQuery();
+
+                    if (rowsAffected > 0)
+                    {
+                        MessageBox.Show("Supplier added successfully!");
+
+                        // Mark sync required
+                        Database.MarkSyncRequired();
+
+                        // Reload data
+                        LoadSuppliers();
+                        LoadSupplierData();
+
+                        // Sync if online
+                        if (Database.IsInternetAvailable())
+                        {
+                            Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    await Database.CheckAndSyncAsync();
+                                }
+                                catch (Exception syncEx)
+                                {
+                                    Console.WriteLine($"Sync after add supplier failed: {syncEx.Message}");
+                                }
+                            });
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("Failed to add supplier.");
+                    }
                 }
             }
             catch (Exception ex)
@@ -274,9 +390,17 @@ namespace ADIX
                 var selectedRow = (DataRowView)SupplierGrid.SelectedItem;
                 string supplierName = selectedRow["Supplier"].ToString();
 
-                string newName = Microsoft.VisualBasic.Interaction.InputBox("Edit supplier name:", "Edit Supplier", supplierName);
+                // Don't allow editing of placeholder rows
+                if (supplierName == "No data found" || supplierName == "No suppliers found")
+                {
+                    MessageBox.Show("Please select a valid supplier to edit.");
+                    return;
+                }
 
-                if (!string.IsNullOrEmpty(newName) && newName != supplierName)
+                string newName = Microsoft.VisualBasic.Interaction.InputBox(
+                    "Edit supplier name:", "Edit Supplier", supplierName);
+
+                if (!string.IsNullOrWhiteSpace(newName) && newName != supplierName)
                 {
                     try
                     {
@@ -285,13 +409,25 @@ namespace ADIX
 
                         string updateSql = "UPDATE SUPPLIER SET name = @newName WHERE name = @oldName";
                         using var cmd = new SqliteCommand(updateSql, connection);
-                        cmd.Parameters.AddWithValue("@newName", newName);
+                        cmd.Parameters.AddWithValue("@newName", newName.Trim());
                         cmd.Parameters.AddWithValue("@oldName", supplierName);
-                        cmd.ExecuteNonQuery();
 
-                        MessageBox.Show("Supplier updated successfully!");
-                        LoadSuppliers();
-                        LoadSupplierData();
+                        int rowsAffected = cmd.ExecuteNonQuery();
+
+                        if (rowsAffected > 0)
+                        {
+                            MessageBox.Show("Supplier updated successfully!");
+
+                            // Mark sync required
+                            Database.MarkSyncRequired();
+
+                            LoadSuppliers();
+                            LoadSupplierData();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Supplier not found or no changes made.");
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -309,8 +445,18 @@ namespace ADIX
         {
             if (SupplierGrid.SelectedItem != null)
             {
+                var selectedRow = (DataRowView)SupplierGrid.SelectedItem;
+                string supplierName = selectedRow["Supplier"].ToString();
+
+                // Don't allow deletion of placeholder rows
+                if (supplierName == "No data found" || supplierName == "No suppliers found")
+                {
+                    MessageBox.Show("Please select a valid supplier to delete.");
+                    return;
+                }
+
                 var result = MessageBox.Show(
-                    "Are you sure you want to delete the selected supplier?",
+                    $"Are you sure you want to delete supplier '{supplierName}'?",
                     "Confirm Delete",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
@@ -319,14 +465,15 @@ namespace ADIX
                 {
                     try
                     {
-                        var selectedRow = (DataRowView)SupplierGrid.SelectedItem;
-                        string supplierName = selectedRow["Supplier"].ToString();
-
                         using var connection = new SqliteConnection(ConnectionString);
                         connection.Open();
 
                         // First check if supplier has items
-                        string checkItemsSql = "SELECT COUNT(*) FROM ITEM WHERE supplierID IN (SELECT supplierID FROM SUPPLIER WHERE name = @name)";
+                        string checkItemsSql = @"
+                            SELECT COUNT(*) FROM ITEM 
+                            WHERE supplierID IN (
+                                SELECT supplierID FROM SUPPLIER WHERE name = @name
+                            )";
                         using (var checkCmd = new SqliteCommand(checkItemsSql, connection))
                         {
                             checkCmd.Parameters.AddWithValue("@name", supplierName);
@@ -334,7 +481,9 @@ namespace ADIX
 
                             if (itemCount > 0)
                             {
-                                MessageBox.Show("Cannot delete supplier with existing items. Please reassign or delete items first.");
+                                MessageBox.Show(
+                                    "Cannot delete supplier with existing items. " +
+                                    "Please reassign or delete items first.");
                                 return;
                             }
                         }
@@ -342,11 +491,23 @@ namespace ADIX
                         string deleteSql = "DELETE FROM SUPPLIER WHERE name = @name";
                         using var cmd = new SqliteCommand(deleteSql, connection);
                         cmd.Parameters.AddWithValue("@name", supplierName);
-                        cmd.ExecuteNonQuery();
 
-                        MessageBox.Show("Supplier deleted successfully!");
-                        LoadSuppliers();
-                        LoadSupplierData();
+                        int rowsAffected = cmd.ExecuteNonQuery();
+
+                        if (rowsAffected > 0)
+                        {
+                            MessageBox.Show("Supplier deleted successfully!");
+
+                            // Mark sync required
+                            Database.MarkSyncRequired();
+
+                            LoadSuppliers();
+                            LoadSupplierData();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Supplier not found.");
+                        }
                     }
                     catch (Exception ex)
                     {

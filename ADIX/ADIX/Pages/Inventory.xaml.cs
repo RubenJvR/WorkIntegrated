@@ -712,5 +712,29 @@ namespace ADIX
             }
         }
 
+
+        private void ClearFilters_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Clear ComboBox selections
+                ItemGroup.SelectedIndex = -1;
+                ItemName.SelectedIndex = -1;
+
+                // Reset Low Stock toggle
+                LowStockToggle.IsChecked = false;
+
+                // Refresh the inventory to show all items
+                LoadInventoryAsync();
+
+                MessageBox.Show("All filters have been cleared.", "Filters Cleared",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error clearing filters: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 }
