@@ -9,72 +9,22 @@ namespace ADIX
     {
         private PointOfSaleViewModel _viewModel;
 
-        private System.Windows.Threading.DispatcherTimer _refreshTimer;
-
         public PointOfSale()
         {
             InitializeComponent();
-
             _viewModel = ViewModelManager.PointOfSaleViewModel;
             DataContext = _viewModel;
-
             this.Loaded += PointOfSale_Loaded;
-            this.Unloaded += PointOfSale_Unloaded;
-
-            // Setup auto-refresh timer (every 30 seconds)
-            _refreshTimer = new System.Windows.Threading.DispatcherTimer();
-            _refreshTimer.Interval = TimeSpan.FromSeconds(30);
-            _refreshTimer.Tick += RefreshTimer_Tick;
         }
 
-
-        private async void PointOfSale_Loaded(object sender, RoutedEventArgs e)
+        private void PointOfSale_Loaded(object sender, RoutedEventArgs e)
         {
-            // Always check for sync when page loads
-            if (Database.IsInternetAvailable() && Database.IsSyncRequired())
-            {
-                try
-                {
-                    await Database.CheckAndSyncAsync();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Background sync on load failed: {ex.Message}");
-                }
-            }
-
             _viewModel.ReloadItemsFromDatabase();
-            _refreshTimer.Start(); // Start auto-refresh when page loads
         }
 
-        private void PointOfSale_Unloaded(object sender, RoutedEventArgs e)
-        {
-            _refreshTimer.Stop(); // Stop timer when page unloads
-        }
-
-        private async void RefreshTimer_Tick(object sender, EventArgs e)
-        {
-            // Check for sync and refresh items
-            if (Database.IsInternetAvailable())
-            {
-                try
-                {
-                    await Database.CheckAndSyncAsync();
-                    _viewModel.ReloadItemsFromDatabase();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Auto-refresh sync failed: {ex.Message}");
-                }
-            }
-        }
-       
         private void Quote_Click(object sender, RoutedEventArgs e)
         {
-            // Get cart items with quantity > 0
             var cartItems = _viewModel.GetCartItemsForExport();
-
-            // Get the current ViewModel data including overall discount
             string customerName = _viewModel.CustomerName ?? "";
             string selectedStaff = _viewModel.SelectedStaff?.Name ?? "Not Selected";
             string vatAmount = _viewModel.VATAmount.ToString("F2");
@@ -82,54 +32,14 @@ namespace ADIX
             string customerAddress = _viewModel.Address ?? "";
             decimal overallDiscountPercent = _viewModel.DiscountPercent;
 
-            // Pass all data including overall discount to Quote page
             var quotePage = new Qoute(cartItems, customerName, selectedStaff, vatAmount, paymentMethod, customerAddress, overallDiscountPercent);
             var mainWindow = Window.GetWindow(this) as MainWindow;
             mainWindow?.MainFrame.Navigate(quotePage);
         }
 
-        private async void ManualSync_Click(object sender, RoutedEventArgs e)
-        {
-            var button = sender as Button;
-            if (button != null)
-            {
-                button.IsEnabled = false;
-                button.Content = "Syncing...";
-            }
-
-            try
-            {
-                if (Database.IsInternetAvailable())
-                {
-                    await Database.CheckAndSyncAsync();
-                    _viewModel.ReloadItemsFromDatabase();
-                    MessageBox.Show("Sync completed!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    MessageBox.Show("No internet connection", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Sync failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                if (button != null)
-                {
-                    button.IsEnabled = true;
-                    button.Content = "Sync Now";
-                }
-            }
-        }
-
         private void Invoice_Click(object sender, RoutedEventArgs e)
         {
-            // Get cart items with quantity > 0
             var cartItems = _viewModel.GetCartItemsForExport();
-
-            // Get the current ViewModel data including overall discount
             string customerName = _viewModel.CustomerName ?? "";
             string selectedStaff = _viewModel.SelectedStaff?.Name ?? "Not Selected";
             string vatAmount = _viewModel.VATAmount.ToString("F2");
@@ -137,11 +47,11 @@ namespace ADIX
             string customerAddress = _viewModel.Address ?? "";
             decimal overallDiscountPercent = _viewModel.DiscountPercent;
 
-            // Pass all data including overall discount to Invoice page
             var invoicePage = new Invoice(cartItems, customerName, selectedStaff, vatAmount, paymentMethod, customerAddress, overallDiscountPercent);
             var mainWindow = Window.GetWindow(this) as MainWindow;
             mainWindow?.MainFrame.Navigate(invoicePage);
         }
+
         // Autocomplete event handlers
         private void ProductSearchTextBox_GotFocus(object sender, RoutedEventArgs e)
         {
@@ -216,8 +126,34 @@ namespace ADIX
                 e.Handled = true;
             }
         }
+
+        // Quantity adjustment buttons
+        private void IncreaseQuantity_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var item = button?.Tag as ADIX.Models.POSItem;
+            if (item != null)
+            {
+                if (item.Quantity < item.InStock)
+                {
+                    item.Quantity++;
+                }
+                else
+                {
+                    MessageBox.Show($"Cannot exceed available stock ({item.InStock})",
+                        "Stock Limit", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+        }
+
+        private void DecreaseQuantity_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var item = button?.Tag as ADIX.Models.POSItem;
+            if (item != null && item.Quantity > 0)
+            {
+                item.Quantity--;
+            }
+        }
     }
 }
-
-       
- 
