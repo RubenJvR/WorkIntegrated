@@ -252,7 +252,7 @@ namespace ADIX.ViewModels
                     }
                 }
 
-                int refundId = _repository.CreateRefund(
+                long refundId = _repository.CreateRefund(
                     CustomerName ?? "",
                     SelectedStaff?.StaffID ?? 0,
                     VATAmount,
