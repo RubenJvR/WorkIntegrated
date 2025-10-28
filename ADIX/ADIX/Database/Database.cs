@@ -1905,6 +1905,100 @@ WHERE itemID=@itemID";
             cmd.ExecuteNonQuery();
         }
 
+
+        /// <summary>
+        /// Add a new expense to the EXPENSES table
+        /// </summary>
+        public static void AddExpense(string expenseType, double amount, string date, string description = "")
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            // Ensure expenses table exists
+            InitializeExpensesTable();
+
+            string insertSql = @"
+        INSERT INTO EXPENSES (expenseType, amount, date, description)
+        VALUES (@expenseType, @amount, @date, @description)";
+
+            using var cmd = new SqliteCommand(insertSql, connection);
+            cmd.Parameters.AddWithValue("@expenseType", expenseType);
+            cmd.Parameters.AddWithValue("@amount", amount);
+            cmd.Parameters.AddWithValue("@date", date);
+            cmd.Parameters.AddWithValue("@description", description);
+
+            cmd.ExecuteNonQuery();
+            Console.WriteLine($"Added expense: {expenseType} - R {amount:N2}");
+        }
+
+
+
+        /// <summary>
+        /// Get all expenses for chart data
+        /// </summary>
+        public static DataTable GetExpensesForCharts()
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            // Ensure expenses table exists
+            InitializeExpensesTable();
+
+            string query = @"
+        SELECT expenseType, SUM(amount) as TotalAmount
+        FROM EXPENSES
+        WHERE date >= date('now', '-30 days')
+        GROUP BY expenseType
+        ORDER BY TotalAmount DESC";
+
+            using var cmd = new SqliteCommand(query, connection);
+            var dataTable = new DataTable();
+            using var reader = cmd.ExecuteReader();
+            dataTable.Load(reader);
+
+            return dataTable;
+        }
+
+        /// <summary>
+        /// Get monthly expense trend data
+        /// </summary>
+        public static Dictionary<string, double> GetMonthlyExpenseTrend()
+        {
+            var trendData = new Dictionary<string, double>();
+
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            // Ensure expenses table exists
+            InitializeExpensesTable();
+
+            string query = @"
+        SELECT 
+            strftime('%Y-%m', date) as Month,
+            SUM(amount) as MonthlyTotal
+        FROM EXPENSES
+        WHERE date >= date('now', '-6 months')
+        GROUP BY strftime('%Y-%m', date)
+        ORDER BY Month DESC
+        LIMIT 6";
+
+            using var cmd = new SqliteCommand(query, connection);
+            using var reader = cmd.ExecuteReader();
+
+            var months = new List<string>();
+            var amounts = new List<double>();
+
+            while (reader.Read())
+            {
+                string month = reader["Month"].ToString();
+                double amount = Convert.ToDouble(reader["MonthlyTotal"]);
+                trendData[month] = amount;
+            }
+
+            return trendData;
+        }
+
+
         public static void MarkSyncRequired()
         {
             _syncRequired = true;
