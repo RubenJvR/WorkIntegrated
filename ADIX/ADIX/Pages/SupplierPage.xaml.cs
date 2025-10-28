@@ -400,11 +400,36 @@ namespace ADIX
             public int Stock { get; set; }
         }
 
-        // The rest of your existing methods (AddSupplierButton_Click, EditSupplierButton_Click, DeleteSupplierButton_Click) remain the same
+        
         private void AddSupplierButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
+                // Get supplier ID from user
+                string supplierIdInput = Microsoft.VisualBasic.Interaction.InputBox(
+                    "Enter Supplier ID (numeric):", "Add Supplier - ID", "");
+
+                if (string.IsNullOrWhiteSpace(supplierIdInput) || !int.TryParse(supplierIdInput, out int supplierId))
+                {
+                    MessageBox.Show("Please enter a valid numeric Supplier ID.");
+                    return;
+                }
+
+                // Check if supplier ID already exists
+                using var connection = new SqliteConnection(ConnectionString);
+                connection.Open();
+
+                string checkIdSql = "SELECT COUNT(*) FROM SUPPLIER WHERE supplierID = @id";
+                using var checkCmd = new SqliteCommand(checkIdSql, connection);
+                checkCmd.Parameters.AddWithValue("@id", supplierId);
+                int existingCount = Convert.ToInt32(checkCmd.ExecuteScalar());
+
+                if (existingCount > 0)
+                {
+                    MessageBox.Show($"Supplier ID {supplierId} already exists. Please use a different ID.");
+                    return;
+                }
+
                 // Get supplier name
                 string supplierName = Microsoft.VisualBasic.Interaction.InputBox(
                     "Enter supplier name:", "Add Supplier", "");
@@ -420,37 +445,26 @@ namespace ADIX
                 string address = Microsoft.VisualBasic.Interaction.InputBox(
                     "Enter supplier address:", "Add Supplier - Address", "");
 
-                using var connection = new SqliteConnection(ConnectionString);
-                connection.Open();
-
-                // Get next supplier ID
-                string maxIdSql = "SELECT COALESCE(MAX(supplierID), 0) + 1 FROM SUPPLIER";
-                int newSupplierId = 1;
-                using (var cmd = new SqliteCommand(maxIdSql, connection))
-                {
-                    newSupplierId = Convert.ToInt32(cmd.ExecuteScalar());
-                }
-
+                // Insert supplier with user-specified ID
                 string insertSql = @"
-                    INSERT INTO SUPPLIER (supplierID, name, contactInfo, address, lastModified) 
-                    VALUES (@id, @name, @contact, @address, CURRENT_TIMESTAMP)";
+            INSERT INTO SUPPLIER (supplierID, name, contactInfo, address, lastModified) 
+            VALUES (@id, @name, @contact, @address, CURRENT_TIMESTAMP)";
 
-                using var cmd2 = new SqliteCommand(insertSql, connection);
-                cmd2.Parameters.AddWithValue("@id", newSupplierId);
-                cmd2.Parameters.AddWithValue("@name", supplierName.Trim());
-                cmd2.Parameters.AddWithValue("@contact", contactInfo?.Trim() ?? "");
-                cmd2.Parameters.AddWithValue("@address", address?.Trim() ?? "");
+                using var cmd = new SqliteCommand(insertSql, connection);
+                cmd.Parameters.AddWithValue("@id", supplierId);
+                cmd.Parameters.AddWithValue("@name", supplierName.Trim());
+                cmd.Parameters.AddWithValue("@contact", contactInfo?.Trim() ?? "");
+                cmd.Parameters.AddWithValue("@address", address?.Trim() ?? "");
 
-                int rowsAffected = cmd2.ExecuteNonQuery();
+                int rowsAffected = cmd.ExecuteNonQuery();
 
                 if (rowsAffected > 0)
                 {
-                    MessageBox.Show("Supplier added successfully!");
+                    MessageBox.Show($"Supplier '{supplierName}' added successfully with ID: {supplierId}");
 
                     // Mark sync required
                     Database.MarkSyncRequired();
 
-                    // Reload data
                     LoadSuppliers();
                     LoadSupplierData();
 
@@ -469,10 +483,6 @@ namespace ADIX
                             }
                         });
                     }
-                }
-                else
-                {
-                    MessageBox.Show("Failed to add supplier.");
                 }
             }
             catch (Exception ex)

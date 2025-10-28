@@ -28,6 +28,25 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
 
+        <!-- Section Header Style -->
+        <Style x:Key="SectionHeaderStyle" TargetType="Border">
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="BorderBrush" Value="#4AA902"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Margin" Value="0,15,0,5"/>
+        </Style>
+
+        <Style x:Key="SectionHeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
         <!-- Input border -->
         <Style x:Key="InputBorderStyle" TargetType="Border">
             <Setter Property="CornerRadius" Value="6"/>
@@ -67,6 +86,16 @@
             <Setter Property="HorizontalAlignment" Value="Center"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+
+        <!-- DataGrid Container Style -->
+        <Style x:Key="DataGridContainerStyle" TargetType="Border">
+            <Setter Property="Background" Value="#4F4F4F"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Margin" Value="0,5,0,15"/>
+            <Setter Property="MaxHeight" Value="300"/>
         </Style>
 
         <!-- Converters -->
@@ -180,7 +209,7 @@
                 </Border>
 
                 <!-- Finance Metrics -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,15">
                     <Border Width="180" Height="60" Background="#4F4F4F" CornerRadius="5" BorderBrush="Black" BorderThickness="1">
                         <TextBlock x:Name="MonthlyTurnover" 
                                    Style="{StaticResource MetricTextBlockStyle}"
@@ -206,12 +235,13 @@
                     </Border>
                 </StackPanel>
 
-                <!-- Add Expense Input Section -->
-                <Border Style="{StaticResource HeaderBorderStyle}" Margin="0,10,0,0">
-                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Add New Expense"/>
+                <!-- ========== EXPENSE MANAGEMENT SECTION ========== -->
+                <Border Style="{StaticResource HeaderBorderStyle}">
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="EXPENSE MANAGEMENT"/>
                 </Border>
 
-                <Border Margin="0,10,0,10" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1" CornerRadius="5" Padding="15">
+                <!-- Add Expense Input Section -->
+                <Border Margin="0,5,0,15" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1" CornerRadius="5" Padding="15">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -269,8 +299,7 @@
                                         Background="#4F4F4F" 
                                         Foreground="black"
                                         Height="30"
-                                        SelectedDateFormat="Short"
-                                        />
+                                        SelectedDateFormat="Short"/>
                         </StackPanel>
 
                         <!-- Description -->
@@ -300,12 +329,95 @@
                     </Grid>
                 </Border>
 
-                <!-- Salary Payments Section -->
-                <Border Style="{StaticResource HeaderBorderStyle}" Margin="0,10,0,0">
-                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Salary Payments"/>
+                <!-- Expense Breakdown -->
+                <Border Style="{StaticResource HeaderBorderStyle}">
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="EXPENSE BREAKDOWN"/>
+                </Border>
+              
+
+                <Border Style="{StaticResource DataGridContainerStyle}">
+                    <DataGrid x:Name="ExpenseGrid"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              Background="#4F4F4F"
+                              Foreground="White"
+                              GridLinesVisibility="All"
+                              BorderBrush="Black"
+                              BorderThickness="1"
+                              HeadersVisibility="Column"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              RowHeight="35"
+                              ColumnHeaderHeight="40"
+                              FontSize="12"
+                              AlternatingRowBackground="#5A5A5A">
+
+                        <!-- Column Header Styling -->
+                        <DataGrid.ColumnHeaderStyle>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Background" Value="#2D2D2D"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter Property="BorderBrush" Value="Black"/>
+                                <Setter Property="BorderThickness" Value="0.5"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                <Setter Property="Padding" Value="5"/>
+                            </Style>
+                        </DataGrid.ColumnHeaderStyle>
+
+                        <!-- Cell Styling -->
+                        <DataGrid.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="BorderBrush" Value="Black"/>
+                                <Setter Property="BorderThickness" Value="0.5"/>
+                                <Setter Property="Padding" Value="5,2"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#6A6A6A"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="BorderBrush" Value="#4AA902"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.CellStyle>
+
+                        <!-- Row Styling -->
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Setter Property="Background" Value="#4F4F4F"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#6A6A6A"/>
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#5A5A5A"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="120" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="180" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat='R {0:N2}'}" Width="120" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" IsReadOnly="True"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </Border>
 
-                <Border Margin="0,10,0,10" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1" CornerRadius="5" Padding="15">
+                <!-- ========== STAFF MANAGEMENT SECTION ========== -->
+                <Border Style="{StaticResource HeaderBorderStyle}">
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="STAFF MANAGEMENT"/>
+                </Border>
+
+                <!-- Salary Payments Input -->
+                <Border Margin="0,5,0,15" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1" CornerRadius="5" Padding="15">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -398,11 +510,12 @@
                 </Border>
 
                 <!-- Staff Salary Records -->
-                <Border Style="{StaticResource HeaderBorderStyle}" Margin="0,10,0,0">
-                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Staff Salary Records"/>
+                <Border Style="{StaticResource HeaderBorderStyle}">
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="STAFF SALARY RECORD"/>
                 </Border>
 
-                <Border Margin="0,10,0,10" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1" MaxHeight="200">
+
+                <Border Style="{StaticResource DataGridContainerStyle}">
                     <DataGrid x:Name="StaffSalaryGrid"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
@@ -476,33 +589,33 @@
                             <DataGridTextColumn Header="Role" Binding="{Binding Role}" Width="120" IsReadOnly="True"/>
                             <DataGridTextColumn Header="Monthly Salary" Binding="{Binding salary, StringFormat='R {0:N2}'}" Width="120" IsReadOnly="True"/>
                             <DataGridTextColumn Header="Username" Binding="{Binding userName}" Width="100" IsReadOnly="True"/>
-                            <DataGridTextColumn Header="Last Modified" Binding="{Binding lastModified}" Width="120" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Last Modified" Binding="{Binding lastModified}" Width="180" IsReadOnly="True"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Border>
 
-                <!-- Expense Breakdown -->
-                <Border Style="{StaticResource HeaderBorderStyle}" Margin="0,10,0,0">
-                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Expense Breakdown"/>
+                <!-- Salary Payment History -->
+                <Border Style="{StaticResource HeaderBorderStyle}">
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="SALARY PAYMENT HISTORY"/>
                 </Border>
 
-                <!-- Expense Breakdown Table -->
-                <Border Margin="0,10,0,10" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1" MaxHeight="200">
-                    <DataGrid x:Name="ExpenseGrid"
-              AutoGenerateColumns="False"
-              IsReadOnly="True"
-              Background="#4F4F4F"
-              Foreground="White"
-              GridLinesVisibility="All"
-              BorderBrush="Black"
-              BorderThickness="1"
-              HeadersVisibility="Column"
-              CanUserAddRows="False"
-              CanUserDeleteRows="False"
-              RowHeight="35"
-              ColumnHeaderHeight="40"
-              FontSize="14"
-              AlternatingRowBackground="#5A5A5A">
+
+                <Border Style="{StaticResource DataGridContainerStyle}">
+                    <DataGrid x:Name="SalaryPaymentHistoryGrid"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              Background="#4F4F4F"
+                              Foreground="White"
+                              GridLinesVisibility="All"
+                              BorderBrush="Black"
+                              BorderThickness="1"
+                              HeadersVisibility="Column"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              RowHeight="35"
+                              ColumnHeaderHeight="40"
+                              FontSize="12"
+                              AlternatingRowBackground="#5A5A5A">
 
                         <!-- Column Header Styling -->
                         <DataGrid.ColumnHeaderStyle>
@@ -555,52 +668,28 @@
                         </DataGrid.RowStyle>
 
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="120" IsReadOnly="True">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Padding" Value="5"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="180" IsReadOnly="True">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Padding" Value="5"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat='R {0:N2}'}" Width="120" IsReadOnly="True">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Padding" Value="5"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" IsReadOnly="True">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Padding" Value="5"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Payment ID" Binding="{Binding PaymentID}" Width="80" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Staff ID" Binding="{Binding staffID}" Width="80" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Staff Name" Binding="{Binding StaffName}" Width="150" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Role" Binding="{Binding Role}" Width="120" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat='R {0:N2}'}" Width="120" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Payment Date" Binding="{Binding PaymentDate}" Width="120" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="380" IsReadOnly="True"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Border>
 
-                <!-- Financial Overview -->
+                <!-- ========== FINANCIAL OVERVIEW SECTION ========== -->
                 <Border Style="{StaticResource HeaderBorderStyle}">
-                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Financial Overview"/>
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="FINANCIAL OVERVIEW"/>
                 </Border>
 
-                <!-- Charts Container - IMPROVED LAYOUT -->
-                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,10,0,10">
+
+                <!-- Charts Container -->
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,10,0,15">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
 
-                        <!-- Pie Chart - CLEAN VERSION WITH BETTER TOOLTIPS -->
+                        <!-- Pie Chart -->
                         <Border Style="{StaticResource ChartBorderStyle}">
                             <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                                 <TextBlock Style="{StaticResource ChartTitleStyle}" Text="Expense Distribution"/>
@@ -636,7 +725,7 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Line Chart - ENLARGED -->
+                        <!-- Line Chart -->
                         <Border Style="{StaticResource ChartBorderStyle}">
                             <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                                 <TextBlock Style="{StaticResource ChartTitleStyle}" Text="Monthly Turnover"/>
@@ -668,7 +757,7 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Column Chart - ENLARGED -->
+                        <!-- Column Chart -->
                         <Border Style="{StaticResource ChartBorderStyle}">
                             <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                                 <TextBlock Style="{StaticResource ChartTitleStyle}" Text="Profit/Loss Trend"/>
@@ -702,12 +791,13 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Supplier Payments Section -->
+                <!-- ========== SUPPLIER PAYMENTS SECTION ========== -->
                 <Border Style="{StaticResource HeaderBorderStyle}">
-                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Supplier Payments"/>
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="SUPPLIER PAYMENT"/>
                 </Border>
 
-                <!-- Filter Controls with Styled ComboBoxes -->
+
+                <!-- Filter Controls -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,5">
                     <!-- Supplier Filter ComboBox -->
                     <ComboBox x:Name="SupplierFilterComboBox"
@@ -767,22 +857,22 @@
                 </StackPanel>
 
                 <!-- Supplier Payments Table -->
-                <Border Margin="0,10,0,10" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1" MaxHeight="250">
+                <Border Style="{StaticResource DataGridContainerStyle}">
                     <DataGrid x:Name="SupplierTable"
-              AutoGenerateColumns="False"
-              IsReadOnly="True"
-              Background="#4F4F4F"
-              Foreground="White"
-              GridLinesVisibility="All"
-              BorderBrush="Black"
-              BorderThickness="1"
-              HeadersVisibility="Column"
-              CanUserAddRows="False"
-              CanUserDeleteRows="False"
-              RowHeight="35"
-              ColumnHeaderHeight="40"
-              FontSize="12"
-              AlternatingRowBackground="#5A5A5A">
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              Background="#4F4F4F"
+                              Foreground="White"
+                              GridLinesVisibility="All"
+                              BorderBrush="Black"
+                              BorderThickness="1"
+                              HeadersVisibility="Column"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              RowHeight="35"
+                              ColumnHeaderHeight="40"
+                              FontSize="12"
+                              AlternatingRowBackground="#5A5A5A">
 
                         <!-- Column Header Styling -->
                         <DataGrid.ColumnHeaderStyle>
@@ -835,84 +925,21 @@
                         </DataGrid.RowStyle>
 
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Supplier" Binding="{Binding SupplierName}" Width="120" IsReadOnly="True">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Padding" Value="5"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Invoice #" Binding="{Binding InvoiceNumber}" Width="100" IsReadOnly="True">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Padding" Value="5"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Invoice Date" Binding="{Binding InvoiceDate}" Width="100" IsReadOnly="True">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Padding" Value="5"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Due Date" Binding="{Binding DueDate}" Width="100" IsReadOnly="True">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Padding" Value="5"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Amount" Binding="{Binding InvoiceAmount, StringFormat='R {0:N2}'}" Width="100" IsReadOnly="True">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Padding" Value="5"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Paid" Binding="{Binding AmountPaid, StringFormat='R {0:N2}'}" Width="100" IsReadOnly="True">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Padding" Value="5"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Balance" Binding="{Binding BalanceDue, StringFormat='R {0:N2}'}" Width="100" IsReadOnly="True">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Padding" Value="5"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="80" IsReadOnly="True">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Padding" Value="5"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Payment Method" Binding="{Binding PaymentMethod}" Width="120" IsReadOnly="True">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Padding" Value="5"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Supplier" Binding="{Binding SupplierName}" Width="120" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Invoice #" Binding="{Binding InvoiceNumber}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Invoice Date" Binding="{Binding InvoiceDate}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Due Date" Binding="{Binding DueDate}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Amount" Binding="{Binding InvoiceAmount, StringFormat='R {0:N2}'}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Paid" Binding="{Binding AmountPaid, StringFormat='R {0:N2}'}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Balance" Binding="{Binding BalanceDue, StringFormat='R {0:N2}'}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="80" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Payment Method" Binding="{Binding PaymentMethod}" Width="120" IsReadOnly="True"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Border>
 
                 <!-- Action Buttons -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,10">
                     <Button Content="Refresh Data" Width="120" Height="40"
                             Background="#4F4F4F" Foreground="White"
                             Click="RefreshButton_Click"

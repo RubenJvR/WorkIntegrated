@@ -30,6 +30,10 @@ namespace ADIX
         private int selectedStaffId = -1;
         private double selectedStaffSalary = 0;
 
+        // Data tables for binding
+        private DataTable expenseData;
+        private DataTable salaryPaymentHistory;
+
         // LiveCharts collections
         public SeriesCollection ExpenseSeries { get; set; }
         public SeriesCollection TurnoverSeries { get; set; }
@@ -78,6 +82,7 @@ namespace ADIX
                 LoadExpenseBreakdown();
                 LoadSupplierPayments();
                 LoadStaffSalaries();
+                LoadSalaryPaymentHistory();
                 LoadCharts();
                 UpdateStatus("Data loaded successfully from database");
             }
@@ -195,80 +200,29 @@ namespace ADIX
         {
             try
             {
-                using var connection = new SqliteConnection(ConnectionString);
-                connection.Open();
-
-                var expenseData = new DataTable();
-                expenseData.Columns.Add("Date", typeof(string));
-                expenseData.Columns.Add("Category", typeof(string));
-                expenseData.Columns.Add("Amount", typeof(decimal));
-                expenseData.Columns.Add("Status", typeof(string));
-
-                // Get actual salary expenses from STAFF table
-                string salarySql = "SELECT name, salary FROM STAFF";
-                using (var cmd = new SqliteCommand(salarySql, connection))
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        expenseData.Rows.Add(
-                            DateTime.Now.ToString("yyyy-MM-dd"),
-                            $"Salary - {reader["name"]}",
-                            reader["salary"],
-                            "Paid"
-                        );
-                    }
-                }
-
-                // Get actual cost of goods sold from recent sales
-                string cogsSql = @"
-                    SELECT SUM(ii.quantity * i.costPrice) as COGS
-                    FROM INVOICEITEM ii
-                    INNER JOIN ITEM i ON ii.itemID = i.itemID
-                    INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
-                    WHERE iq.type = 1 
-                    AND iq.date >= date('now', '-30 days')";
-
-                using (var cmd = new SqliteCommand(cogsSql, connection))
-                {
-                    var cogs = cmd.ExecuteScalar();
-                    if (cogs != DBNull.Value && Convert.ToDouble(cogs) > 0)
-                    {
-                        expenseData.Rows.Add(
-                            DateTime.Now.ToString("yyyy-MM-dd"),
-                            "Cost of Goods Sold",
-                            cogs,
-                            "Paid"
-                        );
-                    }
-                }
-
-                // Get user-entered expenses from EXPENSES table
-                string userExpensesSql = @"
-                    SELECT expenseType, SUM(amount) as TotalAmount, date
-                    FROM EXPENSES
-                    WHERE date >= date('now', '-30 days')
-                    GROUP BY expenseType, date";
-
-                using (var cmd = new SqliteCommand(userExpensesSql, connection))
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        expenseData.Rows.Add(
-                            reader["date"].ToString(),
-                            reader["expenseType"].ToString(),
-                            reader["TotalAmount"],
-                            "Paid"
-                        );
-                    }
-                }
-
+                expenseData = Database.GetExpensesForDisplay();
                 ExpenseGrid.ItemsSource = expenseData.DefaultView;
+
+                UpdateStatus($"Loaded {expenseData.Rows.Count} expense records");
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading expense breakdown: {ex.Message}");
+            }
+        }
+
+        private void LoadSalaryPaymentHistory()
+        {
+            try
+            {
+                salaryPaymentHistory = Database.GetSalaryPaymentHistory();
+                SalaryPaymentHistoryGrid.ItemsSource = salaryPaymentHistory.DefaultView;
+
+                UpdateStatus($"Loaded {salaryPaymentHistory.Rows.Count} salary payment records");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading salary payment history: {ex.Message}");
             }
         }
 
@@ -277,47 +231,128 @@ namespace ADIX
             try
             {
                 staffData = Database.GetStaffWithSalaries();
-                StaffSalaryGrid.ItemsSource = staffData.DefaultView;
 
-                // Populate staff selection combo box
-                StaffSelectionComboBox.ItemsSource = staffData.DefaultView;
-                StaffSelectionComboBox.SelectedIndex = -1;
+                // Check if we have data
+                if (staffData != null && staffData.Rows.Count > 0)
+                {
+                    StaffSalaryGrid.ItemsSource = staffData.DefaultView;
 
-                UpdateStatus($"Loaded {staffData.Rows.Count} staff records");
+                    // Clear and repopulate staff selection combo box properly
+                    StaffSelectionComboBox.Items.Clear();
+
+                    foreach (DataRow row in staffData.Rows)
+                    {
+                        string staffName = row["name"] != DBNull.Value ? row["name"].ToString() : "Unknown";
+                        string staffRole = row["Role"] != DBNull.Value ? row["Role"].ToString() : "Unknown";
+                        int staffId = row["staffID"] != DBNull.Value ? Convert.ToInt32(row["staffID"]) : -1;
+
+                        // Create a display string for the combo box
+                        string displayText = $"{staffName} - {staffRole}";
+
+                        // Create a ComboBoxItem with the display text and store the DataRow as Tag
+                        ComboBoxItem item = new ComboBoxItem();
+                        item.Content = displayText;
+                        item.Tag = row; // Store the actual DataRow for later retrieval
+
+                        StaffSelectionComboBox.Items.Add(item);
+                    }
+
+                    StaffSelectionComboBox.SelectedIndex = -1;
+
+                    UpdateStatus($"Loaded {staffData.Rows.Count} staff records");
+                }
+                else
+                {
+                    // Create empty data table to avoid null references
+                    staffData = new DataTable();
+                    staffData.Columns.Add("staffID", typeof(int));
+                    staffData.Columns.Add("name", typeof(string));
+                    staffData.Columns.Add("Role", typeof(string));
+                    staffData.Columns.Add("salary", typeof(double));
+                    staffData.Columns.Add("userName", typeof(string));
+                    staffData.Columns.Add("lastModified", typeof(string));
+
+                    StaffSalaryGrid.ItemsSource = staffData.DefaultView;
+                    StaffSelectionComboBox.Items.Clear();
+
+                    UpdateStatus("No staff records found in database");
+                }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading staff data: {ex.Message}");
                 UpdateStatus("Error loading staff data");
+
+                // Create empty data to prevent further errors
+                staffData = new DataTable();
+                StaffSalaryGrid.ItemsSource = staffData.DefaultView;
+                StaffSelectionComboBox.Items.Clear();
             }
         }
 
         private void StaffSelectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (StaffSelectionComboBox.SelectedItem is DataRowView selectedRow)
+            try
             {
-                selectedStaffId = Convert.ToInt32(selectedRow["staffID"]);
-                selectedStaffSalary = Convert.ToDouble(selectedRow["salary"]);
+                if (StaffSelectionComboBox.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag is DataRow selectedRow)
+                {
+                    // Safely get values with null checks
+                    var staffIdObj = selectedRow["staffID"];
+                    var salaryObj = selectedRow["salary"];
+                    var nameObj = selectedRow["name"];
+                    var roleObj = selectedRow["Role"];
 
-                // Display staff details
-                SelectedStaffDetails.Text = $"{selectedRow["name"]} - {selectedRow["Role"]}";
-                SalaryCalculationDetails.Text = $"Monthly Salary: R {selectedStaffSalary:N2}";
+                    if (staffIdObj != DBNull.Value && staffIdObj != null)
+                    {
+                        selectedStaffId = Convert.ToInt32(staffIdObj);
+                    }
+                    else
+                    {
+                        selectedStaffId = -1;
+                    }
 
-                // Set default amount to monthly salary
-                SalaryAmountTextBox.Text = selectedStaffSalary.ToString("F2");
+                    if (salaryObj != DBNull.Value && salaryObj != null)
+                    {
+                        selectedStaffSalary = Convert.ToDouble(salaryObj);
+                    }
+                    else
+                    {
+                        selectedStaffSalary = 0;
+                    }
 
-                // Enable pay button
-                PaySalaryButton.IsEnabled = true;
+                    string staffName = nameObj != DBNull.Value && nameObj != null ? nameObj.ToString() : "Unknown";
+                    string role = roleObj != DBNull.Value && roleObj != null ? roleObj.ToString() : "Unknown";
+
+                    // Display staff details
+                    SelectedStaffDetails.Text = $"{staffName} - {role}";
+                    SalaryCalculationDetails.Text = $"Monthly Salary: R {selectedStaffSalary:N2}";
+
+                    // Set default amount to monthly salary
+                    SalaryAmountTextBox.Text = selectedStaffSalary.ToString("F2");
+
+                    // Enable pay button
+                    PaySalaryButton.IsEnabled = true;
+                }
+                else
+                {
+                    ResetStaffSelection();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                selectedStaffId = -1;
-                selectedStaffSalary = 0;
-                SelectedStaffDetails.Text = "No staff member selected";
-                SalaryCalculationDetails.Text = "";
-                SalaryAmountTextBox.Text = "";
-                PaySalaryButton.IsEnabled = false;
+                Console.WriteLine($"Error in staff selection: {ex.Message}");
+                ResetStaffSelection();
             }
+        }
+
+        private void ResetStaffSelection()
+        {
+            selectedStaffId = -1;
+            selectedStaffSalary = 0;
+            SelectedStaffDetails.Text = "No staff member selected";
+            SalaryCalculationDetails.Text = "";
+            SalaryAmountTextBox.Text = "";
+            PaySalaryButton.IsEnabled = false;
         }
 
         private void SalaryAmountTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -362,15 +397,29 @@ namespace ADIX
                 }
 
                 string paymentDate = SalaryPaymentDatePicker.SelectedDate.Value.ToString("yyyy-MM-dd");
-                string staffName = ((DataRowView)StaffSelectionComboBox.SelectedItem)["name"].ToString();
+
+                // Safely get staff name from the selected ComboBoxItem
+                string staffName = "Unknown Staff";
+                if (StaffSelectionComboBox.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag is DataRow selectedRow)
+                {
+                    var nameObj = selectedRow["name"];
+                    staffName = nameObj != DBNull.Value && nameObj != null ? nameObj.ToString() : "Unknown Staff";
+                }
 
                 // Process salary payment
-                Database.ProcessSalaryPayment(selectedStaffId, amount, paymentDate, "EFT", $"Salary for {staffName}");
+                Database.ProcessSalaryPayment(selectedStaffId, amount, paymentDate, "EFT", $"Salary payment for {staffName}");
+
+                // Update staff salary if different from current
+                if (amount != selectedStaffSalary)
+                {
+                    Database.UpdateStaffSalary(selectedStaffId, amount);
+                }
 
                 // Refresh all data
                 LoadFinancialMetrics();
                 LoadExpenseBreakdown();
                 LoadStaffSalaries();
+                LoadSalaryPaymentHistory();
                 LoadCharts();
 
                 // Clear form
@@ -390,20 +439,35 @@ namespace ADIX
 
         private void StaffSalaryGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (StaffSalaryGrid.SelectedItem is DataRowView selectedRow)
+            try
             {
-                // Auto-fill the form when a staff member is selected from the grid
-                int staffId = Convert.ToInt32(selectedRow["staffID"]);
-
-                // Find and select the corresponding item in the combo box
-                foreach (DataRowView item in StaffSelectionComboBox.Items)
+                if (StaffSalaryGrid.SelectedItem is DataRowView selectedRow && selectedRow.Row != null)
                 {
-                    if (Convert.ToInt32(item["staffID"]) == staffId)
+                    // Safely get staff ID
+                    var staffIdObj = selectedRow["staffID"];
+                    if (staffIdObj != DBNull.Value && staffIdObj != null)
                     {
-                        StaffSelectionComboBox.SelectedItem = item;
-                        break;
+                        int staffId = Convert.ToInt32(staffIdObj);
+
+                        // Find and select the corresponding item in the combo box
+                        foreach (ComboBoxItem item in StaffSelectionComboBox.Items)
+                        {
+                            if (item.Tag is DataRow row)
+                            {
+                                var itemStaffIdObj = row["staffID"];
+                                if (itemStaffIdObj != DBNull.Value && itemStaffIdObj != null && Convert.ToInt32(itemStaffIdObj) == staffId)
+                                {
+                                    StaffSelectionComboBox.SelectedItem = item;
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in staff grid selection: {ex.Message}");
             }
         }
 
@@ -959,7 +1023,6 @@ namespace ADIX
                                    row["SupplierName"].ToString().Contains(currentSupplierFilter.Replace("All Suppliers", ""));
                 bool statusMatch = currentStatusFilter == "All Status" ||
                                  row["Status"].ToString() == currentStatusFilter.Replace("All Status", "");
-
                 bool dateMatch = true;
                 if (currentDateFilter != "All Dates")
                 {
@@ -991,6 +1054,7 @@ namespace ADIX
                 LoadExpenseBreakdown();
                 LoadSupplierPayments();
                 LoadStaffSalaries();
+                LoadSalaryPaymentHistory();
                 LoadCharts();
                 UpdateStatus("Data refreshed successfully");
             }
