@@ -1998,6 +1998,63 @@ WHERE itemID=@itemID";
             return trendData;
         }
 
+        /// <summary>
+        /// Process salary payment for staff members
+        /// </summary>
+        public static void ProcessSalaryPayment(int staffID, double amount, string paymentDate, string paymentMethod = "EFT", string description = "Salary Payment")
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            // Ensure expenses table exists
+            InitializeExpensesTable();
+
+            // Add salary payment to expenses
+            string insertExpenseSql = @"
+        INSERT INTO EXPENSES (expenseType, amount, date, description)
+        VALUES (@expenseType, @amount, @date, @description)";
+
+            using var expenseCmd = new SqliteCommand(insertExpenseSql, connection);
+            expenseCmd.Parameters.AddWithValue("@expenseType", "Salary Payment");
+            expenseCmd.Parameters.AddWithValue("@amount", amount);
+            expenseCmd.Parameters.AddWithValue("@date", paymentDate);
+            expenseCmd.Parameters.AddWithValue("@description", $"Salary payment for staff ID: {staffID} - {description}");
+            expenseCmd.ExecuteNonQuery();
+
+            // Optional: You could also add a dedicated salary payments table for better tracking
+            // For now, we'll just use the expenses table
+
+            MarkSyncRequired();
+            Console.WriteLine($"Processed salary payment: Staff {staffID} - R {amount:N2}");
+        }
+
+        /// <summary>
+        /// Get all staff members with their salary information
+        /// </summary>
+        public static DataTable GetStaffWithSalaries()
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            string query = @"
+        SELECT 
+            staffID,
+            name,
+            Role,
+            salary,
+            userName,
+            lastModified
+        FROM STAFF 
+        ORDER BY name";
+
+            using var cmd = new SqliteCommand(query, connection);
+            var dataTable = new DataTable();
+            using var reader = cmd.ExecuteReader();
+            dataTable.Load(reader);
+
+            return dataTable;
+        }
+
 
         public static void MarkSyncRequired()
         {

@@ -25,6 +25,11 @@ namespace ADIX
         private string currentDateFilter = "All Dates";
         private DataTable originalSupplierData;
 
+        // Salary payment fields
+        private DataTable staffData;
+        private int selectedStaffId = -1;
+        private double selectedStaffSalary = 0;
+
         // LiveCharts collections
         public SeriesCollection ExpenseSeries { get; set; }
         public SeriesCollection TurnoverSeries { get; set; }
@@ -57,6 +62,7 @@ namespace ADIX
 
                 // Set default date to today
                 ExpenseDatePicker.SelectedDate = DateTime.Today;
+                SalaryPaymentDatePicker.SelectedDate = DateTime.Today;
             }
             catch (Exception ex)
             {
@@ -71,6 +77,7 @@ namespace ADIX
                 LoadFinancialMetrics();
                 LoadExpenseBreakdown();
                 LoadSupplierPayments();
+                LoadStaffSalaries();
                 LoadCharts();
                 UpdateStatus("Data loaded successfully from database");
             }
@@ -262,6 +269,141 @@ namespace ADIX
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading expense breakdown: {ex.Message}");
+            }
+        }
+
+        private void LoadStaffSalaries()
+        {
+            try
+            {
+                staffData = Database.GetStaffWithSalaries();
+                StaffSalaryGrid.ItemsSource = staffData.DefaultView;
+
+                // Populate staff selection combo box
+                StaffSelectionComboBox.ItemsSource = staffData.DefaultView;
+                StaffSelectionComboBox.SelectedIndex = -1;
+
+                UpdateStatus($"Loaded {staffData.Rows.Count} staff records");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading staff data: {ex.Message}");
+                UpdateStatus("Error loading staff data");
+            }
+        }
+
+        private void StaffSelectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (StaffSelectionComboBox.SelectedItem is DataRowView selectedRow)
+            {
+                selectedStaffId = Convert.ToInt32(selectedRow["staffID"]);
+                selectedStaffSalary = Convert.ToDouble(selectedRow["salary"]);
+
+                // Display staff details
+                SelectedStaffDetails.Text = $"{selectedRow["name"]} - {selectedRow["Role"]}";
+                SalaryCalculationDetails.Text = $"Monthly Salary: R {selectedStaffSalary:N2}";
+
+                // Set default amount to monthly salary
+                SalaryAmountTextBox.Text = selectedStaffSalary.ToString("F2");
+
+                // Enable pay button
+                PaySalaryButton.IsEnabled = true;
+            }
+            else
+            {
+                selectedStaffId = -1;
+                selectedStaffSalary = 0;
+                SelectedStaffDetails.Text = "No staff member selected";
+                SalaryCalculationDetails.Text = "";
+                SalaryAmountTextBox.Text = "";
+                PaySalaryButton.IsEnabled = false;
+            }
+        }
+
+        private void SalaryAmountTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (double.TryParse(SalaryAmountTextBox.Text, out double amount) && amount > 0)
+            {
+                SalaryCalculationDetails.Text = $"Monthly Salary: R {selectedStaffSalary:N2} | Payment Amount: R {amount:N2}";
+
+                if (amount > selectedStaffSalary * 1.5) // Allow up to 50% bonus
+                {
+                    SalaryCalculationDetails.Foreground = Brushes.Orange;
+                    SalaryCalculationDetails.Text += " (Note: Amount exceeds regular salary)";
+                }
+                else
+                {
+                    SalaryCalculationDetails.Foreground = Brushes.LightGray;
+                }
+            }
+        }
+
+        private void PaySalaryButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Validate inputs
+                if (selectedStaffId == -1)
+                {
+                    MessageBox.Show("Please select a staff member.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (!double.TryParse(SalaryAmountTextBox.Text, out double amount) || amount <= 0)
+                {
+                    MessageBox.Show("Please enter a valid salary amount greater than 0.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (SalaryPaymentDatePicker.SelectedDate == null)
+                {
+                    MessageBox.Show("Please select a payment date.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                string paymentDate = SalaryPaymentDatePicker.SelectedDate.Value.ToString("yyyy-MM-dd");
+                string staffName = ((DataRowView)StaffSelectionComboBox.SelectedItem)["name"].ToString();
+
+                // Process salary payment
+                Database.ProcessSalaryPayment(selectedStaffId, amount, paymentDate, "EFT", $"Salary for {staffName}");
+
+                // Refresh all data
+                LoadFinancialMetrics();
+                LoadExpenseBreakdown();
+                LoadStaffSalaries();
+                LoadCharts();
+
+                // Clear form
+                StaffSelectionComboBox.SelectedIndex = -1;
+                SalaryAmountTextBox.Clear();
+                SalaryPaymentDatePicker.SelectedDate = DateTime.Today;
+
+                MessageBox.Show($"Salary payment processed successfully!\n{staffName} - R {amount:N2}", "Payment Successful", MessageBoxButton.OK, MessageBoxImage.Information);
+                UpdateStatus($"Salary paid: {staffName} - R {amount:N2}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error processing salary payment: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                UpdateStatus("Error processing salary payment");
+            }
+        }
+
+        private void StaffSalaryGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (StaffSalaryGrid.SelectedItem is DataRowView selectedRow)
+            {
+                // Auto-fill the form when a staff member is selected from the grid
+                int staffId = Convert.ToInt32(selectedRow["staffID"]);
+
+                // Find and select the corresponding item in the combo box
+                foreach (DataRowView item in StaffSelectionComboBox.Items)
+                {
+                    if (Convert.ToInt32(item["staffID"]) == staffId)
+                    {
+                        StaffSelectionComboBox.SelectedItem = item;
+                        break;
+                    }
+                }
             }
         }
 
@@ -848,6 +990,7 @@ namespace ADIX
                 LoadFinancialMetrics();
                 LoadExpenseBreakdown();
                 LoadSupplierPayments();
+                LoadStaffSalaries();
                 LoadCharts();
                 UpdateStatus("Data refreshed successfully");
             }
