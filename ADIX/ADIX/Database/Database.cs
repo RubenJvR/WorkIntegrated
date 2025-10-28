@@ -1761,11 +1761,15 @@ WHERE itemID=@itemID";
             amount DECIMAL(10,2) NOT NULL,
             date TEXT NOT NULL,
             description TEXT,
+            paymentMethod TEXT DEFAULT 'Cash',
             lastModified TEXT DEFAULT CURRENT_TIMESTAMP
         )";
 
             using var cmd = new SqliteCommand(createTableSql, connection);
             cmd.ExecuteNonQuery();
+
+            // Update schema to ensure paymentMethod column exists
+            UpdateExpensesTableSchema();
 
             // Insert sample expenses if table is empty
             string checkDataSql = "SELECT COUNT(*) FROM EXPENSES";
@@ -1775,11 +1779,11 @@ WHERE itemID=@itemID";
             if (count == 0)
             {
                 string insertSampleData = @"
-            INSERT INTO EXPENSES (expenseType, amount, date, description) VALUES
-            ('Rent', 15000.00, date('now', 'start of month'), 'Monthly rent payment'),
-            ('Utilities', 2500.00, date('now', 'start of month'), 'Electricity, water, internet'),
-            ('Salaries', 45000.00, date('now', 'start of month'), 'Staff salaries'),
-            ('Other', 5000.00, date('now', 'start of month'), 'Miscellaneous expenses')";
+            INSERT INTO EXPENSES (expenseType, amount, date, description, paymentMethod) VALUES
+            ('Rent', 15000.00, date('now', 'start of month'), 'Monthly rent payment', 'EFT'),
+            ('Utilities', 2500.00, date('now', 'start of month'), 'Electricity, water, internet', 'EFT'),
+            ('Salaries', 45000.00, date('now', 'start of month'), 'Staff salaries', 'EFT'),
+            ('Other', 5000.00, date('now', 'start of month'), 'Miscellaneous expenses', 'Cash')";
 
                 using var insertCmd = new SqliteCommand(insertSampleData, connection);
                 insertCmd.ExecuteNonQuery();
@@ -1923,16 +1927,17 @@ WHERE itemID=@itemID";
             InitializeExpensesTable();
 
             string insertSql = @"
-        INSERT INTO EXPENSES (expenseType, amount, date, description)
-        VALUES (@expenseType, @amount, @date, @description)";
+        INSERT INTO EXPENSES (expenseType, amount, date, description, paymentMethod)
+        VALUES (@expenseType, @amount, @date, @description, @paymentMethod)";
 
             using var cmd = new SqliteCommand(insertSql, connection);
             cmd.Parameters.AddWithValue("@expenseType", expenseType);
             cmd.Parameters.AddWithValue("@amount", amount);
             cmd.Parameters.AddWithValue("@date", date);
             cmd.Parameters.AddWithValue("@description", description);
-
+            cmd.Parameters.AddWithValue("@paymentMethod", "Cash"); // Default payment method
             cmd.ExecuteNonQuery();
+
             Console.WriteLine($"Added expense: {expenseType} - R {amount:N2}");
         }
 
@@ -2004,30 +2009,28 @@ WHERE itemID=@itemID";
         }
 
         /// <summary>
-        /// Process salary payment for staff members
+        /// Process a salary payment and record it as an expense
         /// </summary>
-        public static void ProcessSalaryPayment(int staffID, double amount, string paymentDate, string paymentMethod = "EFT", string description = "Salary Payment")
+        public static void ProcessSalaryPayment(int staffID, double amount, string date, string paymentMethod = "EFT", string description = "Salary Payment")
         {
             using var connection = new SqliteConnection(SqliteConnectionString);
             connection.Open();
 
-            // Ensure expenses table exists
+            // Ensure expenses table exists with correct schema
             InitializeExpensesTable();
 
             // Add salary payment to expenses
             string insertExpenseSql = @"
-        INSERT INTO EXPENSES (expenseType, amount, date, description)
-        VALUES (@expenseType, @amount, @date, @description)";
+        INSERT INTO EXPENSES (expenseType, amount, date, description, paymentMethod)
+        VALUES (@expenseType, @amount, @date, @description, @paymentMethod)";
 
             using var expenseCmd = new SqliteCommand(insertExpenseSql, connection);
             expenseCmd.Parameters.AddWithValue("@expenseType", "Salary Payment");
             expenseCmd.Parameters.AddWithValue("@amount", amount);
-            expenseCmd.Parameters.AddWithValue("@date", paymentDate);
+            expenseCmd.Parameters.AddWithValue("@date", date);
             expenseCmd.Parameters.AddWithValue("@description", $"Salary payment for staff ID: {staffID} - {description}");
+            expenseCmd.Parameters.AddWithValue("@paymentMethod", paymentMethod);
             expenseCmd.ExecuteNonQuery();
-
-            // Optional: You could also add a dedicated salary payments table for better tracking
-            // For now, we'll just use the expenses table
 
             MarkSyncRequired();
             Console.WriteLine($"Processed salary payment: Staff {staffID} - R {amount:N2}");
@@ -2059,6 +2062,122 @@ WHERE itemID=@itemID";
 
             return dataTable;
         }
+
+     
+
+        /// <summary>
+        /// Get all expenses for display in the finance page
+        /// </summary>
+        public static DataTable GetExpensesForDisplay()
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            // Ensure expenses table exists
+            InitializeExpensesTable();
+
+            string query = @"
+        SELECT 
+            expenseID as ID,
+            expenseType as Category,
+            amount as Amount,
+            date as Date,
+            description as Description,
+            lastModified
+        FROM EXPENSES
+        ORDER BY date DESC, expenseID DESC";
+
+            using var cmd = new SqliteCommand(query, connection);
+            var dataTable = new DataTable();
+            using var reader = cmd.ExecuteReader();
+            dataTable.Load(reader);
+
+            return dataTable;
+        }
+
+        /// <summary>
+        /// Get salary payment history
+        /// </summary>
+        public static DataTable GetSalaryPaymentHistory()
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            string query = @"
+        SELECT 
+            e.expenseID as PaymentID,
+            s.staffID,
+            s.name as StaffName,
+            s.Role,
+            e.amount as Amount,
+            e.date as PaymentDate,
+            e.description as Description
+        FROM EXPENSES e
+        INNER JOIN STAFF s ON e.description LIKE '%' || s.name || '%' OR e.description LIKE '%Staff ID: ' || s.staffID || '%'
+        WHERE e.expenseType = 'Salary Payment'
+        ORDER BY e.date DESC, e.expenseID DESC";
+
+            using var cmd = new SqliteCommand(query, connection);
+            var dataTable = new DataTable();
+            using var reader = cmd.ExecuteReader();
+            dataTable.Load(reader);
+
+            return dataTable;
+        }
+
+        /// <summary>
+        /// Update staff salary in the STAFF table
+        /// </summary>
+        public static void UpdateStaffSalary(int staffID, double newSalary)
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            string updateSql = @"
+        UPDATE STAFF 
+        SET salary = @salary, 
+            lastModified = CURRENT_TIMESTAMP 
+        WHERE staffID = @staffID";
+
+            using var cmd = new SqliteCommand(updateSql, connection);
+            cmd.Parameters.AddWithValue("@salary", newSalary);
+            cmd.Parameters.AddWithValue("@staffID", staffID);
+            cmd.ExecuteNonQuery();
+
+            MarkSyncRequired();
+            Console.WriteLine($"Updated salary for staff {staffID} to R {newSalary:N2}");
+        }
+
+        /// <summary>
+        /// Update EXPENSES table schema to include paymentMethod column
+        /// </summary>
+        public static void UpdateExpensesTableSchema()
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            // Check if paymentMethod column exists
+            string checkColumnSql = @"
+        SELECT COUNT(*) FROM pragma_table_info('EXPENSES') 
+        WHERE name = 'paymentMethod'";
+
+            using var checkCmd = new SqliteCommand(checkColumnSql, connection);
+            var columnExists = Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
+
+            if (!columnExists)
+            {
+                // Add paymentMethod column
+                string alterTableSql = @"
+            ALTER TABLE EXPENSES 
+            ADD COLUMN paymentMethod TEXT DEFAULT 'Cash'";
+
+                using var alterCmd = new SqliteCommand(alterTableSql, connection);
+                alterCmd.ExecuteNonQuery();
+                Console.WriteLine("Added paymentMethod column to EXPENSES table");
+            }
+        }
+
+
 
 
         public static void MarkSyncRequired()
