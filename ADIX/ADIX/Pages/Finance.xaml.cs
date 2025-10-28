@@ -25,6 +25,11 @@ namespace ADIX
         private string currentDateFilter = "All Dates";
         private DataTable originalSupplierData;
 
+        // Salary payment fields
+        private DataTable staffData;
+        private int selectedStaffId = -1;
+        private double selectedStaffSalary = 0;
+
         // LiveCharts collections
         public SeriesCollection ExpenseSeries { get; set; }
         public SeriesCollection TurnoverSeries { get; set; }
@@ -54,6 +59,10 @@ namespace ADIX
 
                 // Set data context for binding
                 DataContext = this;
+
+                // Set default date to today
+                ExpenseDatePicker.SelectedDate = DateTime.Today;
+                SalaryPaymentDatePicker.SelectedDate = DateTime.Today;
             }
             catch (Exception ex)
             {
@@ -68,6 +77,7 @@ namespace ADIX
                 LoadFinancialMetrics();
                 LoadExpenseBreakdown();
                 LoadSupplierPayments();
+                LoadStaffSalaries();
                 LoadCharts();
                 UpdateStatus("Data loaded successfully from database");
             }
@@ -125,12 +135,21 @@ namespace ADIX
                     salaries = result != DBNull.Value ? Convert.ToDouble(result) : 0;
                 }
 
-                // Calculate actual expenses (COGS + Salaries + estimated overhead)
-                double totalExpenses = costOfGoodsSold + salaries;
+                // Get user-entered expenses
+                string expensesSql = @"
+                    SELECT COALESCE(SUM(amount), 0) 
+                    FROM EXPENSES 
+                    WHERE date >= date('now', '-30 days')";
 
-                // Add estimated overhead (10% of turnover for operational costs)
-                double overhead = turnover * 0.1;
-                totalExpenses += overhead;
+                double userExpenses = 0;
+                using (var cmd = new SqliteCommand(expensesSql, connection))
+                {
+                    var result = cmd.ExecuteScalar();
+                    userExpenses = result != DBNull.Value ? Convert.ToDouble(result) : 0;
+                }
+
+                // Calculate actual expenses (COGS + Salaries + user expenses)
+                double totalExpenses = costOfGoodsSold + salaries + userExpenses;
 
                 double profitLoss = turnover - totalExpenses;
 
@@ -224,22 +243,167 @@ namespace ADIX
                     }
                 }
 
-                // Calculate operational expenses based on actual data
-                double turnover = GetMonthlyTurnover(connection);
-                double rent = Math.Max(15000, turnover * 0.15);
-                double utilities = Math.Max(2500, turnover * 0.03);
-                double marketing = Math.Max(3000, turnover * 0.05);
+                // Get user-entered expenses from EXPENSES table
+                string userExpensesSql = @"
+                    SELECT expenseType, SUM(amount) as TotalAmount, date
+                    FROM EXPENSES
+                    WHERE date >= date('now', '-30 days')
+                    GROUP BY expenseType, date";
 
-                expenseData.Rows.Add(DateTime.Now.ToString("yyyy-MM-dd"), "Rent", rent, "Paid");
-                expenseData.Rows.Add(DateTime.Now.ToString("yyyy-MM-dd"), "Utilities", utilities, "Paid");
-                expenseData.Rows.Add(DateTime.Now.ToString("yyyy-MM-dd"), "Marketing", marketing, "Pending");
-                expenseData.Rows.Add(DateTime.Now.ToString("yyyy-MM-dd"), "Operational Overhead", turnover * 0.1, "Paid");
+                using (var cmd = new SqliteCommand(userExpensesSql, connection))
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        expenseData.Rows.Add(
+                            reader["date"].ToString(),
+                            reader["expenseType"].ToString(),
+                            reader["TotalAmount"],
+                            "Paid"
+                        );
+                    }
+                }
 
                 ExpenseGrid.ItemsSource = expenseData.DefaultView;
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading expense breakdown: {ex.Message}");
+            }
+        }
+
+        private void LoadStaffSalaries()
+        {
+            try
+            {
+                staffData = Database.GetStaffWithSalaries();
+                StaffSalaryGrid.ItemsSource = staffData.DefaultView;
+
+                // Populate staff selection combo box
+                StaffSelectionComboBox.ItemsSource = staffData.DefaultView;
+                StaffSelectionComboBox.SelectedIndex = -1;
+
+                UpdateStatus($"Loaded {staffData.Rows.Count} staff records");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading staff data: {ex.Message}");
+                UpdateStatus("Error loading staff data");
+            }
+        }
+
+        private void StaffSelectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (StaffSelectionComboBox.SelectedItem is DataRowView selectedRow)
+            {
+                selectedStaffId = Convert.ToInt32(selectedRow["staffID"]);
+                selectedStaffSalary = Convert.ToDouble(selectedRow["salary"]);
+
+                // Display staff details
+                SelectedStaffDetails.Text = $"{selectedRow["name"]} - {selectedRow["Role"]}";
+                SalaryCalculationDetails.Text = $"Monthly Salary: R {selectedStaffSalary:N2}";
+
+                // Set default amount to monthly salary
+                SalaryAmountTextBox.Text = selectedStaffSalary.ToString("F2");
+
+                // Enable pay button
+                PaySalaryButton.IsEnabled = true;
+            }
+            else
+            {
+                selectedStaffId = -1;
+                selectedStaffSalary = 0;
+                SelectedStaffDetails.Text = "No staff member selected";
+                SalaryCalculationDetails.Text = "";
+                SalaryAmountTextBox.Text = "";
+                PaySalaryButton.IsEnabled = false;
+            }
+        }
+
+        private void SalaryAmountTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (double.TryParse(SalaryAmountTextBox.Text, out double amount) && amount > 0)
+            {
+                SalaryCalculationDetails.Text = $"Monthly Salary: R {selectedStaffSalary:N2} | Payment Amount: R {amount:N2}";
+
+                if (amount > selectedStaffSalary * 1.5) // Allow up to 50% bonus
+                {
+                    SalaryCalculationDetails.Foreground = Brushes.Orange;
+                    SalaryCalculationDetails.Text += " (Note: Amount exceeds regular salary)";
+                }
+                else
+                {
+                    SalaryCalculationDetails.Foreground = Brushes.LightGray;
+                }
+            }
+        }
+
+        private void PaySalaryButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Validate inputs
+                if (selectedStaffId == -1)
+                {
+                    MessageBox.Show("Please select a staff member.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (!double.TryParse(SalaryAmountTextBox.Text, out double amount) || amount <= 0)
+                {
+                    MessageBox.Show("Please enter a valid salary amount greater than 0.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (SalaryPaymentDatePicker.SelectedDate == null)
+                {
+                    MessageBox.Show("Please select a payment date.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                string paymentDate = SalaryPaymentDatePicker.SelectedDate.Value.ToString("yyyy-MM-dd");
+                string staffName = ((DataRowView)StaffSelectionComboBox.SelectedItem)["name"].ToString();
+
+                // Process salary payment
+                Database.ProcessSalaryPayment(selectedStaffId, amount, paymentDate, "EFT", $"Salary for {staffName}");
+
+                // Refresh all data
+                LoadFinancialMetrics();
+                LoadExpenseBreakdown();
+                LoadStaffSalaries();
+                LoadCharts();
+
+                // Clear form
+                StaffSelectionComboBox.SelectedIndex = -1;
+                SalaryAmountTextBox.Clear();
+                SalaryPaymentDatePicker.SelectedDate = DateTime.Today;
+
+                MessageBox.Show($"Salary payment processed successfully!\n{staffName} - R {amount:N2}", "Payment Successful", MessageBoxButton.OK, MessageBoxImage.Information);
+                UpdateStatus($"Salary paid: {staffName} - R {amount:N2}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error processing salary payment: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                UpdateStatus("Error processing salary payment");
+            }
+        }
+
+        private void StaffSalaryGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (StaffSalaryGrid.SelectedItem is DataRowView selectedRow)
+            {
+                // Auto-fill the form when a staff member is selected from the grid
+                int staffId = Convert.ToInt32(selectedRow["staffID"]);
+
+                // Find and select the corresponding item in the combo box
+                foreach (DataRowView item in StaffSelectionComboBox.Items)
+                {
+                    if (Convert.ToInt32(item["staffID"]) == staffId)
+                    {
+                        StaffSelectionComboBox.SelectedItem = item;
+                        break;
+                    }
+                }
             }
         }
 
@@ -351,7 +515,7 @@ namespace ADIX
                 using var connection = new SqliteConnection(ConnectionString);
                 connection.Open();
 
-                // Get actual expense distribution from database
+                // Get actual expense distribution from database including user-entered expenses
                 var expenseCategories = new Dictionary<string, double>();
 
                 // Get actual salary expenses
@@ -377,12 +541,31 @@ namespace ADIX
                     expenseCategories["Cost of Goods"] = result != DBNull.Value ? Convert.ToDouble(result) : 0;
                 }
 
-                // Calculate operational expenses based on turnover
-                double turnover = GetMonthlyTurnover(connection);
-                expenseCategories["Rent"] = Math.Max(15000, turnover * 0.15);
-                expenseCategories["Utilities"] = Math.Max(2500, turnover * 0.03);
-                expenseCategories["Marketing"] = Math.Max(3000, turnover * 0.05);
-                expenseCategories["Operational Overhead"] = turnover * 0.1;
+                // Get user-entered expenses
+                string userExpensesSql = @"
+                    SELECT expenseType, SUM(amount) as TotalAmount
+                    FROM EXPENSES
+                    WHERE date >= date('now', '-30 days')
+                    GROUP BY expenseType";
+
+                using (var cmd = new SqliteCommand(userExpensesSql, connection))
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        string expenseType = reader["expenseType"].ToString();
+                        double amount = Convert.ToDouble(reader["TotalAmount"]);
+
+                        if (expenseCategories.ContainsKey(expenseType))
+                        {
+                            expenseCategories[expenseType] += amount;
+                        }
+                        else
+                        {
+                            expenseCategories[expenseType] = amount;
+                        }
+                    }
+                }
 
                 // Remove zero-value categories
                 foreach (var key in expenseCategories.Where(kvp => kvp.Value == 0).Select(kvp => kvp.Key).ToList())
@@ -410,17 +593,31 @@ namespace ADIX
                 using var connection = new SqliteConnection(ConnectionString);
                 connection.Open();
 
-                double turnover = GetMonthlyTurnover(connection);
-
-                return new Dictionary<string, double>
+                var expenses = new Dictionary<string, double>
                 {
                     ["Salaries"] = GetTotalSalaries(connection),
-                    ["Cost of Goods"] = GetCostOfGoodsSold(connection),
-                    ["Rent"] = Math.Max(15000, turnover * 0.15),
-                    ["Utilities"] = Math.Max(2500, turnover * 0.03),
-                    ["Marketing"] = Math.Max(3000, turnover * 0.05),
-                    ["Operational Overhead"] = turnover * 0.1
+                    ["Cost of Goods"] = GetCostOfGoodsSold(connection)
                 };
+
+                // Add user-entered expenses
+                string userExpensesSql = @"
+                    SELECT expenseType, SUM(amount) as TotalAmount
+                    FROM EXPENSES
+                    WHERE date >= date('now', '-30 days')
+                    GROUP BY expenseType";
+
+                using (var cmd = new SqliteCommand(userExpensesSql, connection))
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        string expenseType = reader["expenseType"].ToString();
+                        double amount = Convert.ToDouble(reader["TotalAmount"]);
+                        expenses[expenseType] = amount;
+                    }
+                }
+
+                return expenses;
             }
             catch
             {
@@ -431,8 +628,7 @@ namespace ADIX
                     ["Cost of Goods"] = 25000,
                     ["Rent"] = 15000,
                     ["Utilities"] = 3500,
-                    ["Marketing"] = 5000,
-                    ["Operational Overhead"] = 8000
+                    ["Marketing"] = 5000
                 };
             }
         }
@@ -462,18 +658,18 @@ namespace ADIX
 
         private void UpdateChartData(Dictionary<string, double> expenseCategories)
         {
-            // Pie Chart - Expense Distribution - CLEAN VERSION
+            // Pie Chart - Expense Distribution - USING REAL DATA
             ExpenseSeries = new SeriesCollection();
-            var colors = new[] { "#FF4AA902", "#FF2D2D2D", "#FF4F4F4F", "#FF878787", "#FFA9A9A9", "#FFD3D3D3", "#FFE8E8E8" };
+            var colors = new[] { "#FF4AA902", "#FF2D2D2D", "#FF4F4F4F", "#FF878787", "#FFA9A9A9", "#FFD3D3D3", "#FFE8E8E8", "#FF4A90E2", "#FF50E3C2", "#FFBD10E0" };
             int colorIndex = 0;
 
-            foreach (var category in expenseCategories.Where(c => c.Value > 0))
+            foreach (var category in expenseCategories.Where(c => c.Value > 0).OrderByDescending(c => c.Value))
             {
                 ExpenseSeries.Add(new PieSeries
                 {
-                    Title = category.Key, // Just the category name, no price
+                    Title = category.Key,
                     Values = new ChartValues<double> { category.Value },
-                    DataLabels = false, // Disable data labels
+                    DataLabels = false,
                     Fill = (Brush)new BrushConverter().ConvertFromString(colors[colorIndex % colors.Length]),
                     Stroke = Brushes.White,
                     StrokeThickness = 2
@@ -481,32 +677,34 @@ namespace ADIX
                 colorIndex++;
             }
 
-            // Line Chart - Monthly Turnover (last 6 months)
+            // Line Chart - Monthly Turnover (last 6 months) - USING REAL DATA
+            var turnoverData = GetMonthlyTurnoverTrend();
             TurnoverSeries = new SeriesCollection
-    {
-        new LineSeries
-        {
-            Title = "Turnover",
-            Values = new ChartValues<double> { 45000, 52000, 48000, 61000, 58000, 65000 },
-            PointGeometry = DefaultGeometries.Circle,
-            PointGeometrySize = 8,
-            Stroke = (Brush)new BrushConverter().ConvertFromString("#FF4AA902"),
-            Fill = Brushes.Transparent
-        }
-    };
-            TurnoverLabels = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun" };
+            {
+                new LineSeries
+                {
+                    Title = "Turnover",
+                    Values = new ChartValues<double>(turnoverData.Values),
+                    PointGeometry = DefaultGeometries.Circle,
+                    PointGeometrySize = 8,
+                    Stroke = (Brush)new BrushConverter().ConvertFromString("#FF4AA902"),
+                    Fill = Brushes.Transparent
+                }
+            };
+            TurnoverLabels = turnoverData.Keys.ToArray();
 
-            // Column Chart - Profit/Loss Trend
+            // Column Chart - Profit/Loss Trend - USING REAL DATA
+            var profitLossData = GetMonthlyProfitLossTrend();
             ProfitLossSeries = new SeriesCollection
-    {
-        new ColumnSeries
-        {
-            Title = "Profit/Loss",
-            Values = new ChartValues<double> { 5000, 8000, 3000, 12000, 9000, 15000 },
-            Fill = (Brush)new BrushConverter().ConvertFromString("#FF4AA902")
-        }
-    };
-            ProfitLossLabels = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun" };
+            {
+                new ColumnSeries
+                {
+                    Title = "Profit/Loss",
+                    Values = new ChartValues<double>(profitLossData.Values),
+                    Fill = (Brush)new BrushConverter().ConvertFromString("#FF4AA902")
+                }
+            };
+            ProfitLossLabels = profitLossData.Keys.ToArray();
 
             // Notify property changes
             OnPropertyChanged(nameof(ExpenseSeries));
@@ -515,6 +713,147 @@ namespace ADIX
             OnPropertyChanged(nameof(TurnoverLabels));
             OnPropertyChanged(nameof(ProfitLossLabels));
         }
+
+        private Dictionary<string, double> GetMonthlyTurnoverTrend()
+        {
+            var trendData = new Dictionary<string, double>();
+
+            try
+            {
+                using var connection = new SqliteConnection(ConnectionString);
+                connection.Open();
+
+                string query = @"
+                    SELECT 
+                        strftime('%Y-%m', date) as Month,
+                        SUM(totalAmount) as MonthlyTurnover
+                    FROM INVOICEQUOTE
+                    WHERE type = 1 
+                    AND date >= date('now', '-6 months')
+                    GROUP BY strftime('%Y-%m', date)
+                    ORDER BY Month DESC
+                    LIMIT 6";
+
+                using var cmd = new SqliteCommand(query, connection);
+                using var reader = cmd.ExecuteReader();
+
+                var data = new List<KeyValuePair<string, double>>();
+
+                while (reader.Read())
+                {
+                    string month = FormatMonthLabel(reader["Month"].ToString());
+                    double amount = Convert.ToDouble(reader["MonthlyTurnover"]);
+                    data.Add(new KeyValuePair<string, double>(month, amount));
+                }
+
+                // Ensure we have data for last 6 months
+                var last6Months = GetLast6Months();
+                foreach (var month in last6Months)
+                {
+                    var existing = data.FirstOrDefault(d => d.Key == month.Key);
+                    trendData[month.Key] = existing.Value != 0 ? existing.Value : 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading turnover trend: {ex.Message}");
+                // Fallback to sample data
+                var last6Months = GetLast6Months();
+                var random = new Random();
+                foreach (var month in last6Months)
+                {
+                    trendData[month.Key] = random.Next(40000, 70000);
+                }
+            }
+
+            return trendData;
+        }
+
+        private Dictionary<string, double> GetMonthlyProfitLossTrend()
+        {
+            var trendData = new Dictionary<string, double>();
+
+            try
+            {
+                using var connection = new SqliteConnection(ConnectionString);
+                connection.Open();
+
+                string query = @"
+                    SELECT 
+                        strftime('%Y-%m', iq.date) as Month,
+                        SUM(iq.totalAmount) as Revenue,
+                        SUM(ii.quantity * i.costPrice) as COGS,
+                        (SELECT COALESCE(SUM(amount), 0) FROM EXPENSES WHERE strftime('%Y-%m', date) = strftime('%Y-%m', iq.date)) as OtherExpenses
+                    FROM INVOICEQUOTE iq
+                    INNER JOIN INVOICEITEM ii ON iq.invoiceQuoteID = ii.invoiceQuoteID
+                    INNER JOIN ITEM i ON ii.itemID = i.itemID
+                    WHERE iq.type = 1 
+                    AND iq.date >= date('now', '-6 months')
+                    GROUP BY strftime('%Y-%m', iq.date)
+                    ORDER BY Month DESC
+                    LIMIT 6";
+
+                using var cmd = new SqliteCommand(query, connection);
+                using var reader = cmd.ExecuteReader();
+
+                var data = new List<KeyValuePair<string, double>>();
+
+                while (reader.Read())
+                {
+                    string month = FormatMonthLabel(reader["Month"].ToString());
+                    double revenue = Convert.ToDouble(reader["Revenue"]);
+                    double cogs = Convert.ToDouble(reader["COGS"]);
+                    double otherExpenses = Convert.ToDouble(reader["OtherExpenses"]);
+                    double profitLoss = revenue - cogs - otherExpenses;
+
+                    data.Add(new KeyValuePair<string, double>(month, profitLoss));
+                }
+
+                // Ensure we have data for last 6 months
+                var last6Months = GetLast6Months();
+                foreach (var month in last6Months)
+                {
+                    var existing = data.FirstOrDefault(d => d.Key == month.Key);
+                    trendData[month.Key] = existing.Value != 0 ? existing.Value : 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading profit/loss trend: {ex.Message}");
+                // Fallback to sample data
+                var last6Months = GetLast6Months();
+                var random = new Random();
+                foreach (var month in last6Months)
+                {
+                    trendData[month.Key] = random.Next(5000, 20000);
+                }
+            }
+
+            return trendData;
+        }
+
+        private Dictionary<string, int> GetLast6Months()
+        {
+            var months = new Dictionary<string, int>();
+            for (int i = 5; i >= 0; i--)
+            {
+                var date = DateTime.Now.AddMonths(-i);
+                string monthKey = FormatMonthLabel(date.ToString("yyyy-MM"));
+                months[monthKey] = i;
+            }
+            return months;
+        }
+
+        private string FormatMonthLabel(string monthString)
+        {
+            if (DateTime.TryParseExact(monthString + "-01", "yyyy-MM-dd",
+                CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date))
+            {
+                return date.ToString("MMM yy");
+            }
+            return monthString;
+        }
+
         private void SetDefaultMetrics()
         {
             MonthlyTurnover.Text = "Monthly Turnover\nR 65,000.00";
@@ -526,6 +865,57 @@ namespace ADIX
         private void UpdateStatus(string message)
         {
             StatusText.Text = $"{DateTime.Now:HH:mm:ss} - {message}";
+        }
+
+        // Add Expense Button Click Handler
+        private void AddExpenseButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Validate inputs
+                if (ExpenseTypeComboBox.SelectedItem == null)
+                {
+                    MessageBox.Show("Please select an expense type.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (!double.TryParse(ExpenseAmountTextBox.Text, out double amount) || amount <= 0)
+                {
+                    MessageBox.Show("Please enter a valid amount greater than 0.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (ExpenseDatePicker.SelectedDate == null)
+                {
+                    MessageBox.Show("Please select a date.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                string expenseType = ((ComboBoxItem)ExpenseTypeComboBox.SelectedItem).Content.ToString();
+                string date = ExpenseDatePicker.SelectedDate.Value.ToString("yyyy-MM-dd");
+                string description = ExpenseDescriptionTextBox.Text;
+
+                // Add expense to database
+                Database.AddExpense(expenseType, amount, date, description);
+
+                // Refresh all data
+                LoadFinancialMetrics();
+                LoadExpenseBreakdown();
+                LoadCharts();
+
+                // Clear form
+                ExpenseAmountTextBox.Clear();
+                ExpenseDescriptionTextBox.Clear();
+                ExpenseTypeComboBox.SelectedIndex = -1;
+                ExpenseDatePicker.SelectedDate = DateTime.Today;
+
+                UpdateStatus($"Expense added successfully: {expenseType} - R {amount:N2}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adding expense: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                UpdateStatus("Error adding expense");
+            }
         }
 
         // Filter event handlers
@@ -600,6 +990,7 @@ namespace ADIX
                 LoadFinancialMetrics();
                 LoadExpenseBreakdown();
                 LoadSupplierPayments();
+                LoadStaffSalaries();
                 LoadCharts();
                 UpdateStatus("Data refreshed successfully");
             }

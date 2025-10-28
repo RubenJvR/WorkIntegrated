@@ -1905,6 +1905,157 @@ WHERE itemID=@itemID";
             cmd.ExecuteNonQuery();
         }
 
+
+        /// <summary>
+        /// Add a new expense to the EXPENSES table
+        /// </summary>
+        public static void AddExpense(string expenseType, double amount, string date, string description = "")
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            // Ensure expenses table exists
+            InitializeExpensesTable();
+
+            string insertSql = @"
+        INSERT INTO EXPENSES (expenseType, amount, date, description)
+        VALUES (@expenseType, @amount, @date, @description)";
+
+            using var cmd = new SqliteCommand(insertSql, connection);
+            cmd.Parameters.AddWithValue("@expenseType", expenseType);
+            cmd.Parameters.AddWithValue("@amount", amount);
+            cmd.Parameters.AddWithValue("@date", date);
+            cmd.Parameters.AddWithValue("@description", description);
+
+            cmd.ExecuteNonQuery();
+            Console.WriteLine($"Added expense: {expenseType} - R {amount:N2}");
+        }
+
+
+
+        /// <summary>
+        /// Get all expenses for chart data
+        /// </summary>
+        public static DataTable GetExpensesForCharts()
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            // Ensure expenses table exists
+            InitializeExpensesTable();
+
+            string query = @"
+        SELECT expenseType, SUM(amount) as TotalAmount
+        FROM EXPENSES
+        WHERE date >= date('now', '-30 days')
+        GROUP BY expenseType
+        ORDER BY TotalAmount DESC";
+
+            using var cmd = new SqliteCommand(query, connection);
+            var dataTable = new DataTable();
+            using var reader = cmd.ExecuteReader();
+            dataTable.Load(reader);
+
+            return dataTable;
+        }
+
+        /// <summary>
+        /// Get monthly expense trend data
+        /// </summary>
+        public static Dictionary<string, double> GetMonthlyExpenseTrend()
+        {
+            var trendData = new Dictionary<string, double>();
+
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            // Ensure expenses table exists
+            InitializeExpensesTable();
+
+            string query = @"
+        SELECT 
+            strftime('%Y-%m', date) as Month,
+            SUM(amount) as MonthlyTotal
+        FROM EXPENSES
+        WHERE date >= date('now', '-6 months')
+        GROUP BY strftime('%Y-%m', date)
+        ORDER BY Month DESC
+        LIMIT 6";
+
+            using var cmd = new SqliteCommand(query, connection);
+            using var reader = cmd.ExecuteReader();
+
+            var months = new List<string>();
+            var amounts = new List<double>();
+
+            while (reader.Read())
+            {
+                string month = reader["Month"].ToString();
+                double amount = Convert.ToDouble(reader["MonthlyTotal"]);
+                trendData[month] = amount;
+            }
+
+            return trendData;
+        }
+
+        /// <summary>
+        /// Process salary payment for staff members
+        /// </summary>
+        public static void ProcessSalaryPayment(int staffID, double amount, string paymentDate, string paymentMethod = "EFT", string description = "Salary Payment")
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            // Ensure expenses table exists
+            InitializeExpensesTable();
+
+            // Add salary payment to expenses
+            string insertExpenseSql = @"
+        INSERT INTO EXPENSES (expenseType, amount, date, description)
+        VALUES (@expenseType, @amount, @date, @description)";
+
+            using var expenseCmd = new SqliteCommand(insertExpenseSql, connection);
+            expenseCmd.Parameters.AddWithValue("@expenseType", "Salary Payment");
+            expenseCmd.Parameters.AddWithValue("@amount", amount);
+            expenseCmd.Parameters.AddWithValue("@date", paymentDate);
+            expenseCmd.Parameters.AddWithValue("@description", $"Salary payment for staff ID: {staffID} - {description}");
+            expenseCmd.ExecuteNonQuery();
+
+            // Optional: You could also add a dedicated salary payments table for better tracking
+            // For now, we'll just use the expenses table
+
+            MarkSyncRequired();
+            Console.WriteLine($"Processed salary payment: Staff {staffID} - R {amount:N2}");
+        }
+
+        /// <summary>
+        /// Get all staff members with their salary information
+        /// </summary>
+        public static DataTable GetStaffWithSalaries()
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            string query = @"
+        SELECT 
+            staffID,
+            name,
+            Role,
+            salary,
+            userName,
+            lastModified
+        FROM STAFF 
+        ORDER BY name";
+
+            using var cmd = new SqliteCommand(query, connection);
+            var dataTable = new DataTable();
+            using var reader = cmd.ExecuteReader();
+            dataTable.Load(reader);
+
+            return dataTable;
+        }
+
+
         public static void MarkSyncRequired()
         {
             _syncRequired = true;
