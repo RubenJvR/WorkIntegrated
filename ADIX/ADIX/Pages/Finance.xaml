@@ -267,7 +267,7 @@
                             <TextBlock Text="Date" Foreground="White" FontWeight="Bold" Margin="0,0,0,5"/>
                             <DatePicker x:Name="ExpenseDatePicker" 
                                         Background="#4F4F4F" 
-                                        Foreground="White"
+                                        Foreground="black"
                                         Height="30"
                                         SelectedDateFormat="Short"
                                         />
@@ -355,7 +355,7 @@
                             <TextBlock Text="Payment Date" Foreground="White" FontWeight="Bold" Margin="0,0,0,5"/>
                             <DatePicker x:Name="SalaryPaymentDatePicker" 
                                         Background="#4F4F4F" 
-                                        Foreground="White"
+                                        Foreground="black"
                                         Height="30"
                                         SelectedDate="{x:Static sys:DateTime.Today}"
                                         SelectedDateFormat="Short"
