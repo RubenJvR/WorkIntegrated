@@ -246,7 +246,7 @@ VALUES
             string checkQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name='SELLER'";
             using var checkCmd = new SqliteCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-
+            
             if (result == null)
             {
                 CreateSQLiteTables(connection);
@@ -288,7 +288,7 @@ VALUES
             string checkQuery = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'SELLER'";
             using var checkCmd = new SqlCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-      
+            
             if (result == null)
             {
                 CreateAzureSQLTables(connection);
@@ -1094,13 +1094,15 @@ VALUES
         }
         private static void SyncItemMasterDataWithoutInventory(SqliteConnection sqliteConn, SqlConnection azureConn)
         {
+            // FIXED: Now includes stockRecieved in sync
             string[] columns = {
         "itemID",
-        "sku",           // Add this
-        "itemGroup",     // Add this
+        "sku",
+        "itemGroup",
         "description",
         "retailPrice",
         "costPrice",
+        "stockRecieved",  // ← ADDED THIS
         "minimumStock",
         "supplierID",
         "sellerID",
@@ -1121,13 +1123,13 @@ VALUES
 
                     if (azureRow == null)
                     {
-                        // New item - insert with initial inventory from local
-                        var localInventory = GetLocalInventory(sqliteConn, itemID);
+                        // New item - insert to Azure with stockRecieved
                         var insertSql = @"
 INSERT INTO ITEM 
 (itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified, minimumStock)
 VALUES 
-(@itemID, @sku, @itemGroup, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified, @minimumStock)";
+(@itemID, @sku, @itemGroup, @description, @retailPrice, @costPrice, 0, 0, @stockRecieved, @supplierID, @sellerID, @lastModified, @minimumStock)";
+
                         using var cmd = new SqlCommand(insertSql, azureConn, transaction);
                         cmd.Parameters.AddWithValue("@itemID", itemID);
                         cmd.Parameters.AddWithValue("@sku", localRow["sku"] == DBNull.Value ? (object)DBNull.Value : localRow["sku"]);
@@ -1135,26 +1137,24 @@ VALUES
                         cmd.Parameters.AddWithValue("@description", localRow["description"]);
                         cmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
                         cmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
-                        cmd.Parameters.AddWithValue("@stockQuantity", localInventory.stockQuantity);
-                        cmd.Parameters.AddWithValue("@stockSold", localInventory.stockSold);
-                        cmd.Parameters.AddWithValue("@stockRecieved", localInventory.stockRecieved);
+                        cmd.Parameters.AddWithValue("@stockRecieved", localRow["stockRecieved"]);  // ← SYNCING THIS NOW
                         cmd.Parameters.AddWithValue("@minimumStock", localRow["minimumStock"]);
                         cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
                         cmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
                         cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
                         cmd.ExecuteNonQuery();
 
-                        Console.WriteLine($"[ITEM] Added new item {itemID} to Azure");
+                        Console.WriteLine($"[ITEM] Added new item {itemID} to Azure with stockRecieved: {localRow["stockRecieved"]}");
                     }
                     else
                     {
-                        // CONFLICT DETECTION and update logic...
+                        // Item exists - check which is newer
                         var localModified = DateTime.Parse(localRow["lastModified"].ToString());
                         var azureModified = DateTime.Parse(azureRow["lastModified"].ToString());
 
                         if (localModified > azureModified)
                         {
-                            // Same item, local is newer - update Azure (including itemGroup and sku)
+                            // Local is newer - update Azure INCLUDING stockRecieved
                             var updateSql = @"
 UPDATE ITEM 
 SET description=@description, 
@@ -1162,6 +1162,7 @@ SET description=@description,
     itemGroup=@itemGroup,
     retailPrice=@retailPrice, 
     costPrice=@costPrice, 
+    stockRecieved=@stockRecieved,
     supplierID=@supplierID, 
     sellerID=@sellerID,
     minimumStock=@minimumStock,
@@ -1175,13 +1176,14 @@ WHERE itemID=@itemID";
                             cmd.Parameters.AddWithValue("@itemGroup", localRow["itemGroup"] == DBNull.Value ? (object)DBNull.Value : localRow["itemGroup"]);
                             cmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
                             cmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
+                            cmd.Parameters.AddWithValue("@stockRecieved", localRow["stockRecieved"]);  // ← SYNCING THIS NOW
                             cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
                             cmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
                             cmd.Parameters.AddWithValue("@minimumStock", localRow["minimumStock"]);
                             cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
                             cmd.ExecuteNonQuery();
 
-                            Console.WriteLine($"[ITEM] Updated item {itemID} in Azure (local newer)");
+                            Console.WriteLine($"[ITEM] Updated item {itemID} in Azure (local newer) - stockRecieved: {localRow["stockRecieved"]}");
                         }
                     }
                 }
@@ -1196,6 +1198,7 @@ WHERE itemID=@itemID";
 
             Console.WriteLine("[ITEM] Downloading changes from Azure to Local...");
 
+            // Download updates from Azure to Local
             foreach (DataRow azureRow in azureData.Rows)
             {
                 var itemID = Convert.ToInt32(azureRow["itemID"]);
@@ -1204,7 +1207,7 @@ WHERE itemID=@itemID";
 
                 if (localRow == null)
                 {
-                    // Item exists in Azure but not locally - this is handled by DownloadMissingItemsFromAzure
+                    // Item exists in Azure but not locally - handled by DownloadMissingItemsFromAzure
                     continue;
                 }
 
@@ -1221,6 +1224,7 @@ SET description=@description,
     itemGroup=@itemGroup,
     retailPrice=@retailPrice, 
     costPrice=@costPrice, 
+    stockRecieved=@stockRecieved,
     supplierID=@supplierID, 
     sellerID=@sellerID,
     minimumStock=@minimumStock,
@@ -1234,13 +1238,14 @@ WHERE itemID=@itemID";
                     cmd.Parameters.AddWithValue("@itemGroup", azureRow["itemGroup"] == DBNull.Value ? (object)DBNull.Value : azureRow["itemGroup"]);
                     cmd.Parameters.AddWithValue("@retailPrice", azureRow["retailPrice"]);
                     cmd.Parameters.AddWithValue("@costPrice", azureRow["costPrice"]);
+                    cmd.Parameters.AddWithValue("@stockRecieved", azureRow["stockRecieved"]);  // ← SYNCING THIS NOW
                     cmd.Parameters.AddWithValue("@supplierID", azureRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : azureRow["supplierID"]);
                     cmd.Parameters.AddWithValue("@sellerID", azureRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : azureRow["sellerID"]);
                     cmd.Parameters.AddWithValue("@minimumStock", azureRow["minimumStock"]);
                     cmd.Parameters.AddWithValue("@lastModified", azureRow["lastModified"]);
                     cmd.ExecuteNonQuery();
 
-                    Console.WriteLine($"[ITEM] Updated local item {itemID} from Azure (Azure newer) - itemGroup: {azureRow["itemGroup"]}");
+                    Console.WriteLine($"[ITEM] Updated local item {itemID} from Azure (Azure newer) - stockRecieved: {azureRow["stockRecieved"]}");
                 }
             }
         }

@@ -659,11 +659,110 @@ namespace ADIX
         }
 
 
-        private void ImportCSV_Click(object sender, EventArgs e)
+        private async void ImportCSV_Click(object sender, EventArgs e)
         {
+            var button = sender as Button;
+            string originalContent = button?.Content?.ToString() ?? "Import CSV";
 
-            CsvImporter.ImportFromCsv();
-            Database.MarkSyncRequired();
+            try
+            {
+                // Disable the button during import
+                if (button != null)
+                {
+                    button.IsEnabled = false;
+                    button.Content = "Importing...";
+                }
+
+                // Call the importer
+                bool imported = CsvImporter.ImportFromCsv();
+
+                if (imported)
+                {
+                    // Mark sync as required
+                    Database.MarkSyncRequired();
+
+                    // Refresh the grid immediately to show imported items
+                    Console.WriteLine("[INVENTORY] Refreshing grid after CSV import...");
+                    LoadInventoryAsync();
+
+                    // Small delay to let the UI update
+                    await Task.Delay(500);
+
+                    // If online, sync in background
+                    if (Database.IsInternetAvailable())
+                    {
+                        if (button != null)
+                        {
+                            button.Content = "Syncing to cloud...";
+                        }
+
+                        // Sync asynchronously
+                        await Task.Run(async () =>
+                        {
+                            try
+                            {
+                                Console.WriteLine("[INVENTORY] Starting background sync...");
+                                await Database.CheckAndSyncAsync();
+                                Console.WriteLine("[INVENTORY] Background sync completed");
+
+                                // Refresh again after sync to show any changes from Azure
+                                await Dispatcher.InvokeAsync(() =>
+                                {
+                                    Console.WriteLine("[INVENTORY] Refreshing grid after sync...");
+                                    LoadInventoryAsync();
+                                });
+
+                                await Dispatcher.InvokeAsync(() =>
+                                {
+                                    MessageBox.Show("Import and sync completed successfully!",
+                                        "Success",
+                                        MessageBoxButton.OK,
+                                        MessageBoxImage.Information);
+                                });
+                            }
+                            catch (Exception syncEx)
+                            {
+                                Console.WriteLine($"[INVENTORY] Background sync failed: {syncEx.Message}");
+                                await Dispatcher.InvokeAsync(() =>
+                                {
+                                    MessageBox.Show($"Import successful but sync failed: {syncEx.Message}\n\nData saved locally and will sync later.",
+                                        "Sync Warning",
+                                        MessageBoxButton.OK,
+                                        MessageBoxImage.Warning);
+                                });
+                            }
+                        });
+                    }
+                    else
+                    {
+                        MessageBox.Show("Import complete! Data saved locally.\n\nWill sync to cloud when internet is available.",
+                            "Success (Offline)",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("[INVENTORY] Import was cancelled or failed");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[INVENTORY] Import error: {ex.Message}");
+                MessageBox.Show($"Import error: {ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+            finally
+            {
+                // Re-enable the button
+                if (button != null)
+                {
+                    button.IsEnabled = true;
+                    button.Content = originalContent;
+                }
+            }
         }
         private void DebugLocalItems()
         {

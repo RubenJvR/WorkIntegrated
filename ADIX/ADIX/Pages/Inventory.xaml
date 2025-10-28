@@ -645,27 +645,7 @@
                 <Button Content="Import" Width="150" Height="40"
         Background="Green" Foreground="White" Margin="5"
         Click="ImportCSV_Click"/>
-                <Button Content="Delete" Width="150" Height="40"
-Background="Red" Foreground="White" Margin="5"
-Click="Delete_Click"/>
-                <Button Content="Force Sync" Width="150" Height="40"
-Background="Orange" Foreground="White" Margin="5"
-Click="ForceSync_Click"/>
-                <Button Content="Clear Filters" 
-        Width="150" 
-        Height="40"
-        Background="Blue" 
-        Foreground="White" 
-        Margin="5"
-        Click="ClearFilters_Click"/>
-                <Button x:Name="ShowAllDataBtn" 
-        Content="Show All Data Comparison" 
-        Click="ShowAllData_Click" 
-        Margin="5" 
-        Padding="10,5"
-        Background="#FF9B59B6"
-        Foreground="White"
-        FontWeight="Bold"/>
+                
             </StackPanel>
 
         </Grid>
