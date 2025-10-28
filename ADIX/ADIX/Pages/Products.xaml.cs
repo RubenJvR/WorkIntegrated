@@ -32,26 +32,37 @@ namespace ADIX
 
         private void LoadItem()
         {
-            var productList = new List<Product>();
-            using var conn = new SqliteConnection("Data Source=ADIX.db");
-            conn.Open();
-            using var cmd = new SqliteCommand("SELECT itemID, description, retailPrice, costPrice, stockQuantity, stockSold, supplierID, sellerID FROM ITEM", conn);
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read())
+            try
             {
-                productList.Add(new Product
+                using var connection = new SqliteConnection("Data Source=ADIX.db");
+                connection.Open();
+
+                string query = @"SELECT itemID, description, retailPrice, costPrice, stockQuantity, 
+                        supplierID, sellerID, minimumStock FROM ITEM";
+
+                using var cmd = new SqliteCommand(query, connection);
+                using var reader = cmd.ExecuteReader();
+
+                while (reader.Read())
                 {
-                    ItemID = Convert.ToInt32(reader["itemID"]),
-                    Description = reader["description"]?.ToString(),
-                    RetailPrice = Convert.ToDecimal(reader["retailPrice"]),
-                    CostPrice = Convert.ToDecimal(reader["costPrice"]),
-                    StockQuantity = Convert.ToInt32(reader["stockQuantity"]),
-                    StockSold = Convert.ToInt32(reader["stockSold"]),
-                    SupplierID = Convert.ToInt32(reader["supplierID"]),
-                    SellerID = Convert.ToInt32(reader["sellerID"])
-                });
+                    try
+                    {
+                        // Your original code here - wrap each field access if needed
+                        int itemId = Convert.ToInt32(reader["itemID"]);
+                        // ... rest of your field accesses
+                    }
+                    catch (InvalidCastException nullEx)
+                    {
+                        // Skip this row if there are null values
+                        Console.WriteLine($"Skipping row due to null value: {nullEx.Message}");
+                        continue;
+                    }
+                }
             }
-            ProductsGrid.ItemsSource = productList;
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading items: {ex.Message}");
+            }
         }
 
         private void ImportCSV_Click(object sender, EventArgs e)

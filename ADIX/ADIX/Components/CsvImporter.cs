@@ -24,8 +24,18 @@ namespace ADIX.Components
             public int StockQuantity { get; set; }
             public string StockRecieved { get; set; }
             public int StockSold { get; set; }
-            public int SupplierID { get; set; }
-            public int SellerID { get; set; }
+
+            // Backward compatible properties
+            public int SupplierID { get; set; } = 1;
+            public int SellerID { get; set; } = 1;
+
+            // New properties for supplier names
+            public string SupplierName { get; set; }
+            public string SellerName { get; set; }
+
+            // Helper property to determine which to use
+            public bool HasSupplierName => !string.IsNullOrWhiteSpace(SupplierName);
+            public bool HasSellerName => !string.IsNullOrWhiteSpace(SellerName);
         }
 
         public static void ImportFromCsv()
@@ -65,8 +75,7 @@ namespace ADIX.Components
 
                         if (Database.IsInternetAvailable())
                         {
-                            
-                            System.Threading.Tasks.Task.Run(async () => { await Database.CheckAndSyncAsync(); });
+                            Task.Run(async () => { await Database.CheckAndSyncAsync(); });
                         }
                     }
                 }
@@ -94,7 +103,7 @@ namespace ADIX.Components
                     var values = lines[i].Split(',').Select(v => v.Trim('"', ' ')).ToArray();
 
                     // Expected order:
-                    // SKU, ItemGroup, Description, RetailPrice, CostPrice, StockQuantity, StockReceived, SupplierID, SellerID
+                    // SKU, ItemGroup, Description, RetailPrice, CostPrice, StockQuantity, StockReceived, Supplier, Seller
                     if (values.Length < 6)
                     {
                         Console.WriteLine($"Skipping line {i + 1}: Not enough columns");
@@ -110,10 +119,54 @@ namespace ADIX.Components
                         CostPrice = ParseDecimal(values.Length > 4 ? values[4] : "0"),
                         StockQuantity = ParseInt(values.Length > 5 ? values[5] : "0"),
                         StockRecieved = values.Length > 6 ? values[6] : DateTime.Now.ToString("yyyy-MM-dd"),
-                        StockSold = 0,
-                        SupplierID = values.Length > 7 ? ParseInt(values[7]) : 1,
-                        SellerID = values.Length > 8 ? ParseInt(values[8]) : 1
+                        StockSold = 0
                     };
+
+                    // OPTION 1: SMART SUPPLIER DETECTION - Check if column 7 is a number or text
+                    if (values.Length > 7)
+                    {
+                        string supplierValue = values[7];
+
+                        // Try to parse as number first (backward compatibility)
+                        if (int.TryParse(supplierValue, out int supplierId))
+                        {
+                            product.SupplierID = supplierId;
+                            Console.WriteLine($"Line {i + 1}: Using numeric SupplierID: {supplierId}");
+                        }
+                        else
+                        {
+                            // It's a supplier name
+                            product.SupplierName = supplierValue;
+                            Console.WriteLine($"Line {i + 1}: Using supplier name: {supplierValue}");
+                        }
+                    }
+                    else
+                    {
+                        product.SupplierID = 1; // Default supplier
+                    }
+
+                    // OPTION 1: SMART SELLER DETECTION - Check if column 8 is a number or text
+                    if (values.Length > 8)
+                    {
+                        string sellerValue = values[8];
+
+                        // Try to parse as number first (backward compatibility)
+                        if (int.TryParse(sellerValue, out int sellerId))
+                        {
+                            product.SellerID = sellerId;
+                            Console.WriteLine($"Line {i + 1}: Using numeric SellerID: {sellerId}");
+                        }
+                        else
+                        {
+                            // It's a seller name
+                            product.SellerName = sellerValue;
+                            Console.WriteLine($"Line {i + 1}: Using seller name: {sellerValue}");
+                        }
+                    }
+                    else
+                    {
+                        product.SellerID = 1; // Default seller
+                    }
 
                     if (!string.IsNullOrWhiteSpace(product.Description) && product.RetailPrice > 0)
                         parsedList.Add(product);
@@ -126,18 +179,7 @@ namespace ADIX.Components
             return parsedList;
         }
 
-        private static decimal ParseDecimal(string value)
-        {
-            value = value.Trim().Trim('"');
-            return decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var result) ? result : 0;
-        }
-
-        private static int ParseInt(string value)
-        {
-            value = value.Trim().Trim('"');
-            return int.TryParse(value, out var result) ? result : 0;
-        }
-
+        // OPTION 3: UPDATED IMPORT LOGIC
         private static int ImportProductsToDatabase(List<Product> products)
         {
             int importedCount = 0;
@@ -149,6 +191,36 @@ namespace ADIX.Components
             {
                 foreach (var product in products)
                 {
+                    // OPTION 3: DETERMINE SUPPLIER ID
+                    int finalSupplierId;
+                    if (product.HasSupplierName)
+                    {
+                        // Use supplier name to get/create supplier
+                        finalSupplierId = GetOrCreateSupplier(conn, transaction, product.SupplierName);
+                        Console.WriteLine($"Using supplier '{product.SupplierName}' with ID: {finalSupplierId}");
+                    }
+                    else
+                    {
+                        // Use existing SupplierID (backward compatible)
+                        finalSupplierId = product.SupplierID;
+                        Console.WriteLine($"Using numeric SupplierID: {finalSupplierId}");
+                    }
+
+                    // OPTION 3: DETERMINE SELLER ID
+                    int finalSellerId;
+                    if (product.HasSellerName)
+                    {
+                        // Use seller name to get/create seller
+                        finalSellerId = GetOrCreateSeller(conn, transaction, product.SellerName);
+                        Console.WriteLine($"Using seller '{product.SellerName}' with ID: {finalSellerId}");
+                    }
+                    else
+                    {
+                        // Use existing SellerID (backward compatible)
+                        finalSellerId = product.SellerID;
+                        Console.WriteLine($"Using numeric SellerID: {finalSellerId}");
+                    }
+
                     // Check by description instead of exact match
                     var checkCmd = new SqliteCommand(
                         "SELECT itemID FROM ITEM WHERE LOWER(description) = LOWER(@desc)",
@@ -170,7 +242,7 @@ namespace ADIX.Components
                 INSERT INTO ITEM 
                 (itemID, SKU, itemGroup, description, retailPrice, costPrice, stockQuantity, stockRecieved, stockSold, supplierID, sellerID, lastModified)
                 VALUES 
-                (@itemID, @sku, @group, @desc, @retail, @cost, @qty, @received, @sold, @supplier, @seller, CURRENT_TIMESTAMP)",
+                (@itemID, @sku, @group, @desc, @retail, @cost, @qty, @received, @sold, @supplierID, @sellerID, CURRENT_TIMESTAMP)",
                         conn, transaction);
 
                     insertCmd.Parameters.AddWithValue("@itemID", newItemId);
@@ -182,11 +254,11 @@ namespace ADIX.Components
                     insertCmd.Parameters.AddWithValue("@qty", product.StockQuantity);
                     insertCmd.Parameters.AddWithValue("@received", product.StockRecieved ?? DateTime.Now.ToString("yyyy-MM-dd"));
                     insertCmd.Parameters.AddWithValue("@sold", product.StockSold);
-                    insertCmd.Parameters.AddWithValue("@supplier", product.SupplierID);
-                    insertCmd.Parameters.AddWithValue("@seller", product.SellerID);
+                    insertCmd.Parameters.AddWithValue("@supplierID", finalSupplierId);
+                    insertCmd.Parameters.AddWithValue("@sellerID", finalSellerId);
                     insertCmd.ExecuteNonQuery();
 
-                    Console.WriteLine($"Imported item '{product.Description}' with ID {newItemId}");
+                    Console.WriteLine($"Imported item '{product.Description}' with ID {newItemId}, SupplierID: {finalSupplierId}, SellerID: {finalSellerId}");
                     importedCount++;
                 }
 
@@ -201,7 +273,71 @@ namespace ADIX.Components
 
             return importedCount;
         }
+
+        private static int GetOrCreateSupplier(SqliteConnection conn, SqliteTransaction transaction, string supplierName)
+        {
+            // Check if supplier exists
+            var checkCmd = new SqliteCommand(
+                "SELECT supplierID FROM SUPPLIER WHERE LOWER(name) = LOWER(@name)",
+                conn, transaction);
+            checkCmd.Parameters.AddWithValue("@name", supplierName);
+            var existingId = checkCmd.ExecuteScalar();
+
+            if (existingId != null)
+                return Convert.ToInt32(existingId);
+
+            // Create new supplier
+            var maxIdCmd = new SqliteCommand("SELECT COALESCE(MAX(supplierID), 0) + 1 FROM SUPPLIER", conn, transaction);
+            int newSupplierId = Convert.ToInt32(maxIdCmd.ExecuteScalar());
+
+            var insertCmd = new SqliteCommand(
+                "INSERT INTO SUPPLIER (supplierID, name, lastModified) VALUES (@id, @name, CURRENT_TIMESTAMP)",
+                conn, transaction);
+            insertCmd.Parameters.AddWithValue("@id", newSupplierId);
+            insertCmd.Parameters.AddWithValue("@name", supplierName);
+            insertCmd.ExecuteNonQuery();
+
+            Console.WriteLine($"Created new supplier: '{supplierName}' with ID: {newSupplierId}");
+            return newSupplierId;
+        }
+
+        private static int GetOrCreateSeller(SqliteConnection conn, SqliteTransaction transaction, string sellerName)
+        {
+            // Check if seller exists
+            var checkCmd = new SqliteCommand(
+                "SELECT sellerID FROM SELLER WHERE LOWER(name) = LOWER(@name)",
+                conn, transaction);
+            checkCmd.Parameters.AddWithValue("@name", sellerName);
+            var existingId = checkCmd.ExecuteScalar();
+
+            if (existingId != null)
+                return Convert.ToInt32(existingId);
+
+            // Create new seller
+            var maxIdCmd = new SqliteCommand("SELECT COALESCE(MAX(sellerID), 0) + 1 FROM SELLER", conn, transaction);
+            int newSellerId = Convert.ToInt32(maxIdCmd.ExecuteScalar());
+
+            var insertCmd = new SqliteCommand(
+                "INSERT INTO SELLER (sellerID, name, lastModified) VALUES (@id, @name, CURRENT_TIMESTAMP)",
+                conn, transaction);
+            insertCmd.Parameters.AddWithValue("@id", newSellerId);
+            insertCmd.Parameters.AddWithValue("@name", sellerName);
+            insertCmd.ExecuteNonQuery();
+
+            Console.WriteLine($"Created new seller: '{sellerName}' with ID: {newSellerId}");
+            return newSellerId;
+        }
+
+        private static decimal ParseDecimal(string value)
+        {
+            value = value.Trim().Trim('"');
+            return decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var result) ? result : 0;
+        }
+
+        private static int ParseInt(string value)
+        {
+            value = value.Trim().Trim('"');
+            return int.TryParse(value, out var result) ? result : 0;
+        }
     }
 }
-    
-
