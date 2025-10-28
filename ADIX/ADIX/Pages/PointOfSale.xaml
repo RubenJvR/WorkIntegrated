@@ -641,8 +641,7 @@
                 <Button Content="Invoice" Width="150" Height="40"
                  Background="Green" Foreground="White" FontWeight="Bold" Margin="5" Click="Invoice_Click"/>
 
-                <Button Content="Invoice" Width="150" Height="40"
- Background="Blue" Foreground="White" FontWeight="Bold" Margin="5" Click="ManualSync_Click"/>
+                
 
             </StackPanel>
         </Grid>

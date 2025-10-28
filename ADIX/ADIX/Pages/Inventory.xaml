@@ -398,18 +398,6 @@
                         </Style>
                     </ToggleButton.Style>
                 </ToggleButton>
-
-                <!-- Set Min Stock Button -->
-                <Button Grid.Column="1"
-                        Content="Set Min Stock"
-                        Width="150"
-                        Height="30"
-                        Background="#4F4F4F"
-                        Foreground="White"
-                        BorderBrush="Black"
-                        BorderThickness="1"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"/>
             </Grid>
 
             <!-- Stock Overview Header -->
@@ -553,16 +541,7 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
-                        <DataGridTextColumn Header="Stock Returned" Binding="{Binding StockReturned}" Width="150" IsReadOnly="False">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="White"/>
-                                    <Setter Property="Padding" Value="5"/>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
-
-                        <DataGridTextColumn Header="Stock Refunded" Binding="{Binding StockRefunded}" Width="150" IsReadOnly="False">
+                        <DataGridTextColumn Header="Stock Refunded" Binding="{Binding RefundCount}" Width="150" IsReadOnly="False">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="White"/>
@@ -645,27 +624,7 @@
                 <Button Content="Import" Width="150" Height="40"
         Background="Green" Foreground="White" Margin="5"
         Click="ImportCSV_Click"/>
-                <Button Content="Delete" Width="150" Height="40"
-Background="Red" Foreground="White" Margin="5"
-Click="Delete_Click"/>
-                <Button Content="Force Sync" Width="150" Height="40"
-Background="Orange" Foreground="White" Margin="5"
-Click="ForceSync_Click"/>
-                <Button Content="Clear Filters" 
-        Width="150" 
-        Height="40"
-        Background="Blue" 
-        Foreground="White" 
-        Margin="5"
-        Click="ClearFilters_Click"/>
-                <Button x:Name="ShowAllDataBtn" 
-        Content="Show All Data Comparison" 
-        Click="ShowAllData_Click" 
-        Margin="5" 
-        Padding="10,5"
-        Background="#FF9B59B6"
-        Foreground="White"
-        FontWeight="Bold"/>
+                
             </StackPanel>
 
         </Grid>

@@ -1,9 +1,7 @@
-﻿using ADIX.Components;
-using Microsoft.Data.SqlClient;
-using Microsoft.Data.Sqlite;
-using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -18,8 +16,11 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
+using ADIX.Components;
+using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
+using Microsoft.Win32;
+using static iTextSharp.text.pdf.AcroFields;
 
 
 namespace ADIX
@@ -39,6 +40,11 @@ namespace ADIX
             LoadInventoryAsync();
 
             ItemGroupFilter.SelectionChanged += Filter_Changed;
+            LowStockToggle.Checked += (s, e) => ApplyFilters();
+            LowStockToggle.Unchecked += (s, e) => ApplyFilters();
+
+            LoadRefundsPerItem();
+
 
 
             // Setup auto-refresh timer for inventory
@@ -502,6 +508,53 @@ namespace ADIX
 
             ItemGroupFilter.ItemsSource = groups;
             ItemGroupFilter.SelectedIndex = 0;
+
+        }
+
+        private void LoadRefundsPerItem()
+        {
+            try
+            {
+                using (var conn = new SqliteConnection(ConnStr))
+                {
+                    conn.Open();
+
+                    string query = @"
+                SELECT 
+                    ii.itemID,
+                    COUNT(*) AS RefundCount
+                FROM INVOICEQUOTE iq
+                JOIN INVOICEITEM ii ON iq.invoiceQuoteID = ii.invoiceQuoteID
+                WHERE iq.paymentMethod = 'Return'
+                GROUP BY ii.itemID;
+            ";
+
+                    using (var cmd = new SqliteCommand(query, conn))
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        // Loop through refunds and update your FullInventoryList items
+                        while (reader.Read())
+                        {
+                            int itemID = reader.GetInt32(0);
+                            int refundCount = reader.GetInt32(1);
+
+                            // Find matching item in your loaded list
+                            var item = FullInventoryList.FirstOrDefault(x => x.ItemID == itemID);
+                            if (item != null)
+                            {
+                                item.StockRefunded = refundCount;
+                            }
+                        }
+                    }
+                }
+
+                InventoryGrid.Items.Refresh(); // Refresh to display refund counts
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading refunds per item: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         // 🔍 Live search typing handler
@@ -659,11 +712,110 @@ namespace ADIX
         }
 
 
-        private void ImportCSV_Click(object sender, EventArgs e)
+        private async void ImportCSV_Click(object sender, EventArgs e)
         {
+            var button = sender as Button;
+            string originalContent = button?.Content?.ToString() ?? "Import CSV";
 
-            CsvImporter.ImportFromCsv();
-            Database.MarkSyncRequired();
+            try
+            {
+                // Disable the button during import
+                if (button != null)
+                {
+                    button.IsEnabled = false;
+                    button.Content = "Importing...";
+                }
+
+                // Call the importer
+                bool imported = CsvImporter.ImportFromCsv();
+
+                if (imported)
+                {
+                    // Mark sync as required
+                    Database.MarkSyncRequired();
+
+                    // Refresh the grid immediately to show imported items
+                    Console.WriteLine("[INVENTORY] Refreshing grid after CSV import...");
+                    LoadInventoryAsync();
+
+                    // Small delay to let the UI update
+                    await Task.Delay(500);
+
+                    // If online, sync in background
+                    if (Database.IsInternetAvailable())
+                    {
+                        if (button != null)
+                        {
+                            button.Content = "Syncing to cloud...";
+                        }
+
+                        // Sync asynchronously
+                        await Task.Run(async () =>
+                        {
+                            try
+                            {
+                                Console.WriteLine("[INVENTORY] Starting background sync...");
+                                await Database.CheckAndSyncAsync();
+                                Console.WriteLine("[INVENTORY] Background sync completed");
+
+                                // Refresh again after sync to show any changes from Azure
+                                await Dispatcher.InvokeAsync(() =>
+                                {
+                                    Console.WriteLine("[INVENTORY] Refreshing grid after sync...");
+                                    LoadInventoryAsync();
+                                });
+
+                                await Dispatcher.InvokeAsync(() =>
+                                {
+                                    MessageBox.Show("Import and sync completed successfully!",
+                                        "Success",
+                                        MessageBoxButton.OK,
+                                        MessageBoxImage.Information);
+                                });
+                            }
+                            catch (Exception syncEx)
+                            {
+                                Console.WriteLine($"[INVENTORY] Background sync failed: {syncEx.Message}");
+                                await Dispatcher.InvokeAsync(() =>
+                                {
+                                    MessageBox.Show($"Import successful but sync failed: {syncEx.Message}\n\nData saved locally and will sync later.",
+                                        "Sync Warning",
+                                        MessageBoxButton.OK,
+                                        MessageBoxImage.Warning);
+                                });
+                            }
+                        });
+                    }
+                    else
+                    {
+                        MessageBox.Show("Import complete! Data saved locally.\n\nWill sync to cloud when internet is available.",
+                            "Success (Offline)",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("[INVENTORY] Import was cancelled or failed");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[INVENTORY] Import error: {ex.Message}");
+                MessageBox.Show($"Import error: {ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+            finally
+            {
+                // Re-enable the button
+                if (button != null)
+                {
+                    button.IsEnabled = true;
+                    button.Content = originalContent;
+                }
+            }
         }
         private void DebugLocalItems()
         {

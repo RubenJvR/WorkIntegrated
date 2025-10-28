@@ -22,7 +22,7 @@ namespace ADIX
 
             // Setup auto-refresh timer (every 30 seconds)
             _refreshTimer = new System.Windows.Threading.DispatcherTimer();
-            _refreshTimer.Interval = TimeSpan.FromSeconds(30);
+            _refreshTimer.Interval = TimeSpan.FromSeconds(120);
             _refreshTimer.Tick += RefreshTimer_Tick;
         }
 
@@ -87,41 +87,7 @@ namespace ADIX
             mainWindow?.MainFrame.Navigate(quotePage);
         }
 
-        private async void ManualSync_Click(object sender, RoutedEventArgs e)
-        {
-            var button = sender as Button;
-            if (button != null)
-            {
-                button.IsEnabled = false;
-                button.Content = "Syncing...";
-            }
-
-            try
-            {
-                if (Database.IsInternetAvailable())
-                {
-                    await Database.CheckAndSyncAsync();
-                    _viewModel.ReloadItemsFromDatabase();
-                    MessageBox.Show("Sync completed!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    MessageBox.Show("No internet connection", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Sync failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                if (button != null)
-                {
-                    button.IsEnabled = true;
-                    button.Content = "Sync Now";
-                }
-            }
-        }
+        
 
         private void Invoice_Click(object sender, RoutedEventArgs e)
         {
