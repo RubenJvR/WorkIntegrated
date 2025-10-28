@@ -1,9 +1,7 @@
-﻿using ADIX.Components;
-using Microsoft.Data.SqlClient;
-using Microsoft.Data.Sqlite;
-using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -18,8 +16,11 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
+using ADIX.Components;
+using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
+using Microsoft.Win32;
+using static iTextSharp.text.pdf.AcroFields;
 
 
 namespace ADIX
@@ -39,6 +40,11 @@ namespace ADIX
             LoadInventoryAsync();
 
             ItemGroupFilter.SelectionChanged += Filter_Changed;
+            LowStockToggle.Checked += (s, e) => ApplyFilters();
+            LowStockToggle.Unchecked += (s, e) => ApplyFilters();
+
+            LoadRefundsPerItem();
+
 
 
             // Setup auto-refresh timer for inventory
@@ -502,6 +508,53 @@ namespace ADIX
 
             ItemGroupFilter.ItemsSource = groups;
             ItemGroupFilter.SelectedIndex = 0;
+
+        }
+
+        private void LoadRefundsPerItem()
+        {
+            try
+            {
+                using (var conn = new SqliteConnection(ConnStr))
+                {
+                    conn.Open();
+
+                    string query = @"
+                SELECT 
+                    ii.itemID,
+                    COUNT(*) AS RefundCount
+                FROM INVOICEQUOTE iq
+                JOIN INVOICEITEM ii ON iq.invoiceQuoteID = ii.invoiceQuoteID
+                WHERE iq.paymentMethod = 'Return'
+                GROUP BY ii.itemID;
+            ";
+
+                    using (var cmd = new SqliteCommand(query, conn))
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        // Loop through refunds and update your FullInventoryList items
+                        while (reader.Read())
+                        {
+                            int itemID = reader.GetInt32(0);
+                            int refundCount = reader.GetInt32(1);
+
+                            // Find matching item in your loaded list
+                            var item = FullInventoryList.FirstOrDefault(x => x.ItemID == itemID);
+                            if (item != null)
+                            {
+                                item.StockRefunded = refundCount;
+                            }
+                        }
+                    }
+                }
+
+                InventoryGrid.Items.Refresh(); // Refresh to display refund counts
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading refunds per item: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         // 🔍 Live search typing handler
