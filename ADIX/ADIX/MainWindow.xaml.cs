@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Controls;
 
 
 namespace ADIX
@@ -72,7 +73,7 @@ namespace ADIX
         {
             NavigateToPage(pageName);
         }
-
+        
         private void Sidebar_CollapseToggled(object sender, bool isCollapsed)
         {
             // Adjust sidebar width when collapsed/expanded
@@ -90,54 +91,34 @@ namespace ADIX
         {
             SidebarControl.SetActivePage(pageName);
 
-            // Use comprehensive sync before navigation if needed
-            if (Database.IsInternetAvailable() && Database.IsSyncRequired())
+            // Perform lightweight data sync (no popups)
+            if (Database.IsInternetAvailable())
             {
                 try
                 {
                     await Database.SyncAllMissingDataAsync();
-                    Console.WriteLine("Comprehensive sync completed before navigation");
+                    Console.WriteLine("Quick sync completed during page navigation");
                 }
-                catch (Exception syncEx)
+                catch (Exception ex)
                 {
-                    Console.WriteLine($"Warning: Comprehensive sync failed during navigation: {syncEx.Message}");
-                    // Fall back to basic sync
-                    try
-                    {
-                        await Database.CheckAndSyncAsync();
-                    }
-                    catch { /* Ignore fallback failure */ }
+                    Console.WriteLine($"Quick sync failed: {ex.Message}");
                 }
             }
 
-            // Rest of navigation code remains the same...
-            switch (pageName)
+            // Navigate to selected page
+            Page targetPage = pageName switch
             {
-                case "Dashboard":
-                    MainFrame.Navigate(new Dashboard());
-                    break;
-                case "POS":
-                    var posPage = new PointOfSale();
-                    MainFrame.Navigate(posPage);
-                    break;
-                case "Inventory":
-                    var inventoryPage = new Inventory();
-                    MainFrame.Navigate(inventoryPage);
-                    break;
-                
-                case "Suppliers":
-                    MainFrame.Navigate(new SupplierPage());
-                    break;
-                case "Finance":
-                    MainFrame.Navigate(new Finance());
-                    break;
-                case "MonthlyReport":
-                    MainFrame.Navigate(new MonthlyReport());
-                    break;
-                case "Sales":
-                    MainFrame.Navigate(new Sales());
-                    break;
-            }
+                "Dashboard" => new Dashboard(),
+                "POS" => new PointOfSale(),
+                "Inventory" => new Inventory(),
+                "Suppliers" => new SupplierPage(),
+                "Finance" => new Finance(),
+                "MonthlyReport" => new MonthlyReport(),
+                "Sales" => new Sales(),
+                _ => new Dashboard()
+            };
+
+            MainFrame.Navigate(targetPage);
         }
 
         private void SidebarControl_Loaded(object sender, RoutedEventArgs e)
