@@ -288,7 +288,7 @@ VALUES
             string checkQuery = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'SELLER'";
             using var checkCmd = new SqlCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-      
+
             if (result == null)
             {
                 CreateAzureSQLTables(connection);
