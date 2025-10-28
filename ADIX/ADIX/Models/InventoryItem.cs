@@ -24,5 +24,7 @@ namespace ADIX
         public int ReturnedStockUnusable { get; set; }
         public double Loss { get; set; }
         public int MinimumStock { get; set; }
+
+        public int RefundCount { get; set; }
     }
 }
