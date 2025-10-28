@@ -51,11 +51,8 @@ namespace ADIX
                     YearSelector.Items.Add(year.ToString());
                 }
 
-                // Set current year as default
-                YearSelector.SelectedItem = currentYear.ToString();
-
-                // Set current month as default
-                MonthSelector.SelectedIndex = DateTime.Now.Month - 1;
+                // Don't set default selection initially - let placeholder show
+                // The user will make their first selection
             }
             catch (Exception ex)
             {
@@ -263,8 +260,7 @@ namespace ADIX
                 }
 
                 SupplierComboBox.ItemsSource = _suppliers;
-                if (_suppliers.Count > 0)
-                    SupplierComboBox.SelectedIndex = 0;
+                // Don't set default selection - let placeholder show
             }
             catch (Exception ex)
             {

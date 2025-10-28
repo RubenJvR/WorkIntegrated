@@ -29,7 +29,9 @@ namespace ADIX
         private void SetupEventHandlers()
         {
             Supplier.SelectionChanged += Supplier_SelectionChanged;
-            StockType.SelectionChanged += StockType_SelectionChanged;
+            SearchTextBox.TextChanged += SearchTextBox_TextChanged;
+            SearchTextBox.KeyDown += SearchTextBox_KeyDown;
+            AutoCompleteListBox.SelectionChanged += AutoCompleteListBox_SelectionChanged;
             PaymentStatus.SelectionChanged += PaymentStatus_SelectionChanged;
             LowStockToggle.Checked += LowStockToggle_Checked;
             LowStockToggle.Unchecked += LowStockToggle_Unchecked;
@@ -103,18 +105,10 @@ namespace ADIX
                     cmd.Parameters.AddWithValue("@supplierID", supplierItem.Tag.ToString());
                 }
 
-                if (StockType.SelectedItem is ComboBoxItem stockTypeItem)
+                // Add search filter
+                if (!string.IsNullOrWhiteSpace(SearchTextBox.Text))
                 {
-                    string stockType = stockTypeItem.Content.ToString();
-                    if (stockType == "Adix")
-                    {
-                        // Filter for Adix items (you might need to adjust this logic)
-                        // This is just an example - adjust based on your business logic
-                    }
-                    else if (stockType == "Consignment")
-                    {
-                        // Filter for Consignment items
-                    }
+                    cmd.Parameters.AddWithValue("@searchTerm", $"%{SearchTextBox.Text}%");
                 }
 
                 if (LowStockToggle.IsChecked == true)
@@ -197,17 +191,22 @@ namespace ADIX
                 baseQuery += " AND s.supplierID = @supplierID";
             }
 
+            // Add search filter
+            if (!string.IsNullOrWhiteSpace(SearchTextBox.Text))
+            {
+                baseQuery += " AND (s.name LIKE @searchTerm OR i.description LIKE @searchTerm)";
+            }
+
             // Add low stock filter
             if (LowStockToggle.IsChecked == true)
             {
                 baseQuery += " AND i.stockQuantity < 10";
             }
 
-            // Add payment status filter (you'll need to adjust this based on your payment tracking)
+            // Add payment status filter
             if (PaymentStatus.SelectedItem is ComboBoxItem paymentItem)
             {
                 string paymentStatus = paymentItem.Content.ToString();
-                // Example - adjust based on your actual payment tracking
                 if (paymentStatus == "Paid")
                 {
                     baseQuery += " AND (i.costPrice * i.stockRecieved * 0.3) <= 0";
@@ -216,12 +215,96 @@ namespace ADIX
                 {
                     baseQuery += " AND (i.costPrice * i.stockRecieved * 0.3) > 0";
                 }
-                // Add other payment status conditions as needed
             }
 
             baseQuery += " ORDER BY s.name, i.description";
 
             return baseQuery;
+        }
+
+        // Search functionality
+        private async void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            string query = SearchTextBox.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                AutoCompletePopup.IsOpen = false;
+                LoadSupplierData();
+                return;
+            }
+
+            var results = await SearchSuppliersAndItemsAsync(query);
+            AutoCompleteListBox.ItemsSource = results;
+            AutoCompletePopup.IsOpen = results.Any();
+        }
+
+        private async Task<List<SearchResult>> SearchSuppliersAndItemsAsync(string searchTerm)
+        {
+            var list = new List<SearchResult>();
+            try
+            {
+                using var conn = new SqliteConnection(ConnectionString);
+                await conn.OpenAsync();
+
+                string query = @"
+                    SELECT 
+                        s.name as SupplierName,
+                        i.description as ItemDescription,
+                        i.retailPrice as Price,
+                        i.stockQuantity as Stock
+                    FROM ITEM i
+                    INNER JOIN SUPPLIER s ON i.supplierID = s.supplierID
+                    WHERE s.name LIKE @term OR i.description LIKE @term
+                    ORDER BY s.name, i.description
+                    LIMIT 10";
+
+                using var cmd = new SqliteCommand(query, conn);
+                cmd.Parameters.AddWithValue("@term", $"%{searchTerm}%");
+
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var result = new SearchResult
+                    {
+                        SupplierName = reader["SupplierName"]?.ToString() ?? "Unknown",
+                        ItemDescription = reader["ItemDescription"]?.ToString() ?? "Unknown",
+                        Price = Convert.ToDouble(reader["Price"]),
+                        Stock = Convert.ToInt32(reader["Stock"])
+                    };
+                    list.Add(result);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Search error: {ex.Message}");
+            }
+
+            return list;
+        }
+
+        private void SearchTextBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Escape)
+            {
+                AutoCompletePopup.IsOpen = false;
+                SearchTextBox.Clear();
+            }
+            else if (e.Key == System.Windows.Input.Key.Enter)
+            {
+                AutoCompletePopup.IsOpen = false;
+                LoadSupplierData();
+            }
+        }
+
+        private void AutoCompleteListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (AutoCompleteListBox.SelectedItem is SearchResult selected)
+            {
+                SearchTextBox.Text = $"{selected.SupplierName} - {selected.ItemDescription}";
+                AutoCompletePopup.IsOpen = false;
+                LoadSupplierData();
+            }
         }
 
         // Helper methods for safe data reading
@@ -265,6 +348,7 @@ namespace ADIX
             }
         }
 
+        // Event handlers for filters
         private void DateRange_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (DateRange.SelectedItem is ComboBoxItem selected)
@@ -283,11 +367,6 @@ namespace ADIX
         }
 
         private void Supplier_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            ApplyFilters();
-        }
-
-        private void StockType_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ApplyFilters();
         }
@@ -312,69 +391,88 @@ namespace ADIX
             LoadSupplierData();
         }
 
+        // Search result class
+        public class SearchResult
+        {
+            public string SupplierName { get; set; }
+            public string ItemDescription { get; set; }
+            public double Price { get; set; }
+            public int Stock { get; set; }
+        }
+
+        // The rest of your existing methods (AddSupplierButton_Click, EditSupplierButton_Click, DeleteSupplierButton_Click) remain the same
         private void AddSupplierButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
+                // Get supplier name
                 string supplierName = Microsoft.VisualBasic.Interaction.InputBox(
                     "Enter supplier name:", "Add Supplier", "");
 
-                if (!string.IsNullOrWhiteSpace(supplierName))
+                if (string.IsNullOrWhiteSpace(supplierName))
+                    return;
+
+                // Get contact info
+                string contactInfo = Microsoft.VisualBasic.Interaction.InputBox(
+                    "Enter contact information (phone/email):", "Add Supplier - Contact Info", "");
+
+                // Get address
+                string address = Microsoft.VisualBasic.Interaction.InputBox(
+                    "Enter supplier address:", "Add Supplier - Address", "");
+
+                using var connection = new SqliteConnection(ConnectionString);
+                connection.Open();
+
+                // Get next supplier ID
+                string maxIdSql = "SELECT COALESCE(MAX(supplierID), 0) + 1 FROM SUPPLIER";
+                int newSupplierId = 1;
+                using (var cmd = new SqliteCommand(maxIdSql, connection))
                 {
-                    using var connection = new SqliteConnection(ConnectionString);
-                    connection.Open();
+                    newSupplierId = Convert.ToInt32(cmd.ExecuteScalar());
+                }
 
-                    // Get next supplier ID
-                    string maxIdSql = "SELECT COALESCE(MAX(supplierID), 0) + 1 FROM SUPPLIER";
-                    int newSupplierId = 1;
-                    using (var cmd = new SqliteCommand(maxIdSql, connection))
+                string insertSql = @"
+                    INSERT INTO SUPPLIER (supplierID, name, contactInfo, address, lastModified) 
+                    VALUES (@id, @name, @contact, @address, CURRENT_TIMESTAMP)";
+
+                using var cmd2 = new SqliteCommand(insertSql, connection);
+                cmd2.Parameters.AddWithValue("@id", newSupplierId);
+                cmd2.Parameters.AddWithValue("@name", supplierName.Trim());
+                cmd2.Parameters.AddWithValue("@contact", contactInfo?.Trim() ?? "");
+                cmd2.Parameters.AddWithValue("@address", address?.Trim() ?? "");
+
+                int rowsAffected = cmd2.ExecuteNonQuery();
+
+                if (rowsAffected > 0)
+                {
+                    MessageBox.Show("Supplier added successfully!");
+
+                    // Mark sync required
+                    Database.MarkSyncRequired();
+
+                    // Reload data
+                    LoadSuppliers();
+                    LoadSupplierData();
+
+                    // Sync if online
+                    if (Database.IsInternetAvailable())
                     {
-                        newSupplierId = Convert.ToInt32(cmd.ExecuteScalar());
-                    }
-
-                    string insertSql = @"
-                        INSERT INTO SUPPLIER (supplierID, name, contactInfo, address) 
-                        VALUES (@id, @name, @contact, @address)";
-
-                    using var cmd2 = new SqliteCommand(insertSql, connection);
-                    cmd2.Parameters.AddWithValue("@id", newSupplierId);
-                    cmd2.Parameters.AddWithValue("@name", supplierName.Trim());
-                    cmd2.Parameters.AddWithValue("@contact", "");
-                    cmd2.Parameters.AddWithValue("@address", "");
-
-                    int rowsAffected = cmd2.ExecuteNonQuery();
-
-                    if (rowsAffected > 0)
-                    {
-                        MessageBox.Show("Supplier added successfully!");
-
-                        // Mark sync required
-                        Database.MarkSyncRequired();
-
-                        // Reload data
-                        LoadSuppliers();
-                        LoadSupplierData();
-
-                        // Sync if online
-                        if (Database.IsInternetAvailable())
+                        Task.Run(async () =>
                         {
-                            Task.Run(async () =>
+                            try
                             {
-                                try
-                                {
-                                    await Database.CheckAndSyncAsync();
-                                }
-                                catch (Exception syncEx)
-                                {
-                                    Console.WriteLine($"Sync after add supplier failed: {syncEx.Message}");
-                                }
-                            });
-                        }
+                                await Database.CheckAndSyncAsync();
+                            }
+                            catch (Exception syncEx)
+                            {
+                                Console.WriteLine($"Sync after add supplier failed: {syncEx.Message}");
+                            }
+                        });
                     }
-                    else
-                    {
-                        MessageBox.Show("Failed to add supplier.");
-                    }
+                }
+                else
+                {
+                    MessageBox.Show("Failed to add supplier.");
                 }
             }
             catch (Exception ex)
@@ -397,42 +495,93 @@ namespace ADIX
                     return;
                 }
 
-                string newName = Microsoft.VisualBasic.Interaction.InputBox(
-                    "Edit supplier name:", "Edit Supplier", supplierName);
-
-                if (!string.IsNullOrWhiteSpace(newName) && newName != supplierName)
+                try
                 {
-                    try
+                    using var connection = new SqliteConnection(ConnectionString);
+                    connection.Open();
+
+                    // Get current supplier details
+                    string selectSql = "SELECT name, contactInfo, address FROM SUPPLIER WHERE name = @name";
+                    string currentContactInfo = "";
+                    string currentAddress = "";
+
+                    using (var selectCmd = new SqliteCommand(selectSql, connection))
                     {
-                        using var connection = new SqliteConnection(ConnectionString);
-                        connection.Open();
-
-                        string updateSql = "UPDATE SUPPLIER SET name = @newName WHERE name = @oldName";
-                        using var cmd = new SqliteCommand(updateSql, connection);
-                        cmd.Parameters.AddWithValue("@newName", newName.Trim());
-                        cmd.Parameters.AddWithValue("@oldName", supplierName);
-
-                        int rowsAffected = cmd.ExecuteNonQuery();
-
-                        if (rowsAffected > 0)
+                        selectCmd.Parameters.AddWithValue("@name", supplierName);
+                        using var reader = selectCmd.ExecuteReader();
+                        if (reader.Read())
                         {
-                            MessageBox.Show("Supplier updated successfully!");
-
-                            // Mark sync required
-                            Database.MarkSyncRequired();
-
-                            LoadSuppliers();
-                            LoadSupplierData();
-                        }
-                        else
-                        {
-                            MessageBox.Show("Supplier not found or no changes made.");
+                            currentContactInfo = reader["contactInfo"].ToString();
+                            currentAddress = reader["address"].ToString();
                         }
                     }
-                    catch (Exception ex)
+
+                    // Edit name
+                    string newName = Microsoft.VisualBasic.Interaction.InputBox(
+                        "Edit supplier name:", "Edit Supplier", supplierName);
+
+                    if (string.IsNullOrWhiteSpace(newName))
+                        return;
+
+                    // Edit contact info
+                    string newContactInfo = Microsoft.VisualBasic.Interaction.InputBox(
+                        "Edit contact information:", "Edit Supplier - Contact Info", currentContactInfo);
+
+                    // Edit address
+                    string newAddress = Microsoft.VisualBasic.Interaction.InputBox(
+                        "Edit supplier address:", "Edit Supplier - Address", currentAddress);
+
+                    // Update the supplier
+                    string updateSql = @"
+                        UPDATE SUPPLIER 
+                        SET name = @newName, 
+                            contactInfo = @contactInfo, 
+                            address = @address,
+                            lastModified = CURRENT_TIMESTAMP 
+                        WHERE name = @oldName";
+
+                    using var updateCmd = new SqliteCommand(updateSql, connection);
+                    updateCmd.Parameters.AddWithValue("@newName", newName.Trim());
+                    updateCmd.Parameters.AddWithValue("@contactInfo", newContactInfo?.Trim() ?? "");
+                    updateCmd.Parameters.AddWithValue("@address", newAddress?.Trim() ?? "");
+                    updateCmd.Parameters.AddWithValue("@oldName", supplierName);
+
+                    int rowsAffected = updateCmd.ExecuteNonQuery();
+
+                    if (rowsAffected > 0)
                     {
-                        MessageBox.Show($"Error updating supplier: {ex.Message}");
+                        MessageBox.Show("Supplier updated successfully!");
+
+                        // Mark sync required
+                        Database.MarkSyncRequired();
+
+                        LoadSuppliers();
+                        LoadSupplierData();
+
+                        // Sync if online
+                        if (Database.IsInternetAvailable())
+                        {
+                            Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    await Database.CheckAndSyncAsync();
+                                }
+                                catch (Exception syncEx)
+                                {
+                                    Console.WriteLine($"Sync after edit supplier failed: {syncEx.Message}");
+                                }
+                            });
+                        }
                     }
+                    else
+                    {
+                        MessageBox.Show("Supplier not found or no changes made.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error updating supplier: {ex.Message}");
                 }
             }
             else
@@ -503,6 +652,22 @@ namespace ADIX
 
                             LoadSuppliers();
                             LoadSupplierData();
+
+                            // Sync if online
+                            if (Database.IsInternetAvailable())
+                            {
+                                Task.Run(async () =>
+                                {
+                                    try
+                                    {
+                                        await Database.CheckAndSyncAsync();
+                                    }
+                                    catch (Exception syncEx)
+                                    {
+                                        Console.WriteLine($"Sync after delete supplier failed: {syncEx.Message}");
+                                    }
+                                });
+                            }
                         }
                         else
                         {

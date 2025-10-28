@@ -36,6 +36,7 @@
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
         </Style>
 
+        <!-- Enhanced ComboBox Style with Dynamic Placeholder -->
         <Style x:Key="RoundedComboBoxStyle" TargetType="ComboBox">
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Background" Value="#4F4F4F"/>
@@ -49,46 +50,83 @@
                     <ControlTemplate TargetType="ComboBox">
                         <Grid>
                             <Border x:Name="Border"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="6"/>
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6"/>
+
+                            <!-- Dynamic Placeholder Text - Only shows when no item selected -->
                             <TextBlock x:Name="PlaceholderText"
-                                       Text="{TemplateBinding Tag}"
-                                       Foreground="LightGray"
-                                       Margin="8,0,30,0"
-                                       VerticalAlignment="Center"
-                                       IsHitTestVisible="False"/>
+                               Text="{TemplateBinding Tag}"
+                               Foreground="LightGray"
+                               Margin="8,0,30,0"
+                               VerticalAlignment="Center"
+                               IsHitTestVisible="False">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=ComboBox}}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <!-- Content Presenter - Shows selected item -->
                             <ContentPresenter x:Name="ContentSite"
-                                              Content="{TemplateBinding SelectionBoxItem}"
-                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                              VerticalAlignment="Center"
-                                              Margin="8,0,30,0"/>
+                                      Content="{TemplateBinding SelectionBoxItem}"
+                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                      ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                                      VerticalAlignment="Center"
+                                      Margin="8,0,30,0">
+                                <ContentPresenter.Style>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=ComboBox}}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ContentPresenter.Style>
+                            </ContentPresenter>
+
                             <ToggleButton x:Name="ToggleButton"
-                                          Focusable="False"
-                                          IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                                          ClickMode="Press"
-                                          HorizontalAlignment="Right"
-                                          VerticalAlignment="Center"
-                                          Width="20">
+                                  Focusable="False"
+                                  IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                  ClickMode="Press"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Center"
+                                  Width="20">
                                 <Path Fill="White" Data="M 0 0 L 4 4 L 8 0 Z" Stretch="Uniform"/>
                             </ToggleButton>
+
                             <Popup x:Name="PART_Popup"
-                                   Placement="Bottom"
-                                   IsOpen="{TemplateBinding IsDropDownOpen}"
-                                   AllowsTransparency="True"
-                                   Focusable="False"
-                                   PopupAnimation="Fade">
+                           Placement="Bottom"
+                           IsOpen="{TemplateBinding IsDropDownOpen}"
+                           AllowsTransparency="True"
+                           Focusable="False"
+                           PopupAnimation="Fade">
                                 <Border Background="{TemplateBinding Background}"
-                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                        BorderThickness="{TemplateBinding BorderThickness}"
-                                        CornerRadius="6">
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
                                     <ScrollViewer Margin="0" SnapsToDevicePixels="True">
                                         <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
                                     </ScrollViewer>
                                 </Border>
                             </Popup>
                         </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="HasItems" Value="false">
+                                <Setter TargetName="Border" Property="MinHeight" Value="30"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -171,13 +209,15 @@
                 <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Monthly Report"/>
             </Border>
 
-            <!-- Month Selector -->
+            <!-- Month and Year Selectors -->
+            <!-- Month and Year Selectors -->
             <StackPanel Grid.Row="2" Orientation="Vertical">
+                <!-- Month Selector with Dynamic Placeholder -->
                 <ComboBox x:Name="MonthSelector"
-                          Style="{StaticResource RoundedComboBoxStyle}"
-                         
-                          SelectedIndex="-1"
-                          SelectionChanged="MonthSelector_SelectionChanged">
+              Style="{StaticResource RoundedComboBoxStyle}"
+              Tag="Filter by Month"
+              SelectedIndex="-1"
+              SelectionChanged="MonthSelector_SelectionChanged">
                     <ComboBoxItem Content="January"/>
                     <ComboBoxItem Content="February"/>
                     <ComboBoxItem Content="March"/>
@@ -192,13 +232,13 @@
                     <ComboBoxItem Content="December"/>
                 </ComboBox>
 
-                <!-- Year Selector -->
+                <!-- Year Selector with Dynamic Placeholder -->
                 <ComboBox x:Name="YearSelector"
-                          Style="{StaticResource RoundedComboBoxStyle}"
-                         
-                          SelectedIndex="-1"
-                          Margin="0,5,0,0"
-                          SelectionChanged="YearSelector_SelectionChanged">
+              Style="{StaticResource RoundedComboBoxStyle}"
+              Tag="Filter by Year"
+              SelectedIndex="-1"
+              Margin="0,5,0,0"
+              SelectionChanged="YearSelector_SelectionChanged">
                     <!-- Years will be populated in code-behind -->
                 </ComboBox>
             </StackPanel>
@@ -391,13 +431,12 @@
                     <TextBlock Style="{StaticResource SummaryHeaderStyle}" Text="Supplier Stock Reports"/>
 
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,10" VerticalAlignment="Center">
-                     
-
                         <ComboBox x:Name="SupplierComboBox"
                       Style="{StaticResource RoundedComboBoxStyle}"
                       Width="250"
                       VerticalAlignment="Center"
-                      Tag="Select Supplier"/>
+                      Tag="Select Supplier"
+                      SelectedIndex="-1"/>
 
                         <Button x:Name="SaveSupplierReport"
                     Content="Save Supplier Report"
@@ -412,6 +451,7 @@
                    TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
+            
             <!-- Action Buttons -->
             <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
                 <Button x:Name="GenerateReport" 

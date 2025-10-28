@@ -5,6 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:ADIX"
       xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+      xmlns:sys="clr-namespace:System;assembly=mscorlib"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="Finance">
@@ -205,6 +206,281 @@
                     </Border>
                 </StackPanel>
 
+                <!-- Add Expense Input Section -->
+                <Border Style="{StaticResource HeaderBorderStyle}" Margin="0,10,0,0">
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Add New Expense"/>
+                </Border>
+
+                <Border Margin="0,10,0,10" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1" CornerRadius="5" Padding="15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Expense Type -->
+                        <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,0,10,10">
+                            <TextBlock Text="Expense Type" Foreground="White" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <ComboBox x:Name="ExpenseTypeComboBox" 
+                                      Style="{StaticResource RoundedComboBoxStyle}"
+                                      Tag="Select Expense Type"
+                                      Height="30">
+                                <ComboBox.ItemContainerStyle>
+                                    <Style TargetType="ComboBoxItem">
+                                        <Setter Property="Foreground" Value="white"/>
+                                        <Setter Property="Background" Value="#4F4F4F"/>
+                                    </Style>
+                                </ComboBox.ItemContainerStyle>
+                                <ComboBoxItem Content="Rent"/>
+                                <ComboBoxItem Content="Utilities"/>
+                                <ComboBoxItem Content="Salaries"/>
+                                <ComboBoxItem Content="Marketing"/>
+                                <ComboBoxItem Content="Supplies"/>
+                                <ComboBoxItem Content="Maintenance"/>
+                                <ComboBoxItem Content="Transport"/>
+                                <ComboBoxItem Content="Other"/>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <!-- Amount -->
+                        <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,0,10,10">
+                            <TextBlock Text="Amount (R)" Foreground="White" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="ExpenseAmountTextBox" 
+                                     Background="#4F4F4F" 
+                                     Foreground="White" 
+                                     BorderBrush="Black" 
+                                     BorderThickness="1"
+                                     Height="30"
+                                     Padding="5"
+                                     VerticalContentAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Date -->
+                        <StackPanel Grid.Column="2" Grid.Row="0" Margin="0,0,10,10">
+                            <TextBlock Text="Date" Foreground="White" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <DatePicker x:Name="ExpenseDatePicker" 
+                                        Background="#4F4F4F" 
+                                        Foreground="White"
+                                        Height="30"
+                                        SelectedDateFormat="Short"
+                                        />
+                        </StackPanel>
+
+                        <!-- Description -->
+                        <StackPanel Grid.Column="3" Grid.Row="0" Margin="0,0,10,10">
+                            <TextBlock Text="Description" Foreground="White" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="ExpenseDescriptionTextBox" 
+                                     Background="#4F4F4F" 
+                                     Foreground="White" 
+                                     BorderBrush="Black" 
+                                     BorderThickness="1"
+                                     Height="30"
+                                     Padding="5"
+                                     VerticalContentAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Add Button -->
+                        <Button Grid.Column="4" Grid.Row="0" 
+                                Content="Add Expense" 
+                                Width="100" 
+                                Height="30" 
+                                Background="#4AA902" 
+                                Foreground="White"
+                                FontWeight="Bold"
+                                Click="AddExpenseButton_Click"
+                                Margin="0,20,0,0"
+                                Style="{StaticResource SolidButtonStyle}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Salary Payments Section -->
+                <Border Style="{StaticResource HeaderBorderStyle}" Margin="0,10,0,0">
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Salary Payments"/>
+                </Border>
+
+                <Border Margin="0,10,0,10" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1" CornerRadius="5" Padding="15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Staff Selection -->
+                        <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,0,10,10">
+                            <TextBlock Text="Select Staff" Foreground="White" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <ComboBox x:Name="StaffSelectionComboBox" 
+                                      Style="{StaticResource RoundedComboBoxStyle}"
+                                      Tag="Select Staff Member"
+                                      Height="30"
+                                      DisplayMemberPath="name"
+                                      SelectionChanged="StaffSelectionComboBox_SelectionChanged">
+                                <ComboBox.ItemContainerStyle>
+                                    <Style TargetType="ComboBoxItem">
+                                        <Setter Property="Foreground" Value="white"/>
+                                        <Setter Property="Background" Value="#4F4F4F"/>
+                                    </Style>
+                                </ComboBox.ItemContainerStyle>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <!-- Salary Amount -->
+                        <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,0,10,10">
+                            <TextBlock Text="Salary Amount (R)" Foreground="White" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="SalaryAmountTextBox" 
+                                     Background="#4F4F4F" 
+                                     Foreground="White" 
+                                     BorderBrush="Black" 
+                                     BorderThickness="1"
+                                     Height="30"
+                                     Padding="5"
+                                     VerticalContentAlignment="Center"
+                                     TextChanged="SalaryAmountTextBox_TextChanged"/>
+                        </StackPanel>
+
+                        <!-- Payment Date -->
+                        <StackPanel Grid.Column="2" Grid.Row="0" Margin="0,0,10,10">
+                            <TextBlock Text="Payment Date" Foreground="White" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <DatePicker x:Name="SalaryPaymentDatePicker" 
+                                        Background="#4F4F4F" 
+                                        Foreground="White"
+                                        Height="30"
+                                        SelectedDate="{x:Static sys:DateTime.Today}"
+                                        SelectedDateFormat="Short"
+                                        VerticalAlignment="Top"/>
+                        </StackPanel>
+
+                        <!-- Pay Salary Button -->
+                        <Button Grid.Column="3" Grid.Row="0" 
+                                x:Name="PaySalaryButton"
+                                Content="Pay Salary" 
+                                Width="100" 
+                                Height="30" 
+                                Background="#4AA902" 
+                                Foreground="White"
+                                FontWeight="Bold"
+                                Click="PaySalaryButton_Click"
+                                Margin="0,20,0,0"
+                                IsEnabled="False"
+                                Style="{StaticResource SolidButtonStyle}"/>
+
+                        <!-- Staff Details -->
+                        <StackPanel Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="4" Margin="0,10,0,0">
+                            <Border Background="#2D2D2D" CornerRadius="5" Padding="10">
+                                <StackPanel>
+                                    <TextBlock x:Name="SelectedStaffDetails" 
+                                               Text="No staff member selected" 
+                                               Foreground="LightGreen" 
+                                               FontWeight="Bold"
+                                               TextWrapping="Wrap"/>
+                                    <TextBlock x:Name="SalaryCalculationDetails" 
+                                               Text="" 
+                                               Foreground="LightGray" 
+                                               FontSize="11"
+                                               TextWrapping="Wrap"
+                                               Margin="0,5,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Staff Salary Records -->
+                <Border Style="{StaticResource HeaderBorderStyle}" Margin="0,10,0,0">
+                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Staff Salary Records"/>
+                </Border>
+
+                <Border Margin="0,10,0,10" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1" MaxHeight="200">
+                    <DataGrid x:Name="StaffSalaryGrid"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              Background="#4F4F4F"
+                              Foreground="White"
+                              GridLinesVisibility="All"
+                              BorderBrush="Black"
+                              BorderThickness="1"
+                              HeadersVisibility="Column"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              RowHeight="35"
+                              ColumnHeaderHeight="40"
+                              FontSize="12"
+                              AlternatingRowBackground="#5A5A5A"
+                              SelectionChanged="StaffSalaryGrid_SelectionChanged">
+
+                        <!-- Column Header Styling -->
+                        <DataGrid.ColumnHeaderStyle>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Background" Value="#2D2D2D"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter Property="BorderBrush" Value="Black"/>
+                                <Setter Property="BorderThickness" Value="0.5"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                <Setter Property="Padding" Value="5"/>
+                            </Style>
+                        </DataGrid.ColumnHeaderStyle>
+
+                        <!-- Cell Styling -->
+                        <DataGrid.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="BorderBrush" Value="Black"/>
+                                <Setter Property="BorderThickness" Value="0.5"/>
+                                <Setter Property="Padding" Value="5,2"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#6A6A6A"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="BorderBrush" Value="#4AA902"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.CellStyle>
+
+                        <!-- Row Styling -->
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Setter Property="Background" Value="#4F4F4F"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#6A6A6A"/>
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#5A5A5A"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Staff ID" Binding="{Binding staffID}" Width="80" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Name" Binding="{Binding name}" Width="150" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Role" Binding="{Binding Role}" Width="120" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Monthly Salary" Binding="{Binding salary, StringFormat='R {0:N2}'}" Width="120" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Username" Binding="{Binding userName}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Last Modified" Binding="{Binding lastModified}" Width="120" IsReadOnly="True"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+
                 <!-- Expense Breakdown -->
                 <Border Style="{StaticResource HeaderBorderStyle}" Margin="0,10,0,0">
                     <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Expense Breakdown"/>
@@ -314,6 +590,7 @@
                         </DataGrid.Columns>
                     </DataGrid>
                 </Border>
+
                 <!-- Financial Overview -->
                 <Border Style="{StaticResource HeaderBorderStyle}">
                     <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Financial Overview"/>
@@ -358,8 +635,7 @@
                                 </lvc:PieChart>
                             </StackPanel>
                         </Border>
-                        
-                        
+
                         <!-- Line Chart - ENLARGED -->
                         <Border Style="{StaticResource ChartBorderStyle}">
                             <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
@@ -634,6 +910,7 @@
                         </DataGrid.Columns>
                     </DataGrid>
                 </Border>
+
                 <!-- Action Buttons -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
                     <Button Content="Refresh Data" Width="120" Height="40"
