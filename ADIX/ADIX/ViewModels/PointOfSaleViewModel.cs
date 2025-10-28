@@ -172,7 +172,7 @@ namespace ADIX.ViewModels
                 _repository.AddRefundItems(refundId, itemsToRefund);
 
 
-                Database.ProcessSale(refundId); // This will handle negative quantities for returns
+               //Database.ProcessSale(refundId); // This will handle negative quantities for returns
 
                 MessageBox.Show($"Refund processed successfully!\nRefund #: {refundId}\nRefund Amount: R {Math.Abs(TotalBill):F2}",
                     "Refund Success", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -479,6 +479,18 @@ namespace ADIX.ViewModels
         {
             try
             {
+
+                var currentQuantities = new Dictionary<int, int>();
+                var currentDiscounts = new Dictionary<int, decimal>();
+
+                foreach (var item in CartItems)
+                {
+                    if (item.Quantity > 0)
+                    {
+                        currentQuantities[item.ItemID] = item.Quantity;
+                        currentDiscounts[item.ItemID] = item.ItemDiscount;
+                    }
+                }
                 // Clear existing items
                 CartItems.Clear();
 
@@ -487,6 +499,16 @@ namespace ADIX.ViewModels
 
                 foreach (var item in items)
                 {
+                    if (currentQuantities.ContainsKey(item.ItemID))
+                    {
+                        item.Quantity = currentQuantities[item.ItemID];
+                        item.ItemDiscount = currentDiscounts[item.ItemID];
+                    }
+                    else
+                    {
+                        item.Quantity = 0;
+                        item.ItemDiscount = 0;
+                    }
                     item.PropertyChanged += CartItem_PropertyChanged;
                     CartItems.Add(item);
                 }
@@ -537,7 +559,7 @@ namespace ADIX.ViewModels
                 _repository.AddInvoiceItems(invoiceId, itemsToAdd);
 
 
-                Database.ProcessSale(invoiceId);
+                //Database.ProcessSale(invoiceId);
 
                 MessageBox.Show($"Sale completed successfully!\nInvoice #: {invoiceId}\nTotal: R {TotalBill:F2}",
                     "Success", MessageBoxButton.OK, MessageBoxImage.Information);

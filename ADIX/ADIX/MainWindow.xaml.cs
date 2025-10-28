@@ -124,9 +124,7 @@ namespace ADIX
                     var inventoryPage = new Inventory();
                     MainFrame.Navigate(inventoryPage);
                     break;
-                case "Products":
-                    MainFrame.Navigate(new Products());
-                    break;
+                
                 case "Suppliers":
                     MainFrame.Navigate(new SupplierPage());
                     break;
