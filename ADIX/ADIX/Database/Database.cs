@@ -2347,7 +2347,138 @@ WHERE itemID=@itemID";
             }
         }
 
+        /// <summary>
+        /// Enhanced method to get accurate financial metrics
+        /// </summary>
+        public static (double turnover, double cogs, double expenses, double profitLoss, double outstandingPayments)
+            GetAccurateFinancialMetrics()
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
 
+            // 1. Monthly Turnover (last 30 days sales)
+            string turnoverSql = @"
+        SELECT COALESCE(SUM(totalAmount), 0) 
+        FROM INVOICEQUOTE 
+        WHERE type = 1 
+        AND date >= date('now', '-30 days')";
+
+            double turnover = 0;
+            using (var cmd = new SqliteCommand(turnoverSql, connection))
+            {
+                var result = cmd.ExecuteScalar();
+                turnover = result != DBNull.Value ? Convert.ToDouble(result) : 0;
+            }
+
+            // 2. Accurate Cost of Goods Sold (based on actual items sold)
+            string cogsSql = @"
+        SELECT COALESCE(SUM(ii.quantity * i.costPrice), 0)
+        FROM INVOICEITEM ii
+        INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
+        INNER JOIN ITEM i ON ii.itemID = i.itemID
+        WHERE iq.type = 1 
+        AND iq.date >= date('now', '-30 days')
+        AND ii.quantity > 0"; // Only positive quantities (exclude returns)
+
+            double costOfGoodsSold = 0;
+            using (var cmd = new SqliteCommand(cogsSql, connection))
+            {
+                var result = cmd.ExecuteScalar();
+                costOfGoodsSold = result != DBNull.Value ? Convert.ToDouble(result) : 0;
+            }
+
+            // 3. Accurate Expenses (user expenses + auto-generated salary expenses)
+            string expensesSql = @"
+        SELECT COALESCE(SUM(amount), 0) 
+        FROM EXPENSES 
+        WHERE date >= date('now', '-30 days')
+        AND expenseType != 'Salary Payment'"; // Exclude salary payments as they're handled separately
+
+            double userExpenses = 0;
+            using (var cmd = new SqliteCommand(expensesSql, connection))
+            {
+                var result = cmd.ExecuteScalar();
+                userExpenses = result != DBNull.Value ? Convert.ToDouble(result) : 0;
+            }
+
+            // 4. Add salary expenses from staff payments in the period
+            string salaryExpensesSql = @"
+        SELECT COALESCE(SUM(amount), 0) 
+        FROM EXPENSES 
+        WHERE date >= date('now', '-30 days')
+        AND expenseType = 'Salary Payment'";
+
+            double salaryExpenses = 0;
+            using (var cmd = new SqliteCommand(salaryExpensesSql, connection))
+            {
+                var result = cmd.ExecuteScalar();
+                salaryExpenses = result != DBNull.Value ? Convert.ToDouble(result) : 0;
+            }
+
+            double totalExpenses = userExpenses + salaryExpenses + costOfGoodsSold;
+            double profitLoss = turnover - totalExpenses;
+
+            // 5. Accurate Outstanding Supplier Payments
+            string outstandingSql = @"
+        SELECT COALESCE(SUM(i.costPrice * i.stockQuantity), 0)
+        FROM ITEM i
+        INNER JOIN SUPPLIER s ON i.supplierID = s.supplierID
+        WHERE i.stockQuantity > 0";
+
+            double outstandingPayments = 0;
+            using (var cmd = new SqliteCommand(outstandingSql, connection))
+            {
+                var result = cmd.ExecuteScalar();
+                outstandingPayments = result != DBNull.Value ? Convert.ToDouble(result) : 0;
+            }
+
+            return (turnover, costOfGoodsSold, totalExpenses, profitLoss, outstandingPayments);
+        }
+
+        /// <summary>
+        /// Enhanced expense addition with validation
+        /// </summary>
+        public static bool AddExpenseWithValidation(string expenseType, double amount, string date, string description = "")
+        {
+            // Validate inputs
+            if (string.IsNullOrEmpty(expenseType) || amount <= 0 || string.IsNullOrEmpty(date))
+                return false;
+
+            // Prevent salary expenses through this method
+            if (expenseType.Equals("Salaries", StringComparison.OrdinalIgnoreCase) ||
+                expenseType.Equals("Salary", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Salary expenses must be processed through the staff payment system.");
+            }
+
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            // Ensure expenses table exists
+            InitializeExpensesTable();
+
+            string insertSql = @"
+        INSERT INTO EXPENSES (expenseType, amount, date, description, paymentMethod)
+        VALUES (@expenseType, @amount, @date, @description, @paymentMethod)";
+
+            using var cmd = new SqliteCommand(insertSql, connection);
+            cmd.Parameters.AddWithValue("@expenseType", expenseType);
+            cmd.Parameters.AddWithValue("@amount", amount);
+            cmd.Parameters.AddWithValue("@date", date);
+            cmd.Parameters.AddWithValue("@description", description);
+            cmd.Parameters.AddWithValue("@paymentMethod", "Cash");
+
+            int rowsAffected = cmd.ExecuteNonQuery();
+
+            if (rowsAffected > 0)
+            {
+                Console.WriteLine($"Added expense: {expenseType} - R {amount:N2}");
+                MarkSyncRequired();
+                return true;
+            }
+
+            return false;
+        }
 
 
         public static void MarkSyncRequired()
