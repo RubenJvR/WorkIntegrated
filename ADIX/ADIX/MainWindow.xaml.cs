@@ -26,6 +26,8 @@ namespace ADIX
                 // Initialize database
                 await Database.InitializeAsync();
 
+                SidebarControl.ApplyRoleBasedRestrictions();
+
                 // Perform comprehensive sync to get all missing data
                 if (Database.IsInternetAvailable())
                 {
@@ -79,19 +81,29 @@ namespace ADIX
             // Adjust sidebar width when collapsed/expanded
             if (isCollapsed)
             {
-                SidebarColumn.Width = new GridLength(80); // Slightly wider for icons
+                SidebarColumn.Width = new GridLength(80); 
             }
             else
             {
-                SidebarColumn.Width = new GridLength(220); // Expanded width
+                SidebarColumn.Width = new GridLength(220); 
             }
         }
 
         private async void NavigateToPage(string pageName)
         {
+
+            if (!UserSession.IsAdmin && !IsAllowedPageForNonAdmin(pageName))
+            {
+                MessageBox.Show($"Access Denied: You don't have permission to access {pageName}.\n\nPlease contact an administrator.",
+                               "Access Denied",
+                               MessageBoxButton.OK,
+                               MessageBoxImage.Warning);
+                return;
+            }
+
             SidebarControl.SetActivePage(pageName);
 
-            // Perform lightweight data sync (no popups)
+            // Perform lightweight data sync
             if (Database.IsInternetAvailable())
             {
                 try
@@ -115,12 +127,18 @@ namespace ADIX
                 "Finance" => new Finance(),
                 "MonthlyReport" => new MonthlyReport(),
                 "Sales" => new Sales(),
+                "Staff" => new ADIX.Pages.Staff(),
                 _ => new Dashboard()
             };
 
             MainFrame.Navigate(targetPage);
         }
-
+        private bool IsAllowedPageForNonAdmin(string pageName)
+        {
+            // Define which pages non-admin users can access
+            var allowedPages = new[] { "Dashboard", "POS", "Inventory" };
+            return allowedPages.Contains(pageName);
+        }
         private void SidebarControl_Loaded(object sender, RoutedEventArgs e)
         {
             // Optional: Any sidebar initialization code
