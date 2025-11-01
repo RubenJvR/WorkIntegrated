@@ -1,17 +1,23 @@
-﻿using System;
-using System.Data;
-using System.Windows;
-using System.Windows.Controls;
+﻿using LiveCharts;
+using LiveCharts.Defaults;
+using LiveCharts.Wpf;
+using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Media;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using LiveCharts;
-using LiveCharts.Wpf;
-using LiveCharts.Defaults;
+using System.Data;
+using System.Data.Common;
 using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net.NetworkInformation;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Media;
 
 namespace ADIX
 {
@@ -90,7 +96,7 @@ namespace ADIX
             {
                 MessageBox.Show($"Error loading finance data: {ex.Message}\n\nPlease ensure the database is properly initialized.");
                 UpdateStatus("Error loading data - check database connection");
-                SetDefaultMetrics();
+                SetDefaultMetricsFromDatabase();
             }
         }
 
@@ -130,7 +136,7 @@ namespace ADIX
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading financial metrics: {ex.Message}");
-                SetDefaultMetrics();
+                SetDefaultMetricsFromDatabase();
             }
         }
 
@@ -146,12 +152,12 @@ namespace ADIX
                     expenseData.Columns.Add("Status", typeof(string));
                 }
 
-                // Proper payment status logic
+                // Use actual dates from database for status calculation
                 foreach (DataRow row in expenseData.Rows)
                 {
                     if (row["Date"] != DBNull.Value && DateTime.TryParse(row["Date"].ToString(), out DateTime expenseDate))
                     {
-                        // Real business logic for payment status
+                        // Use actual expense date from database for status
                         if (expenseDate > DateTime.Now)
                         {
                             row["Status"] = "Scheduled";
@@ -171,12 +177,17 @@ namespace ADIX
                     }
                     else
                     {
+                        // If no date, use current date
                         row["Status"] = "Pending";
+                        if (row["Date"] == DBNull.Value)
+                        {
+                            row["Date"] = DateTime.Today.ToString("yyyy-MM-dd");
+                        }
                     }
                 }
 
                 ExpenseGrid.ItemsSource = expenseData.DefaultView;
-                UpdateStatus($"Loaded {expenseData.Rows.Count} expense records");
+                UpdateStatus($"Loaded {expenseData.Rows.Count} expense records with actual dates");
             }
             catch (Exception ex)
             {
@@ -248,16 +259,21 @@ namespace ADIX
             {
                 salaryPaymentHistory = Database.GetSalaryPaymentHistory();
 
-                // Ensure all columns are properly populated
+                // Ensure all columns are properly populated and dates are accurate
                 foreach (DataRow row in salaryPaymentHistory.Rows)
                 {
-                    // Make sure PaymentDate is properly formatted
+                    // Make sure PaymentDate is properly formatted using actual dates
                     if (row["PaymentDate"] != DBNull.Value)
                     {
                         if (DateTime.TryParse(row["PaymentDate"].ToString(), out DateTime paymentDate))
                         {
                             row["PaymentDate"] = paymentDate.ToString("yyyy-MM-dd");
                         }
+                    }
+                    else
+                    {
+                        // Use current date if no payment date exists
+                        row["PaymentDate"] = DateTime.Today.ToString("yyyy-MM-dd");
                     }
 
                     // Ensure Status is populated for salary payments
@@ -269,8 +285,7 @@ namespace ADIX
                 }
 
                 SalaryPaymentHistoryGrid.ItemsSource = salaryPaymentHistory.DefaultView;
-
-                UpdateStatus($"Loaded {salaryPaymentHistory.Rows.Count} salary payment records");
+                UpdateStatus($"Loaded {salaryPaymentHistory.Rows.Count} salary payment records with actual dates");
             }
             catch (Exception ex)
             {
@@ -287,7 +302,7 @@ namespace ADIX
                 // Check if we have data
                 if (staffData != null && staffData.Rows.Count > 0)
                 {
-                    // Ensure lastModified dates are properly formatted
+                    // Ensure lastModified dates are properly formatted using actual dates
                     foreach (DataRow row in staffData.Rows)
                     {
                         if (row["lastModified"] != DBNull.Value)
@@ -296,6 +311,11 @@ namespace ADIX
                             {
                                 row["lastModified"] = lastModified.ToString("yyyy-MM-dd HH:mm:ss");
                             }
+                        }
+                        else
+                        {
+                            // Use current date if no modification date
+                            row["lastModified"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                         }
                     }
 
@@ -322,8 +342,7 @@ namespace ADIX
                     }
 
                     StaffSelectionComboBox.SelectedIndex = -1;
-
-                    UpdateStatus($"Loaded {staffData.Rows.Count} staff records");
+                    UpdateStatus($"Loaded {staffData.Rows.Count} staff records with actual data");
                 }
                 else
                 {
@@ -338,7 +357,6 @@ namespace ADIX
 
                     StaffSalaryGrid.ItemsSource = staffData.DefaultView;
                     StaffSelectionComboBox.Items.Clear();
-
                     UpdateStatus("No staff records found in database");
                 }
             }
@@ -573,7 +591,7 @@ namespace ADIX
                 paymentData.Columns.Add("Status", typeof(string));
                 paymentData.Columns.Add("PaymentMethod", typeof(string));
 
-                // Get actual supplier payment data based on stock received
+                // Get actual supplier payment data based on stock received with proper dates
                 string supplierSql = @"
                     SELECT 
                         s.name as SupplierName,
@@ -584,41 +602,43 @@ namespace ADIX
                         i.stockRecieved as StockReceived,
                         i.stockSold,
                         i.stockQuantity,
-                        i.lastModified
+                        i.lastModified as StockReceivedDate
                     FROM SUPPLIER s
                     INNER JOIN ITEM i ON s.supplierID = i.supplierID
                     WHERE i.stockRecieved > 0
-                    ORDER BY s.name";
+                    ORDER BY i.lastModified DESC, s.name";
 
                 using (var cmd = new SqliteCommand(supplierSql, connection))
                 using (var reader = cmd.ExecuteReader())
                 {
-                    var random = new Random();
                     while (reader.Read())
                     {
                         double costPrice = reader["costPrice"] != DBNull.Value ? Convert.ToDouble(reader["costPrice"]) : 0;
                         int stockReceived = reader["StockReceived"] != DBNull.Value ? Convert.ToInt32(reader["StockReceived"]) : 0;
 
-                        // Use actual last modified date from database
-                        DateTime lastModified = DateTime.Now;
-                        if (reader["lastModified"] != DBNull.Value && DateTime.TryParse(reader["lastModified"].ToString(), out DateTime actualDate))
+                        // Use ACTUAL last modified date from database for invoice date
+                        DateTime stockReceivedDate = DateTime.Now;
+                        if (reader["StockReceivedDate"] != DBNull.Value &&
+                            DateTime.TryParse(reader["StockReceivedDate"].ToString(), out DateTime actualDate))
                         {
-                            lastModified = actualDate;
+                            stockReceivedDate = actualDate;
                         }
 
                         if (stockReceived > 0)
                         {
                             // Calculate payment details based on actual stock received
                             double totalAmount = costPrice * stockReceived;
-                            double amountPaid = totalAmount * 0.7;
-                            double balanceDue = totalAmount - amountPaid;
+
+                            // Get actual payments made to this supplier
+                            double amountPaid = GetSupplierPayments(connection, Convert.ToInt32(reader["supplierID"]));
+                            double balanceDue = Math.Max(0, totalAmount - amountPaid);
 
                             string status = balanceDue <= 0 ? "Paid" : (amountPaid > 0 ? "Partial" : "Pending");
                             string paymentMethod = status == "Paid" ? "EFT" : (status == "Partial" ? "Mixed" : "Pending");
 
-                            // Use actual dates from database with some variance for due dates
-                            DateTime invoiceDate = lastModified;
-                            DateTime dueDate = invoiceDate.AddDays(30);
+                            // Use ACTUAL dates from database
+                            DateTime invoiceDate = stockReceivedDate;
+                            DateTime dueDate = invoiceDate.AddDays(30); // Standard 30-day terms
 
                             paymentData.Rows.Add(
                                 reader["SupplierName"].ToString(),
@@ -639,19 +659,32 @@ namespace ADIX
                 originalSupplierData = paymentData.Copy();
                 SupplierTable.ItemsSource = paymentData.DefaultView;
 
-                // If no data found, show message
-                if (paymentData.Rows.Count == 0)
-                {
-                    UpdateStatus("No supplier payment data found in database");
-                }
-                else
-                {
-                    UpdateStatus($"Loaded {paymentData.Rows.Count} supplier payment records");
-                }
+                UpdateStatus($"Loaded {paymentData.Rows.Count} supplier payment records with actual dates");
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading supplier payments: {ex.Message}");
+            }
+        }
+
+        // Helper method to get actual supplier payments
+        private double GetSupplierPayments(SqliteConnection connection, int supplierID)
+        {
+            try
+            {
+                string paymentSql = @"
+                    SELECT COALESCE(SUM(amount), 0) 
+                    FROM SUPPLIER_PAYMENT 
+                    WHERE supplierID = @supplierID";
+
+                using var cmd = new SqliteCommand(paymentSql, connection);
+                cmd.Parameters.AddWithValue("@supplierID", supplierID);
+                var result = cmd.ExecuteScalar();
+                return result != DBNull.Value ? Convert.ToDouble(result) : 0;
+            }
+            catch
+            {
+                return 0;
             }
         }
 
@@ -665,7 +698,7 @@ namespace ADIX
                 // Get actual expense distribution from database including user-entered expenses
                 var expenseCategories = new Dictionary<string, double>();
 
-                // Get actual salary expenses
+                // Get actual salary expenses from database
                 string salarySql = "SELECT COALESCE(SUM(salary), 0) as TotalSalary FROM STAFF";
                 using (var cmd = new SqliteCommand(salarySql, connection))
                 {
@@ -673,7 +706,7 @@ namespace ADIX
                     expenseCategories["Salaries"] = result != DBNull.Value ? Convert.ToDouble(result) : 0;
                 }
 
-                // Get actual cost of goods sold
+                // Get actual cost of goods sold from database
                 string cogsSql = @"
                     SELECT COALESCE(SUM(ii.quantity * i.costPrice), 0) as COGS
                     FROM INVOICEITEM ii
@@ -688,7 +721,7 @@ namespace ADIX
                     expenseCategories["Cost of Goods"] = result != DBNull.Value ? Convert.ToDouble(result) : 0;
                 }
 
-                // Get user-entered expenses
+                // Get user-entered expenses from database with actual dates
                 string userExpensesSql = @"
                     SELECT expenseType, SUM(amount) as TotalAmount
                     FROM EXPENSES
@@ -720,6 +753,16 @@ namespace ADIX
                     expenseCategories.Remove(key);
                 }
 
+                // If no data found, use database metrics instead of sample data
+                if (expenseCategories.Count == 0)
+                {
+                    var metrics = Database.GetAccurateFinancialMetrics();
+                    if (metrics.cogs > 0)
+                        expenseCategories["Cost of Goods"] = metrics.cogs;
+                    if (metrics.expenses - metrics.cogs > 0)
+                        expenseCategories["Operating Expenses"] = metrics.expenses - metrics.cogs;
+                }
+
                 // Update charts with actual data
                 UpdateChartData(expenseCategories);
             }
@@ -727,80 +770,41 @@ namespace ADIX
             {
                 MessageBox.Show($"Error loading charts: {ex.Message}");
 
-                // Fallback to calculated sample data
-                var sampleExpenses = CalculateSampleExpenses();
-                UpdateChartData(sampleExpenses);
-            }
-        }
-
-        private Dictionary<string, double> CalculateSampleExpenses()
-        {
-            try
-            {
-                using var connection = new SqliteConnection(ConnectionString);
-                connection.Open();
-
-                var expenses = new Dictionary<string, double>
+                // Fallback to database metrics instead of hardcoded sample data
+                try
                 {
-                    ["Salaries"] = GetTotalSalaries(connection),
-                    ["Cost of Goods"] = GetCostOfGoodsSold(connection)
-                };
-
-                // Add user-entered expenses
-                string userExpensesSql = @"
-                    SELECT expenseType, SUM(amount) as TotalAmount
-                    FROM EXPENSES
-                    WHERE date >= date('now', '-30 days')
-                    GROUP BY expenseType";
-
-                using (var cmd = new SqliteCommand(userExpensesSql, connection))
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
+                    var metrics = Database.GetAccurateFinancialMetrics();
+                    var fallbackExpenses = new Dictionary<string, double>();
+                    
+                    if (metrics.cogs > 0)
+                        fallbackExpenses["Cost of Goods"] = metrics.cogs;
+                    if (metrics.expenses - metrics.cogs > 0)
+                        fallbackExpenses["Operating Expenses"] = metrics.expenses - metrics.cogs;
+                    
+                    if (fallbackExpenses.Count > 0)
                     {
-                        string expenseType = reader["expenseType"].ToString();
-                        double amount = Convert.ToDouble(reader["TotalAmount"]);
-                        expenses[expenseType] = amount;
+                        UpdateChartData(fallbackExpenses);
+                    }
+                    else
+                    {
+                        // Final fallback only if database is completely unavailable
+                        var minimalFallback = new Dictionary<string, double>
+                        {
+                            ["No Data Available"] = 1
+                        };
+                        UpdateChartData(minimalFallback);
                     }
                 }
-
-                return expenses;
-            }
-            catch
-            {
-                // Final fallback to hardcoded values
-                return new Dictionary<string, double>
+                catch
                 {
-                    ["Salaries"] = 45000,
-                    ["Cost of Goods"] = 25000,
-                    ["Rent"] = 15000,
-                    ["Utilities"] = 3500,
-                    ["Marketing"] = 5000
-                };
+                    // Absolute final fallback
+                    var minimalFallback = new Dictionary<string, double>
+                    {
+                        ["Database Unavailable"] = 1
+                    };
+                    UpdateChartData(minimalFallback);
+                }
             }
-        }
-
-        private double GetTotalSalaries(SqliteConnection connection)
-        {
-            string sql = "SELECT COALESCE(SUM(salary), 0) FROM STAFF";
-            using var cmd = new SqliteCommand(sql, connection);
-            var result = cmd.ExecuteScalar();
-            return result != DBNull.Value ? Convert.ToDouble(result) : 45000;
-        }
-
-        private double GetCostOfGoodsSold(SqliteConnection connection)
-        {
-            string sql = @"
-                SELECT COALESCE(SUM(ii.quantity * i.costPrice), 0)
-                FROM INVOICEITEM ii
-                INNER JOIN ITEM i ON ii.itemID = i.itemID
-                INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
-                WHERE iq.type = 1 
-                AND iq.date >= date('now', '-30 days')";
-
-            using var cmd = new SqliteCommand(sql, connection);
-            var result = cmd.ExecuteScalar();
-            return result != DBNull.Value ? Convert.ToDouble(result) : 25000;
         }
 
         private void UpdateChartData(Dictionary<string, double> expenseCategories)
@@ -870,6 +874,7 @@ namespace ADIX
                 using var connection = new SqliteConnection(ConnectionString);
                 connection.Open();
 
+                // Get actual turnover data with proper date grouping
                 string query = @"
                     SELECT 
                         strftime('%Y-%m', date) as Month,
@@ -878,38 +883,54 @@ namespace ADIX
                     WHERE type = 1 
                     AND date >= date('now', '-6 months')
                     GROUP BY strftime('%Y-%m', date)
-                    ORDER BY Month DESC
-                    LIMIT 6";
+                    ORDER BY Month";
 
                 using var cmd = new SqliteCommand(query, connection);
                 using var reader = cmd.ExecuteReader();
-
-                var data = new List<KeyValuePair<string, double>>();
 
                 while (reader.Read())
                 {
                     string month = FormatMonthLabel(reader["Month"].ToString());
                     double amount = Convert.ToDouble(reader["MonthlyTurnover"]);
-                    data.Add(new KeyValuePair<string, double>(month, amount));
+                    trendData[month] = amount;
                 }
 
-                // Ensure we have data for last 6 months
+                // Fill in missing months with zero
                 var last6Months = GetLast6Months();
                 foreach (var month in last6Months)
                 {
-                    var existing = data.FirstOrDefault(d => d.Key == month.Key);
-                    trendData[month.Key] = existing.Value != 0 ? existing.Value : 0;
+                    if (!trendData.ContainsKey(month.Key))
+                    {
+                        trendData[month.Key] = 0;
+                    }
                 }
+
+                // Reorder by date
+                trendData = trendData
+                    .OrderBy(x => Array.IndexOf(last6Months.Keys.ToArray(), x.Key))
+                    .ToDictionary(x => x.Key, x => x.Value);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading turnover trend: {ex.Message}");
-                // Fallback to sample data
-                var last6Months = GetLast6Months();
-                var random = new Random();
-                foreach (var month in last6Months)
+                // Fallback: use database financial metrics with actual data
+                try
                 {
-                    trendData[month.Key] = random.Next(40000, 70000);
+                    var metrics = Database.GetAccurateFinancialMetrics();
+                    var last6Months = GetLast6Months();
+                    foreach (var month in last6Months)
+                    {
+                        trendData[month.Key] = metrics.turnover / 6; // Distribute evenly as fallback
+                    }
+                }
+                catch
+                {
+                    // Use zero values as final fallback
+                    var last6Months = GetLast6Months();
+                    foreach (var month in last6Months)
+                    {
+                        trendData[month.Key] = 0;
+                    }
                 }
             }
 
@@ -925,25 +946,24 @@ namespace ADIX
                 using var connection = new SqliteConnection(ConnectionString);
                 connection.Open();
 
+                // Get actual profit/loss data with proper date grouping
                 string query = @"
                     SELECT 
                         strftime('%Y-%m', iq.date) as Month,
                         SUM(iq.totalAmount) as Revenue,
                         SUM(ii.quantity * i.costPrice) as COGS,
-                        (SELECT COALESCE(SUM(amount), 0) FROM EXPENSES WHERE strftime('%Y-%m', date) = strftime('%Y-%m', iq.date)) as OtherExpenses
+                        (SELECT COALESCE(SUM(amount), 0) FROM EXPENSES 
+                         WHERE strftime('%Y-%m', date) = strftime('%Y-%m', iq.date)) as OtherExpenses
                     FROM INVOICEQUOTE iq
                     INNER JOIN INVOICEITEM ii ON iq.invoiceQuoteID = ii.invoiceQuoteID
                     INNER JOIN ITEM i ON ii.itemID = i.itemID
                     WHERE iq.type = 1 
                     AND iq.date >= date('now', '-6 months')
                     GROUP BY strftime('%Y-%m', iq.date)
-                    ORDER BY Month DESC
-                    LIMIT 6";
+                    ORDER BY Month";
 
                 using var cmd = new SqliteCommand(query, connection);
                 using var reader = cmd.ExecuteReader();
-
-                var data = new List<KeyValuePair<string, double>>();
 
                 while (reader.Read())
                 {
@@ -953,26 +973,45 @@ namespace ADIX
                     double otherExpenses = Convert.ToDouble(reader["OtherExpenses"]);
                     double profitLoss = revenue - cogs - otherExpenses;
 
-                    data.Add(new KeyValuePair<string, double>(month, profitLoss));
+                    trendData[month] = profitLoss;
                 }
 
-                // Ensure we have data for last 6 months
+                // Fill in missing months with zero
                 var last6Months = GetLast6Months();
                 foreach (var month in last6Months)
                 {
-                    var existing = data.FirstOrDefault(d => d.Key == month.Key);
-                    trendData[month.Key] = existing.Value != 0 ? existing.Value : 0;
+                    if (!trendData.ContainsKey(month.Key))
+                    {
+                        trendData[month.Key] = 0;
+                    }
                 }
+
+                // Reorder by date
+                trendData = trendData
+                    .OrderBy(x => Array.IndexOf(last6Months.Keys.ToArray(), x.Key))
+                    .ToDictionary(x => x.Key, x => x.Value);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading profit/loss trend: {ex.Message}");
-                // Fallback to sample data
-                var last6Months = GetLast6Months();
-                var random = new Random();
-                foreach (var month in last6Months)
+                // Fallback: use current profit/loss distributed evenly
+                try
                 {
-                    trendData[month.Key] = random.Next(5000, 20000);
+                    var metrics = Database.GetAccurateFinancialMetrics();
+                    var last6Months = GetLast6Months();
+                    foreach (var month in last6Months)
+                    {
+                        trendData[month.Key] = metrics.profitLoss / 6;
+                    }
+                }
+                catch
+                {
+                    // Use zero values as final fallback
+                    var last6Months = GetLast6Months();
+                    foreach (var month in last6Months)
+                    {
+                        trendData[month.Key] = 0;
+                    }
                 }
             }
 
@@ -1001,12 +1040,34 @@ namespace ADIX
             return monthString;
         }
 
-        private void SetDefaultMetrics()
+        private void SetDefaultMetricsFromDatabase()
         {
-            MonthlyTurnover.Text = "Monthly Turnover\nR 65,000.00";
-            MonthlyExpense.Text = "Monthly Expense\nR 48,500.00";
-            ProfitLoss.Text = "Profit\nR 16,500.00";
-            OutstandingSuppPayment.Text = "Outstanding Payments\nR 12,750.00";
+            try
+            {
+                // Try to get actual metrics from database first
+                var metrics = Database.GetAccurateFinancialMetrics();
+                MonthlyTurnover.Text = $"Monthly Turnover\nR {metrics.turnover:N2}";
+                MonthlyExpense.Text = $"Monthly Expense\nR {metrics.expenses:N2}";
+                
+                if (metrics.profitLoss >= 0)
+                {
+                    ProfitLoss.Text = $"Profit\nR {metrics.profitLoss:N2}";
+                }
+                else
+                {
+                    ProfitLoss.Text = $"Loss\nR {Math.Abs(metrics.profitLoss):N2}";
+                }
+                
+                OutstandingSuppPayment.Text = $"Outstanding Payments\nR {metrics.outstandingPayments:N2}";
+            }
+            catch
+            {
+                // Only use hardcoded values as absolute last resort
+                MonthlyTurnover.Text = "Monthly Turnover\nR 0.00";
+                MonthlyExpense.Text = "Monthly Expense\nR 0.00";
+                ProfitLoss.Text = "Profit\nR 0.00";
+                OutstandingSuppPayment.Text = "Outstanding Payments\nR 0.00";
+            }
         }
 
         private void UpdateStatus(string message)
@@ -1137,7 +1198,7 @@ namespace ADIX
                 LoadStaffSalaries();
                 LoadSalaryPaymentHistory();
                 LoadCharts();
-                UpdateStatus("Data refreshed successfully");
+                UpdateStatus("Data refreshed successfully from database");
             }
             catch (Exception ex)
             {
@@ -1151,5 +1212,20 @@ namespace ADIX
             MessageBox.Show("PDF export functionality would be implemented here.\n\nThis would generate a comprehensive financial report including all metrics, charts, and supplier payment details.", "Export to PDF", MessageBoxButton.OK, MessageBoxImage.Information);
             UpdateStatus("PDF export initiated - feature under development");
         }
+
+        public class NullToVisibilityConverter : IValueConverter
+        {
+            public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+            {
+                return value == null ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+            {
+                throw new NotImplementedException();
+            }
+        }
     }
+
+
 }
