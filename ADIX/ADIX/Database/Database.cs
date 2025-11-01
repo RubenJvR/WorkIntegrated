@@ -197,10 +197,10 @@ namespace ADIX
                     {
                         // This item exists in Azure but not locally - download it
                         var insertSql = @"
-INSERT INTO ITEM 
-(itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified, minimumStock)
-VALUES 
-(@itemID, @sku, @itemGroup, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified, @minimumStock)";
+                        INSERT INTO ITEM 
+                        (itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified, minimumStock)
+                        VALUES 
+                        (@itemID, @sku, @itemGroup, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified, @minimumStock)";
                         using var cmd = new SqliteCommand(insertSql, sqliteConn);
                         cmd.Parameters.AddWithValue("@itemID", itemId);
                         cmd.Parameters.AddWithValue("@sku", azureRow["sku"] == DBNull.Value ? (object)DBNull.Value : azureRow["sku"]);
@@ -262,6 +262,7 @@ VALUES
 
             if (result == null)
             {
+           
                 CreateSQLiteTables(connection);
                 InsertTestDataSQLite(connection);
             }
@@ -430,7 +431,15 @@ VALUES
             FOREIGN KEY(invoiceQuoteID) REFERENCES INVOICEQUOTE(invoiceQuoteID),
             FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
         );
-
+    CREATE TABLE IF NOT EXISTS EXPENSES(
+                expenseID INTEGER PRIMARY KEY AUTOINCREMENT,
+                expenseType TEXT NOT NULL,
+                amount REAL NOT NULL,
+                date TEXT NOT NULL,
+                description TEXT,
+                paymentMethod TEXT DEFAULT 'Cash',
+                lastModified TEXT DEFAULT CURRENT_TIMESTAMP
+            );
         CREATE TABLE IF NOT EXISTS SYNC_LOG(
             syncLogID INTEGER PRIMARY KEY AUTOINCREMENT,
             tableName TEXT NOT NULL,
@@ -547,6 +556,15 @@ VALUES
             FOREIGN KEY(invoiceQuoteID) REFERENCES INVOICEQUOTE(invoiceQuoteID),
             FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
         );
+        CREATE TABLE EXPENSES (
+            expenseID INT IDENTITY(1,1) PRIMARY KEY,
+            expenseType NVARCHAR(100) NOT NULL,
+            amount FLOAT NOT NULL,
+            date DATETIME NOT NULL,
+            description NVARCHAR(500),
+            paymentMethod NVARCHAR(50) DEFAULT 'Cash',
+            lastModified DATETIME DEFAULT GETUTCDATE()
+)
 
         CREATE INDEX idx_item_supplier ON ITEM(supplierID);
         CREATE INDEX idx_item_seller ON ITEM(sellerID);
@@ -791,7 +809,7 @@ VALUES
             SyncMasterData(sqliteConn, azureConn, "SUPPLIER", new[] { "supplierID", "name", "contactInfo", "address", "lastModified" });
             SyncMasterData(sqliteConn, azureConn, "CUSTOMER", new[] { "customerID", "name", "phone", "email", "credit", "lastModified" });
             SyncMasterData(sqliteConn, azureConn, "STAFF", new[] { "staffID", "name", "Role", "userName", "passwordHash", "salary", "lastModified" });
-
+            SyncExpenses(sqliteConn, azureConn);
             // Step 2: DOWNLOAD MISSING ITEMS FROM AZURE FIRST
             DownloadMissingItemsFromAzure(sqliteConn, azureConn);
 
@@ -866,7 +884,159 @@ VALUES
 
             Console.WriteLine("Comprehensive data sync completed successfully.");
         }
+        private static void SyncExpenses(SqliteConnection sqliteConn, SqlConnection azureConn)
+        {
+            try
+            {
+                Console.WriteLine("[EXPENSES] Starting expense sync...");
 
+                // Get local expenses
+                var localExpenses = GetTableData(sqliteConn, "EXPENSES",
+                    new[] { "expenseID", "expenseType", "amount", "date", "description", "paymentMethod", "lastModified" });
+
+                // Get Azure expenses
+                var azureExpenses = GetTableDataFromAzure(azureConn, "EXPENSES",
+                    new[] { "expenseID", "expenseType", "amount", "date", "description", "paymentMethod", "lastModified" });
+
+                using var transaction = azureConn.BeginTransaction();
+                try
+                {
+                    // Upload local expenses to Azure
+                    foreach (DataRow localRow in localExpenses.Rows)
+                    {
+                        var expenseID = Convert.ToInt32(localRow["expenseID"]);
+                        var localModified = DateTime.Parse(localRow["lastModified"].ToString());
+
+                        var azureRow = azureExpenses.AsEnumerable()
+                            .FirstOrDefault(r => r["expenseID"].ToString() == expenseID.ToString());
+
+                        if (azureRow == null)
+                        {
+                            // New expense - insert to Azure
+                            var insertSql = @"
+                                SET IDENTITY_INSERT EXPENSES ON;
+                                INSERT INTO EXPENSES (expenseID, expenseType, amount, date, description, paymentMethod, lastModified)
+                                VALUES (@expenseID, @expenseType, @amount, @date, @description, @paymentMethod, @lastModified);
+                                SET IDENTITY_INSERT EXPENSES OFF;";
+
+                            using var cmd = new SqlCommand(insertSql, azureConn, transaction);
+                            cmd.Parameters.AddWithValue("@expenseID", expenseID);
+                            cmd.Parameters.AddWithValue("@expenseType", localRow["expenseType"]);
+                            cmd.Parameters.AddWithValue("@amount", localRow["amount"]);
+                            cmd.Parameters.AddWithValue("@date", localRow["date"]);
+                            cmd.Parameters.AddWithValue("@description", localRow["description"] == DBNull.Value ? (object)DBNull.Value : localRow["description"]);
+                            cmd.Parameters.AddWithValue("@paymentMethod", localRow["paymentMethod"] == DBNull.Value ? "Cash" : localRow["paymentMethod"]);
+                            cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
+                            cmd.ExecuteNonQuery();
+
+                            Console.WriteLine($"[EXPENSES] Uploaded new expense {expenseID} to Azure");
+                        }
+                        else
+                        {
+                            // Expense exists - check which is newer
+                            var azureModified = DateTime.Parse(azureRow["lastModified"].ToString());
+
+                            if (localModified > azureModified)
+                            {
+                                // Local is newer - update Azure
+                                var updateSql = @"
+                                    UPDATE EXPENSES 
+                                    SET expenseType=@expenseType, amount=@amount, date=@date, 
+                                        description=@description, paymentMethod=@paymentMethod, 
+                                        lastModified=@lastModified
+                                    WHERE expenseID=@expenseID";
+
+                                using var cmd = new SqlCommand(updateSql, azureConn, transaction);
+                                cmd.Parameters.AddWithValue("@expenseID", expenseID);
+                                cmd.Parameters.AddWithValue("@expenseType", localRow["expenseType"]);
+                                cmd.Parameters.AddWithValue("@amount", localRow["amount"]);
+                                cmd.Parameters.AddWithValue("@date", localRow["date"]);
+                                cmd.Parameters.AddWithValue("@description", localRow["description"] == DBNull.Value ? (object)DBNull.Value : localRow["description"]);
+                                cmd.Parameters.AddWithValue("@paymentMethod", localRow["paymentMethod"] == DBNull.Value ? "Cash" : localRow["paymentMethod"]);
+                                cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
+                                cmd.ExecuteNonQuery();
+
+                                Console.WriteLine($"[EXPENSES] Updated expense {expenseID} in Azure (local newer)");
+                            }
+                        }
+                    }
+
+                    transaction.Commit();
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    throw new Exception($"Failed to upload expenses to Azure: {ex.Message}", ex);
+                }
+
+                // Download expenses from Azure to Local
+                Console.WriteLine("[EXPENSES] Downloading changes from Azure to Local...");
+
+                foreach (DataRow azureRow in azureExpenses.Rows)
+                {
+                    var expenseID = Convert.ToInt32(azureRow["expenseID"]);
+                    var azureModified = DateTime.Parse(azureRow["lastModified"].ToString());
+
+                    var localRow = localExpenses.AsEnumerable()
+                        .FirstOrDefault(r => r["expenseID"].ToString() == expenseID.ToString());
+
+                    if (localRow == null)
+                    {
+                        // New expense from Azure - insert to local
+                        var insertLocalSql = @"
+                            INSERT INTO EXPENSES (expenseID, expenseType, amount, date, description, paymentMethod, lastModified)
+                            VALUES (@expenseID, @expenseType, @amount, @date, @description, @paymentMethod, @lastModified)";
+
+                        using var cmd = new SqliteCommand(insertLocalSql, sqliteConn);
+                        cmd.Parameters.AddWithValue("@expenseID", expenseID);
+                        cmd.Parameters.AddWithValue("@expenseType", azureRow["expenseType"]);
+                        cmd.Parameters.AddWithValue("@amount", azureRow["amount"]);
+                        cmd.Parameters.AddWithValue("@date", azureRow["date"]);
+                        cmd.Parameters.AddWithValue("@description", azureRow["description"] == DBNull.Value ? (object)DBNull.Value : azureRow["description"]);
+                        cmd.Parameters.AddWithValue("@paymentMethod", azureRow["paymentMethod"] == DBNull.Value ? "Cash" : azureRow["paymentMethod"]);
+                        cmd.Parameters.AddWithValue("@lastModified", azureRow["lastModified"]);
+                        cmd.ExecuteNonQuery();
+
+                        Console.WriteLine($"[EXPENSES] Downloaded new expense {expenseID} from Azure");
+                    }
+                    else
+                    {
+                        // Expense exists - check which is newer
+                        var localModified = DateTime.Parse(localRow["lastModified"].ToString());
+
+                        if (azureModified > localModified)
+                        {
+                            // Azure is newer - update local
+                            var updateLocalSql = @"
+                                UPDATE EXPENSES 
+                                SET expenseType=@expenseType, amount=@amount, date=@date, 
+                                    description=@description, paymentMethod=@paymentMethod, 
+                                    lastModified=@lastModified
+                                WHERE expenseID=@expenseID";
+
+                            using var cmd = new SqliteCommand(updateLocalSql, sqliteConn);
+                            cmd.Parameters.AddWithValue("@expenseID", expenseID);
+                            cmd.Parameters.AddWithValue("@expenseType", azureRow["expenseType"]);
+                            cmd.Parameters.AddWithValue("@amount", azureRow["amount"]);
+                            cmd.Parameters.AddWithValue("@date", azureRow["date"]);
+                            cmd.Parameters.AddWithValue("@description", azureRow["description"] == DBNull.Value ? (object)DBNull.Value : azureRow["description"]);
+                            cmd.Parameters.AddWithValue("@paymentMethod", azureRow["paymentMethod"] == DBNull.Value ? "Cash" : azureRow["paymentMethod"]);
+                            cmd.Parameters.AddWithValue("@lastModified", azureRow["lastModified"]);
+                            cmd.ExecuteNonQuery();
+
+                            Console.WriteLine($"[EXPENSES] Updated local expense {expenseID} from Azure (Azure newer)");
+                        }
+                    }
+                }
+
+                Console.WriteLine("[EXPENSES] Expense sync completed successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EXPENSES] Error syncing expenses: {ex.Message}");
+                throw;
+            }
+        }
         private static void DownloadAllMissingMasterData(SqliteConnection sqliteConn, SqlConnection azureConn)
         {
             var masterTables = new[]
