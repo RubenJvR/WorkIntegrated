@@ -25,11 +25,24 @@ namespace ADIX
             }
             else
             {
-                _deviceId = Guid.NewGuid().ToString("N").Substring(0, 8); // Short unique ID
+                _deviceId = Guid.NewGuid().ToString("N").Substring(0, 8); 
                 File.WriteAllText(deviceIdFile, _deviceId);
             }
 
             Console.WriteLine($"Device ID: {_deviceId}");
+        }
+        internal static string GetUserRole(string username)
+        {
+            using var conn = new SqliteConnection(SqliteConnectionString);
+            conn.Open();
+
+            string query = "SELECT Role FROM STAFF WHERE username = @username";
+
+            using var cmd = new SqliteCommand(query, conn);
+            cmd.Parameters.AddWithValue("@username", username);
+
+            var result = cmd.ExecuteScalar();
+            return result?.ToString() ?? "Staff"; 
         }
 
         private const string SqliteConnectionString = "Data Source=ADIX.db";
@@ -318,6 +331,8 @@ namespace ADIX
         private static void CreateSQLiteTables(SqliteConnection connection)
         {
             string createTablesSql = @"
+
+
         CREATE TABLE IF NOT EXISTS SELLER(
             sellerID INTEGER NOT NULL PRIMARY KEY,
             name TEXT NOT NULL,
@@ -342,22 +357,24 @@ namespace ADIX
         );
 
         CREATE TABLE IF NOT EXISTS ITEM(
-            itemID INTEGER NOT NULL PRIMARY KEY,
-            sku INTEGER,
-            itemGroup TEXT,
-            description TEXT NOT NULL,
-            retailPrice REAL NOT NULL CHECK(retailPrice >= 0),
-            costPrice REAL NOT NULL CHECK(costPrice >= 0),
-            stockQuantity INTEGER NOT NULL DEFAULT 0 CHECK(stockQuantity >= 0),
-            stockRecieved INTEGER NOT NULL,
-            stockSold INTEGER NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
-            minimumStock INTEGER NOT NULL DEFAULT 0,
-            supplierID INTEGER,
-            sellerID INTEGER,
-            lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
-            FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
-        );
+        itemID INTEGER NOT NULL PRIMARY KEY,
+        sku INTEGER,
+        itemGroup TEXT,
+        description TEXT NOT NULL,
+        retailPrice REAL NOT NULL CHECK(retailPrice >= 0),
+        costPrice REAL NOT NULL CHECK(costPrice >= 0),
+        stockQuantity INTEGER NOT NULL DEFAULT 0 CHECK(stockQuantity >= 0),
+        stockRecieved INTEGER NOT NULL,
+        stockSold INTEGER NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
+        minimumStock INTEGER NOT NULL DEFAULT 0,
+        supplierID INTEGER,
+        sellerID INTEGER,
+        lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
+        FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
+    );
+
+
 
         CREATE TABLE IF NOT EXISTS CUSTOMER(
             customerID INTEGER NOT NULL PRIMARY KEY,
@@ -402,6 +419,7 @@ namespace ADIX
             FOREIGN KEY(staffID) REFERENCES STAFF(staffID)
         );
 
+        -- FIXED: No CHECK constraint on quantity to allow negative values for refunds
         CREATE TABLE IF NOT EXISTS INVOICEITEM(
             invoiceItemID INTEGER NOT NULL PRIMARY KEY,
             quantity INTEGER NOT NULL,
@@ -413,17 +431,15 @@ namespace ADIX
             FOREIGN KEY(invoiceQuoteID) REFERENCES INVOICEQUOTE(invoiceQuoteID),
             FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
         );
-
-        CREATE TABLE IF NOT EXISTS EXPENSES(
-            expenseID INTEGER PRIMARY KEY AUTOINCREMENT,
-            expenseType TEXT NOT NULL,
-            amount REAL NOT NULL,
-            date TEXT NOT NULL,
-            description TEXT,
-            paymentMethod TEXT DEFAULT 'Cash',
-            lastModified TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-
+    CREATE TABLE IF NOT EXISTS EXPENSES(
+                expenseID INTEGER PRIMARY KEY AUTOINCREMENT,
+                expenseType TEXT NOT NULL,
+                amount REAL NOT NULL,
+                date TEXT NOT NULL,
+                description TEXT,
+                paymentMethod TEXT DEFAULT 'Cash',
+                lastModified TEXT DEFAULT CURRENT_TIMESTAMP
+            );
         CREATE TABLE IF NOT EXISTS SYNC_LOG(
             syncLogID INTEGER PRIMARY KEY AUTOINCREMENT,
             tableName TEXT NOT NULL,
@@ -431,30 +447,6 @@ namespace ADIX
             operation TEXT NOT NULL,
             syncedToAzure INTEGER DEFAULT 0,
             timestamp TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-
-        -- ADD THE MISSING SUPPLIER PAYMENT TABLES HERE
-        CREATE TABLE IF NOT EXISTS SUPPLIER_PAYMENT (
-            paymentID INTEGER PRIMARY KEY AUTOINCREMENT,
-            supplierID INTEGER NOT NULL,
-            amount DECIMAL(10,2) NOT NULL,
-            paymentDate TEXT NOT NULL,
-            paymentMethod TEXT NOT NULL,
-            referenceNumber TEXT,
-            notes TEXT,
-            lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID)
-        );
-
-        CREATE TABLE IF NOT EXISTS SUPPLIER_PAYMENT_ALLOCATION (
-            allocationID INTEGER PRIMARY KEY AUTOINCREMENT,
-            paymentID INTEGER NOT NULL,
-            itemID INTEGER NOT NULL,
-            quantity INTEGER NOT NULL,
-            amount DECIMAL(10,2) NOT NULL,
-            lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(paymentID) REFERENCES SUPPLIER_PAYMENT(paymentID),
-            FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
         );
 
         CREATE INDEX IF NOT EXISTS idx_item_supplier ON ITEM(supplierID);
@@ -465,12 +457,6 @@ namespace ADIX
         CREATE INDEX IF NOT EXISTS idx_invoiceitem_invoice ON INVOICEITEM(invoiceQuoteID);
         CREATE INDEX IF NOT EXISTS idx_invoiceitem_item ON INVOICEITEM(itemID);
         CREATE INDEX IF NOT EXISTS idx_sync_log_synced ON SYNC_LOG(syncedToAzure);
-        
-        -- ADD INDEXES FOR SUPPLIER PAYMENT TABLES
-        CREATE INDEX IF NOT EXISTS idx_supplier_payment_supplier ON SUPPLIER_PAYMENT(supplierID);
-        CREATE INDEX IF NOT EXISTS idx_supplier_payment_date ON SUPPLIER_PAYMENT(paymentDate);
-        CREATE INDEX IF NOT EXISTS idx_allocation_payment ON SUPPLIER_PAYMENT_ALLOCATION(paymentID);
-        CREATE INDEX IF NOT EXISTS idx_allocation_item ON SUPPLIER_PAYMENT_ALLOCATION(itemID);
     ";
 
             using var cmd = new SqliteCommand(createTablesSql, connection);
@@ -480,6 +466,7 @@ namespace ADIX
         private static void CreateAzureSQLTables(SqlConnection connection)
         {
             string createTablesSql = @"
+
         CREATE TABLE SELLER(
             sellerID INT NOT NULL PRIMARY KEY,
             name NVARCHAR(255) NOT NULL,
@@ -498,22 +485,23 @@ namespace ADIX
         );
 
         CREATE TABLE ITEM(
-            itemID INT NOT NULL PRIMARY KEY,
-            sku INT,
-            itemGroup NVARCHAR(5),
-            description NVARCHAR(500) NOT NULL,
-            retailPrice FLOAT NOT NULL CHECK(retailPrice >= 0),
-            costPrice FLOAT NOT NULL CHECK(costPrice >= 0),
-            stockQuantity INT NOT NULL DEFAULT 0 CHECK(stockQuantity >= 0),
-            stockRecieved INT NOT NULL,
-            stockSold INT NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
-            supplierID INT,
-            sellerID INT,
-            lastModified DATETIME DEFAULT GETUTCDATE(),
-            minimumStock INT NOT NULL DEFAULT 0,
-            FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
-            FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
-        );
+        itemID INT NOT NULL PRIMARY KEY,
+        sku INT,
+        itemGroup NVARCHAR(5),
+        description NVARCHAR(500) NOT NULL,
+        retailPrice FLOAT NOT NULL CHECK(retailPrice >= 0),
+        costPrice FLOAT NOT NULL CHECK(costPrice >= 0),
+        stockQuantity INT NOT NULL DEFAULT 0 CHECK(stockQuantity >= 0),
+        stockRecieved INT NOT NULL,
+        stockSold INT NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
+        supplierID INT,
+        sellerID INT,
+        lastModified DATETIME DEFAULT GETUTCDATE(),
+        minimumStock INT NOT NULL DEFAULT 0,
+        FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
+        FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
+    );
+
 
         CREATE TABLE CUSTOMER(
             customerID INT NOT NULL PRIMARY KEY,
@@ -557,6 +545,7 @@ namespace ADIX
             FOREIGN KEY(staffID) REFERENCES STAFF(staffID)
         );
 
+       
         CREATE TABLE INVOICEITEM(
             invoiceItemID BIGINT NOT NULL PRIMARY KEY,
             quantity INT NOT NULL,
@@ -567,7 +556,6 @@ namespace ADIX
             FOREIGN KEY(invoiceQuoteID) REFERENCES INVOICEQUOTE(invoiceQuoteID),
             FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
         );
-
         CREATE TABLE EXPENSES (
             expenseID INT IDENTITY(1,1) PRIMARY KEY,
             expenseType NVARCHAR(100) NOT NULL,
@@ -576,31 +564,7 @@ namespace ADIX
             description NVARCHAR(500),
             paymentMethod NVARCHAR(50) DEFAULT 'Cash',
             lastModified DATETIME DEFAULT GETUTCDATE()
-        );
-
-        -- ADD THE MISSING SUPPLIER PAYMENT TABLES FOR AZURE SQL
-        CREATE TABLE SUPPLIER_PAYMENT (
-            paymentID INT IDENTITY(1,1) PRIMARY KEY,
-            supplierID INT NOT NULL,
-            amount DECIMAL(10,2) NOT NULL,
-            paymentDate DATETIME NOT NULL,
-            paymentMethod NVARCHAR(50) NOT NULL,
-            referenceNumber NVARCHAR(100),
-            notes NVARCHAR(500),
-            lastModified DATETIME DEFAULT GETUTCDATE(),
-            FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID)
-        );
-
-        CREATE TABLE SUPPLIER_PAYMENT_ALLOCATION (
-            allocationID INT IDENTITY(1,1) PRIMARY KEY,
-            paymentID INT NOT NULL,
-            itemID INT NOT NULL,
-            quantity INT NOT NULL,
-            amount DECIMAL(10,2) NOT NULL,
-            lastModified DATETIME DEFAULT GETUTCDATE(),
-            FOREIGN KEY(paymentID) REFERENCES SUPPLIER_PAYMENT(paymentID),
-            FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
-        );
+)
 
         CREATE INDEX idx_item_supplier ON ITEM(supplierID);
         CREATE INDEX idx_item_seller ON ITEM(sellerID);
@@ -609,153 +573,11 @@ namespace ADIX
         CREATE INDEX idx_invoice_date ON INVOICEQUOTE(date);
         CREATE INDEX idx_invoiceitem_invoice ON INVOICEITEM(invoiceQuoteID);
         CREATE INDEX idx_invoiceitem_item ON INVOICEITEM(itemID);
-        
-        -- ADD INDEXES FOR SUPPLIER PAYMENT TABLES
-        CREATE INDEX idx_supplier_payment_supplier ON SUPPLIER_PAYMENT(supplierID);
-        CREATE INDEX idx_supplier_payment_date ON SUPPLIER_PAYMENT(paymentDate);
-        CREATE INDEX idx_allocation_payment ON SUPPLIER_PAYMENT_ALLOCATION(paymentID);
-        CREATE INDEX idx_allocation_item ON SUPPLIER_PAYMENT_ALLOCATION(itemID);
     ";
 
             using var cmd = new SqlCommand(createTablesSql, connection);
             cmd.ExecuteNonQuery();
         }
-
-
-        /// <summary>
-        /// Safe method to ensure supplier payment tables exist
-        /// </summary>
-        public static void EnsureSupplierPaymentTablesExist()
-        {
-            try
-            {
-                using var connection = new SqliteConnection(SqliteConnectionString);
-                connection.Open();
-
-                // Check if SUPPLIER_PAYMENT table exists
-                string checkTableSql = @"
-            SELECT name FROM sqlite_master 
-            WHERE type='table' AND name='SUPPLIER_PAYMENT'";
-
-                using var checkCmd = new SqliteCommand(checkTableSql, connection);
-                var result = checkCmd.ExecuteScalar();
-
-                if (result == null)
-                {
-                    Console.WriteLine("SUPPLIER_PAYMENT table not found - creating it now");
-
-                    // Create the missing tables
-                    string createPaymentTableSql = @"
-                CREATE TABLE SUPPLIER_PAYMENT (
-                    paymentID INTEGER PRIMARY KEY AUTOINCREMENT,
-                    supplierID INTEGER NOT NULL,
-                    amount DECIMAL(10,2) NOT NULL,
-                    paymentDate TEXT NOT NULL,
-                    paymentMethod TEXT NOT NULL,
-                    referenceNumber TEXT,
-                    notes TEXT,
-                    lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID)
-                );";
-
-                    string createAllocationTableSql = @"
-                CREATE TABLE SUPPLIER_PAYMENT_ALLOCATION (
-                    allocationID INTEGER PRIMARY KEY AUTOINCREMENT,
-                    paymentID INTEGER NOT NULL,
-                    itemID INTEGER NOT NULL,
-                    quantity INTEGER NOT NULL,
-                    amount DECIMAL(10,2) NOT NULL,
-                    lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(paymentID) REFERENCES SUPPLIER_PAYMENT(paymentID),
-                    FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
-                );";
-
-                    using var cmd1 = new SqliteCommand(createPaymentTableSql, connection);
-                    cmd1.ExecuteNonQuery();
-
-                    using var cmd2 = new SqliteCommand(createAllocationTableSql, connection);
-                    cmd2.ExecuteNonQuery();
-
-                    Console.WriteLine("SUPPLIER_PAYMENT tables created successfully");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error ensuring supplier payment tables exist: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Reconcile stock quantities between POS and Supplier calculations
-        /// </summary>
-        public static void ReconcileStockQuantities()
-        {
-            try
-            {
-                using var connection = new SqliteConnection(SqliteConnectionString);
-                connection.Open();
-
-                Console.WriteLine("Starting stock reconciliation...");
-
-                // Get all items
-                string getItemsSql = "SELECT itemID, stockRecieved FROM ITEM";
-                using var getItemsCmd = new SqliteCommand(getItemsSql, connection);
-                using var reader = getItemsCmd.ExecuteReader();
-
-                var itemsToUpdate = new List<(int itemID, int stockReceived)>();
-
-                while (reader.Read())
-                {
-                    int itemID = reader.GetInt32(0);
-                    int stockReceived = reader.GetInt32(1);
-                    itemsToUpdate.Add((itemID, stockReceived));
-                }
-                reader.Close();
-
-                // Recalculate stock for each item based on transactions
-                foreach (var item in itemsToUpdate)
-                {
-                    // Calculate actual sold from invoice items
-                    string soldSql = @"
-                SELECT COALESCE(SUM(ii.quantity), 0) 
-                FROM INVOICEITEM ii
-                INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
-                WHERE ii.itemID = @itemID AND iq.type = 1 AND ii.quantity > 0";
-
-                    using var soldCmd = new SqliteCommand(soldSql, connection);
-                    soldCmd.Parameters.AddWithValue("@itemID", item.itemID);
-                    int totalSold = Convert.ToInt32(soldCmd.ExecuteScalar());
-
-                    // Calculate current stock balance
-                    int currentStock = Math.Max(0, item.stockReceived - totalSold);
-
-                    // Update the item with accurate values
-                    string updateSql = @"
-                UPDATE ITEM 
-                SET stockSold = @sold, 
-                    stockQuantity = @quantity,
-                    lastModified = CURRENT_TIMESTAMP
-                WHERE itemID = @itemID";
-
-                    using var updateCmd = new SqliteCommand(updateSql, connection);
-                    updateCmd.Parameters.AddWithValue("@sold", totalSold);
-                    updateCmd.Parameters.AddWithValue("@quantity", currentStock);
-                    updateCmd.Parameters.AddWithValue("@itemID", item.itemID);
-                    updateCmd.ExecuteNonQuery();
-
-                    Console.WriteLine($"Reconciled item {item.itemID}: Received={item.stockReceived}, Sold={totalSold}, Stock={currentStock}");
-                }
-
-                Console.WriteLine("Stock reconciliation completed successfully");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error during stock reconciliation: {ex.Message}");
-            }
-        }
-
-
-
 
         /// <summary>
         /// Migrate existing database to remove CHECK constraint from INVOICEITEM.quantity
@@ -898,7 +720,8 @@ namespace ADIX
 (2, 'Sarah Ndlovu', 'Cashier', 'sarah', 'hashedpassword2', 9000.00),
 (3, 'Michael Smith', 'Manager', 'michael', 'hashedpassword3', 12000.00),
 (4, 'Emily Johnson', 'Cashier', 'emily', 'hashedpassword4', 9000.00),
-(5, 'David Brown', 'Sales', 'david', 'hashedpassword5', 8000.00);
+(5, 'David Brown', 'Sales', 'david', 'hashedpassword5', 8000.00),
+(6, 'Admin', 'Admin', 'admin', 'admin123', 15000.00);
 
    INSERT INTO CUSTOMER (customerID, name, phone, email, credit) VALUES
 (1, 'Alice Archer', '0712345678', 'alice@archerymail.com', 100.00),
@@ -943,8 +766,8 @@ namespace ADIX
 (2, 'Sarah Ndlovu', 'Cashier', 'sarah', 'hashedpassword2', 9000.00),
 (3, 'Michael Smith', 'Manager', 'michael', 'hashedpassword3', 12000.00),
 (4, 'Emily Johnson', 'Cashier', 'emily', 'hashedpassword4', 9000.00),
-(5, 'David Brown', 'Sales', 'david', 'hashedpassword5', 8000.00);
-
+(5, 'David Brown', 'Sales', 'david', 'hashedpassword5', 8000.00),
+(6, 'Admin', 'Admin', 'admin', 'admin123', 15000.00);
    INSERT INTO CUSTOMER (customerID, name, phone, email, credit) VALUES
 (1, 'Alice Archer', '0712345678', 'alice@archerymail.com', 100.00),
 (2, 'Bob Bowman', '0723456789', 'bob@archerymail.com', 50.00),
@@ -987,49 +810,22 @@ namespace ADIX
             SyncMasterData(sqliteConn, azureConn, "CUSTOMER", new[] { "customerID", "name", "phone", "email", "credit", "lastModified" });
             SyncMasterData(sqliteConn, azureConn, "STAFF", new[] { "staffID", "name", "Role", "userName", "passwordHash", "salary", "lastModified" });
             SyncExpenses(sqliteConn, azureConn);
-
-            // Step 2: Sync supplier payments
-            SyncSupplierPayments(sqliteConn, azureConn);
-
-            // Step 3: DOWNLOAD MISSING ITEMS FROM AZURE FIRST
+            // Step 2: DOWNLOAD MISSING ITEMS FROM AZURE FIRST
             DownloadMissingItemsFromAzure(sqliteConn, azureConn);
 
-            // Step 4: Sync item master data (prices, descriptions) but NOT quantities YET
+            // Step 3: Sync item master data (prices, descriptions) but NOT quantities YET
             SyncItemMasterDataWithoutInventory(sqliteConn, azureConn);
 
-            // Step 5: Sync transactions FIRST (upload local transactions to Azure)
+            // Step 4: Sync transactions FIRST (upload local transactions to Azure)
             SyncTransactions(sqliteConn, azureConn);
 
-            // Step 6: Recalculate inventory on BOTH databases independently
+            // Step 5: Recalculate inventory on BOTH databases independently
             RecalculateInventoryOnBothDatabases(sqliteConn, azureConn);
 
-            // Step 7: Sync reports
+            // Step 6: Sync reports
             SyncMasterData(sqliteConn, azureConn, "REPORT", new[] { "reportID", "reportType", "date", "staffID", "lastModified" });
 
             Console.WriteLine("Transaction-based sync completed successfully.");
-        }
-
-        // Add new sync method for supplier payments
-        private static void SyncSupplierPayments(SqliteConnection sqliteConn, SqlConnection azureConn)
-        {
-            try
-            {
-                Console.WriteLine("[SUPPLIER PAYMENTS] Starting payment sync...");
-
-                // Sync SUPPLIER_PAYMENT table
-                SyncMasterData(sqliteConn, azureConn, "SUPPLIER_PAYMENT",
-                    new[] { "paymentID", "supplierID", "amount", "paymentDate", "paymentMethod", "referenceNumber", "notes", "lastModified" });
-
-                // Sync SUPPLIER_PAYMENT_ALLOCATION table  
-                SyncMasterData(sqliteConn, azureConn, "SUPPLIER_PAYMENT_ALLOCATION",
-                    new[] { "allocationID", "paymentID", "itemID", "quantity", "amount", "lastModified" });
-
-                Console.WriteLine("[SUPPLIER PAYMENTS] Payment sync completed successfully");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[SUPPLIER PAYMENTS] Error syncing payments: {ex.Message}");
-            }
         }
         /// <summary>
         /// Comprehensive sync that ensures all missing data is downloaded from Azure
@@ -2450,7 +2246,7 @@ WHERE itemID=@itemID";
             return dataTable;
         }
 
-
+     
 
         /// <summary>
         /// Get all expenses for display in the finance page
@@ -2478,20 +2274,6 @@ WHERE itemID=@itemID";
             var dataTable = new DataTable();
             using var reader = cmd.ExecuteReader();
             dataTable.Load(reader);
-
-            // Ensure all dates are properly formatted
-            foreach (DataRow row in dataTable.Rows)
-            {
-                if (row["Date"] != DBNull.Value && DateTime.TryParse(row["Date"].ToString(), out DateTime date))
-                {
-                    row["Date"] = date.ToString("yyyy-MM-dd");
-                }
-                else
-                {
-                    // Set default date if invalid
-                    row["Date"] = DateTime.Today.ToString("yyyy-MM-dd");
-                }
-            }
 
             return dataTable;
         }
@@ -2577,140 +2359,6 @@ WHERE itemID=@itemID";
                 Console.WriteLine("Added paymentMethod column to EXPENSES table");
             }
         }
-
-        /// <summary>
-        /// Enhanced method to get accurate financial metrics
-        /// </summary>
-        public static (double turnover, double cogs, double expenses, double profitLoss, double outstandingPayments)
-            GetAccurateFinancialMetrics()
-        {
-            using var connection = new SqliteConnection(SqliteConnectionString);
-            connection.Open();
-
-            // 1. Monthly Turnover (last 30 days sales)
-            string turnoverSql = @"
-        SELECT COALESCE(SUM(totalAmount), 0) 
-        FROM INVOICEQUOTE 
-        WHERE type = 1 
-        AND date >= date('now', '-30 days')";
-
-            double turnover = 0;
-            using (var cmd = new SqliteCommand(turnoverSql, connection))
-            {
-                var result = cmd.ExecuteScalar();
-                turnover = result != DBNull.Value ? Convert.ToDouble(result) : 0;
-            }
-
-            // 2. Accurate Cost of Goods Sold (based on actual items sold)
-            string cogsSql = @"
-        SELECT COALESCE(SUM(ii.quantity * i.costPrice), 0)
-        FROM INVOICEITEM ii
-        INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
-        INNER JOIN ITEM i ON ii.itemID = i.itemID
-        WHERE iq.type = 1 
-        AND iq.date >= date('now', '-30 days')
-        AND ii.quantity > 0"; // Only positive quantities (exclude returns)
-
-            double costOfGoodsSold = 0;
-            using (var cmd = new SqliteCommand(cogsSql, connection))
-            {
-                var result = cmd.ExecuteScalar();
-                costOfGoodsSold = result != DBNull.Value ? Convert.ToDouble(result) : 0;
-            }
-
-            // 3. Accurate Expenses (user expenses + auto-generated salary expenses)
-            string expensesSql = @"
-        SELECT COALESCE(SUM(amount), 0) 
-        FROM EXPENSES 
-        WHERE date >= date('now', '-30 days')
-        AND expenseType != 'Salary Payment'"; // Exclude salary payments as they're handled separately
-
-            double userExpenses = 0;
-            using (var cmd = new SqliteCommand(expensesSql, connection))
-            {
-                var result = cmd.ExecuteScalar();
-                userExpenses = result != DBNull.Value ? Convert.ToDouble(result) : 0;
-            }
-
-            // 4. Add salary expenses from staff payments in the period
-            string salaryExpensesSql = @"
-        SELECT COALESCE(SUM(amount), 0) 
-        FROM EXPENSES 
-        WHERE date >= date('now', '-30 days')
-        AND expenseType = 'Salary Payment'";
-
-            double salaryExpenses = 0;
-            using (var cmd = new SqliteCommand(salaryExpensesSql, connection))
-            {
-                var result = cmd.ExecuteScalar();
-                salaryExpenses = result != DBNull.Value ? Convert.ToDouble(result) : 0;
-            }
-
-            double totalExpenses = userExpenses + salaryExpenses + costOfGoodsSold;
-            double profitLoss = turnover - totalExpenses;
-
-            // 5. Accurate Outstanding Supplier Payments
-            string outstandingSql = @"
-        SELECT COALESCE(SUM(i.costPrice * i.stockQuantity), 0)
-        FROM ITEM i
-        INNER JOIN SUPPLIER s ON i.supplierID = s.supplierID
-        WHERE i.stockQuantity > 0";
-
-            double outstandingPayments = 0;
-            using (var cmd = new SqliteCommand(outstandingSql, connection))
-            {
-                var result = cmd.ExecuteScalar();
-                outstandingPayments = result != DBNull.Value ? Convert.ToDouble(result) : 0;
-            }
-
-            return (turnover, costOfGoodsSold, totalExpenses, profitLoss, outstandingPayments);
-        }
-
-        /// <summary>
-        /// Enhanced expense addition with validation
-        /// </summary>
-        public static bool AddExpenseWithValidation(string expenseType, double amount, string date, string description = "")
-        {
-            // Validate inputs
-            if (string.IsNullOrEmpty(expenseType) || amount <= 0 || string.IsNullOrEmpty(date))
-                return false;
-
-            // Prevent salary expenses through this method
-            if (expenseType.Equals("Salaries", StringComparison.OrdinalIgnoreCase) ||
-                expenseType.Equals("Salary", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException("Salary expenses must be processed through the staff payment system.");
-            }
-
-            using var connection = new SqliteConnection(SqliteConnectionString);
-            connection.Open();
-
-            // Ensure expenses table exists
-            InitializeExpensesTable();
-
-            string insertSql = @"
-        INSERT INTO EXPENSES (expenseType, amount, date, description, paymentMethod)
-        VALUES (@expenseType, @amount, @date, @description, @paymentMethod)";
-
-            using var cmd = new SqliteCommand(insertSql, connection);
-            cmd.Parameters.AddWithValue("@expenseType", expenseType);
-            cmd.Parameters.AddWithValue("@amount", amount);
-            cmd.Parameters.AddWithValue("@date", date);
-            cmd.Parameters.AddWithValue("@description", description);
-            cmd.Parameters.AddWithValue("@paymentMethod", "Cash");
-
-            int rowsAffected = cmd.ExecuteNonQuery();
-
-            if (rowsAffected > 0)
-            {
-                Console.WriteLine($"Added expense: {expenseType} - R {amount:N2}");
-                MarkSyncRequired();
-                return true;
-            }
-
-            return false;
-        }
-
 
 
 

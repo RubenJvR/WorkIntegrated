@@ -59,12 +59,35 @@ namespace ADIX
                 case "Sales":
                     SalesButton.Tag = "Active";
                     break;
-              
+                case "Staff":
+                    StaffButton.Tag = "Active";
+                    break;
+
             }
 
             _currentActiveButton = buttonName;
         }
-
+        public void ApplyRoleBasedRestrictions()
+        {
+            if (!UserSession.IsAdmin)
+            {
+                
+                SupplierButton.Visibility = Visibility.Collapsed;
+                FinanceButton.Visibility = Visibility.Collapsed;
+                MonthlyReportButton.Visibility = Visibility.Collapsed;
+                SalesButton.Visibility = Visibility.Collapsed;
+                StaffButton.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                
+                SupplierButton.Visibility = Visibility.Visible;
+                FinanceButton.Visibility = Visibility.Visible;
+                MonthlyReportButton.Visibility = Visibility.Visible;
+                SalesButton.Visibility = Visibility.Visible;
+                StaffButton.Visibility = Visibility.Visible;
+            }
+        }
         private void ToggleCollapse()
         {
             _isCollapsed = !_isCollapsed;
@@ -116,7 +139,8 @@ namespace ADIX
                 ToolTipService.SetToolTip(FinanceButton, "Finance");
                 ToolTipService.SetToolTip(MonthlyReportButton, "MonthlyReport");
                 ToolTipService.SetToolTip(SalesButton, "Sales");
-               
+                ToolTipService.SetToolTip(StaffButton, "Staff");
+
             }
             else
             {
@@ -223,7 +247,11 @@ namespace ADIX
             NavigationRequested?.Invoke(this, "Sales");
         }
 
-    
+        private void Staff_button_click(object sender, RoutedEventArgs e)
+        {
+            SetActiveButton("Staff");
+            NavigationRequested?.Invoke(this, "Staff");
+        }
 
         private void CollapseButton_Click(object sender, RoutedEventArgs e)
         {

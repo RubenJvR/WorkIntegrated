@@ -1,0 +1,255 @@
+﻿<Page x:Class="ADIX.Pages.Staff"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:ADIX.Pages"
+      xmlns:adix="clr-namespace:ADIX"
+      mc:Ignorable="d" 
+      d:DesignHeight="450" d:DesignWidth="800"
+      Title="Staff Management">
+
+    <Page.Resources>
+        <!-- Converters -->
+        <adix:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
+
+        <!-- Header styles -->
+        <Style x:Key="HeaderBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="#4AA902"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style x:Key="HeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="23"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Rounded input border -->
+        <Style x:Key="InputBorderStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Background" Value="#4F4F4F"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+    </Page.Resources>
+
+    <Grid Background="#878787">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Style="{StaticResource HeaderBorderStyle}">
+            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Staff Management"/>
+        </Border>
+
+        <!-- Search Box -->
+        <Border Grid.Row="2" Style="{StaticResource InputBorderStyle}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox
+                    x:Name="StaffSearchTextBox"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Foreground="White"
+                    Padding="8,5,8,5"
+                    VerticalContentAlignment="Center"
+                    TextChanged="StaffSearchTextBox_TextChanged"/>
+
+                <TextBlock
+                    Text="Search staff by name..."
+                    Foreground="LightGray"
+                    Margin="10,0,30,0"
+                    VerticalAlignment="Center"
+                    IsHitTestVisible="False"
+                    Visibility="{Binding Text, ElementName=StaffSearchTextBox, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+            </Grid>
+        </Border>
+
+        <!-- Staff DataGrid -->
+        <Border Grid.Row="4" Margin="0,0,0,10" Background="#4F4F4F" BorderBrush="Black" BorderThickness="1">
+            <DataGrid x:Name="StaffGrid"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="False"
+                      Background="#4F4F4F"
+                      Foreground="White"
+                      GridLinesVisibility="All"
+                      BorderBrush="Black"
+                      BorderThickness="1"
+                      HeadersVisibility="Column"
+                      CanUserAddRows="True"
+                      CanUserDeleteRows="False"
+                      RowHeight="35"
+                      ColumnHeaderHeight="40"
+                      FontSize="14"
+                      SelectionMode="Single"
+                      SelectionUnit="FullRow"
+                      AlternatingRowBackground="#5A5A5A"
+                      CellEditEnding="StaffGrid_CellEditEnding">
+
+                <!-- Column Header Styling -->
+                <DataGrid.ColumnHeaderStyle>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="#2D2D2D"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
+                        <Setter Property="BorderBrush" Value="Black"/>
+                        <Setter Property="BorderThickness" Value="0.5"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                        <Setter Property="Padding" Value="5"/>
+                    </Style>
+                </DataGrid.ColumnHeaderStyle>
+
+                <!-- Cell Styling -->
+                <DataGrid.CellStyle>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="BorderBrush" Value="Black"/>
+                        <Setter Property="BorderThickness" Value="0.5"/>
+                        <Setter Property="Padding" Value="5,2"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#6A6A6A"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="BorderBrush" Value="#4AA902"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.CellStyle>
+
+                <!-- Row Styling -->
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Setter Property="Background" Value="#4F4F4F"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#6A6A6A"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#5A5A5A"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.RowStyle>
+
+                <!-- Columns -->
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Staff ID" Binding="{Binding StaffID}" Width="80" IsReadOnly="True">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Padding" Value="5"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="150" IsReadOnly="False">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Padding" Value="5"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="Role" Binding="{Binding Role}" Width="120" IsReadOnly="False">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Padding" Value="5"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="120" IsReadOnly="False">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Padding" Value="5"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="Password" Binding="{Binding PasswordHash}" Width="200" IsReadOnly="False">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Padding" Value="5"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTemplateColumn Header="Salary" Width="100">
+                 
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Salary, StringFormat='R {0:N2}'}" 
+                               Foreground="White" 
+                               Padding="5"
+                               VerticalAlignment="Center"/> 
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding Salary, UpdateSourceTrigger=PropertyChanged}" 
+                                 Background="#4F4F4F"
+                                 Foreground="White"
+                                 BorderThickness="0"
+                                 Padding="5"
+                                 VerticalContentAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
+
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10">
+            <Button Content="Add New Staff" 
+                    Width="120" 
+                    Height="35" 
+                    Background="#4AA902" 
+                    Foreground="White" 
+                    Margin="5"
+                    Click="AddNewStaff_Click"/>
+            <Button Content="Save Changes" 
+                    Width="120" 
+                    Height="35" 
+                    Background="#1976D2" 
+                    Foreground="White" 
+                    Margin="5"
+                    Click="SaveChanges_Click"/>
+            <Button Content="Refresh" 
+                    Width="120" 
+                    Height="35" 
+                    Background="#FF9800" 
+                    Foreground="White" 
+                    Margin="5"
+                    Click="Refresh_Click"/>
+        </StackPanel>
+    </Grid>
+</Page>

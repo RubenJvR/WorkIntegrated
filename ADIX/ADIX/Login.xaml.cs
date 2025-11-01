@@ -30,11 +30,14 @@ namespace ADIX
             // Add your authentication logic here
             if (Database.ValidateUser(username, password))
             {
+
+                UserSession.CurrentUsername = username;
+                UserSession.CurrentRole = Database.GetUserRole(username);
                 // Login successful - open main application
                 MainWindow mainWindow = new MainWindow();
                 mainWindow.Show();
 
-                this.Close(); // Close login window
+                this.Close(); 
             }
             else
             {
