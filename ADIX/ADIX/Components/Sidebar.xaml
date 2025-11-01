@@ -143,8 +143,14 @@
                         <TextBlock x:Name="SalesText" Text="Sales" Foreground="White" VerticalAlignment="Center" FontSize="14"/>
                     </StackPanel>
                 </Button>
+                <Button x:Name="StaffButton" Margin="10,5" Height="45" Style="{StaticResource MenuButtonStyle}" Click="Staff_button_click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Image Source="/icons/settings.png" Width="24" Height="24" Margin="0,0,12,0"/>
+                        <TextBlock x:Name="StaffText" Text="Staff" Foreground="White" VerticalAlignment="Center" FontSize="14"/>
+                    </StackPanel>
+                </Button>
 
-               
+
             </StackPanel>
         </DockPanel>
     </ScrollViewer>

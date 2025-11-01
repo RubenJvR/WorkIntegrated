@@ -25,11 +25,24 @@ namespace ADIX
             }
             else
             {
-                _deviceId = Guid.NewGuid().ToString("N").Substring(0, 8); // Short unique ID
+                _deviceId = Guid.NewGuid().ToString("N").Substring(0, 8); 
                 File.WriteAllText(deviceIdFile, _deviceId);
             }
 
             Console.WriteLine($"Device ID: {_deviceId}");
+        }
+        internal static string GetUserRole(string username)
+        {
+            using var conn = new SqliteConnection(SqliteConnectionString);
+            conn.Open();
+
+            string query = "SELECT Role FROM STAFF WHERE username = @username";
+
+            using var cmd = new SqliteCommand(query, conn);
+            cmd.Parameters.AddWithValue("@username", username);
+
+            var result = cmd.ExecuteScalar();
+            return result?.ToString() ?? "Staff"; 
         }
 
         private const string SqliteConnectionString = "Data Source=ADIX.db";
@@ -454,7 +467,6 @@ namespace ADIX
         {
             string createTablesSql = @"
 
-
         CREATE TABLE SELLER(
             sellerID INT NOT NULL PRIMARY KEY,
             name NVARCHAR(255) NOT NULL,
@@ -708,7 +720,8 @@ namespace ADIX
 (2, 'Sarah Ndlovu', 'Cashier', 'sarah', 'hashedpassword2', 9000.00),
 (3, 'Michael Smith', 'Manager', 'michael', 'hashedpassword3', 12000.00),
 (4, 'Emily Johnson', 'Cashier', 'emily', 'hashedpassword4', 9000.00),
-(5, 'David Brown', 'Sales', 'david', 'hashedpassword5', 8000.00);
+(5, 'David Brown', 'Sales', 'david', 'hashedpassword5', 8000.00),
+(6, 'Admin', 'Admin', 'admin', 'admin123', 15000.00);
 
    INSERT INTO CUSTOMER (customerID, name, phone, email, credit) VALUES
 (1, 'Alice Archer', '0712345678', 'alice@archerymail.com', 100.00),
@@ -753,8 +766,8 @@ namespace ADIX
 (2, 'Sarah Ndlovu', 'Cashier', 'sarah', 'hashedpassword2', 9000.00),
 (3, 'Michael Smith', 'Manager', 'michael', 'hashedpassword3', 12000.00),
 (4, 'Emily Johnson', 'Cashier', 'emily', 'hashedpassword4', 9000.00),
-(5, 'David Brown', 'Sales', 'david', 'hashedpassword5', 8000.00);
-
+(5, 'David Brown', 'Sales', 'david', 'hashedpassword5', 8000.00),
+(6, 'Admin', 'Admin', 'admin', 'admin123', 15000.00);
    INSERT INTO CUSTOMER (customerID, name, phone, email, credit) VALUES
 (1, 'Alice Archer', '0712345678', 'alice@archerymail.com', 100.00),
 (2, 'Bob Bowman', '0723456789', 'bob@archerymail.com', 50.00),
