@@ -2246,7 +2246,7 @@ WHERE itemID=@itemID";
             return dataTable;
         }
 
-     
+
 
         /// <summary>
         /// Get all expenses for display in the finance page
@@ -2275,35 +2275,19 @@ WHERE itemID=@itemID";
             using var reader = cmd.ExecuteReader();
             dataTable.Load(reader);
 
-            return dataTable;
-        }
-
-        /// <summary>
-        /// Get salary payment history
-        /// </summary>
-        public static DataTable GetSalaryPaymentHistory()
-        {
-            using var connection = new SqliteConnection(SqliteConnectionString);
-            connection.Open();
-
-            string query = @"
-        SELECT 
-            e.expenseID as PaymentID,
-            s.staffID,
-            s.name as StaffName,
-            s.Role,
-            e.amount as Amount,
-            e.date as PaymentDate,
-            e.description as Description
-        FROM EXPENSES e
-        INNER JOIN STAFF s ON e.description LIKE '%' || s.name || '%' OR e.description LIKE '%Staff ID: ' || s.staffID || '%'
-        WHERE e.expenseType = 'Salary Payment'
-        ORDER BY e.date DESC, e.expenseID DESC";
-
-            using var cmd = new SqliteCommand(query, connection);
-            var dataTable = new DataTable();
-            using var reader = cmd.ExecuteReader();
-            dataTable.Load(reader);
+            // Ensure all dates are properly formatted
+            foreach (DataRow row in dataTable.Rows)
+            {
+                if (row["Date"] != DBNull.Value && DateTime.TryParse(row["Date"].ToString(), out DateTime date))
+                {
+                    row["Date"] = date.ToString("yyyy-MM-dd");
+                }
+                else
+                {
+                    // Set default date if invalid
+                    row["Date"] = DateTime.Today.ToString("yyyy-MM-dd");
+                }
+            }
 
             return dataTable;
         }
@@ -2359,6 +2343,257 @@ WHERE itemID=@itemID";
                 Console.WriteLine("Added paymentMethod column to EXPENSES table");
             }
         }
+
+        /// <summary>
+        /// Enhanced method to get accurate financial metrics
+        /// </summary>
+        public static (double turnover, double cogs, double expenses, double profitLoss, double outstandingPayments)
+            GetAccurateFinancialMetrics()
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            // 1. Monthly Turnover (last 30 days sales)
+            string turnoverSql = @"
+        SELECT COALESCE(SUM(totalAmount), 0) 
+        FROM INVOICEQUOTE 
+        WHERE type = 1 
+        AND date >= date('now', '-30 days')";
+
+            double turnover = 0;
+            using (var cmd = new SqliteCommand(turnoverSql, connection))
+            {
+                var result = cmd.ExecuteScalar();
+                turnover = result != DBNull.Value ? Convert.ToDouble(result) : 0;
+            }
+
+            // 2. Accurate Cost of Goods Sold (based on actual items sold)
+            string cogsSql = @"
+        SELECT COALESCE(SUM(ii.quantity * i.costPrice), 0)
+        FROM INVOICEITEM ii
+        INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
+        INNER JOIN ITEM i ON ii.itemID = i.itemID
+        WHERE iq.type = 1 
+        AND iq.date >= date('now', '-30 days')
+        AND ii.quantity > 0"; // Only positive quantities (exclude returns)
+
+            double costOfGoodsSold = 0;
+            using (var cmd = new SqliteCommand(cogsSql, connection))
+            {
+                var result = cmd.ExecuteScalar();
+                costOfGoodsSold = result != DBNull.Value ? Convert.ToDouble(result) : 0;
+            }
+
+            // 3. Accurate Expenses (user expenses + auto-generated salary expenses)
+            string expensesSql = @"
+        SELECT COALESCE(SUM(amount), 0) 
+        FROM EXPENSES 
+        WHERE date >= date('now', '-30 days')
+        AND expenseType != 'Salary Payment'"; // Exclude salary payments as they're handled separately
+
+            double userExpenses = 0;
+            using (var cmd = new SqliteCommand(expensesSql, connection))
+            {
+                var result = cmd.ExecuteScalar();
+                userExpenses = result != DBNull.Value ? Convert.ToDouble(result) : 0;
+            }
+
+            // 4. Add salary expenses from staff payments in the period
+            string salaryExpensesSql = @"
+        SELECT COALESCE(SUM(amount), 0) 
+        FROM EXPENSES 
+        WHERE date >= date('now', '-30 days')
+        AND expenseType = 'Salary Payment'";
+
+            double salaryExpenses = 0;
+            using (var cmd = new SqliteCommand(salaryExpensesSql, connection))
+            {
+                var result = cmd.ExecuteScalar();
+                salaryExpenses = result != DBNull.Value ? Convert.ToDouble(result) : 0;
+            }
+
+            double totalExpenses = userExpenses + salaryExpenses + costOfGoodsSold;
+            double profitLoss = turnover - totalExpenses;
+
+            // 5. Accurate Outstanding Supplier Payments
+            string outstandingSql = @"
+        SELECT COALESCE(SUM(i.costPrice * i.stockQuantity), 0)
+        FROM ITEM i
+        INNER JOIN SUPPLIER s ON i.supplierID = s.supplierID
+        WHERE i.stockQuantity > 0";
+
+            double outstandingPayments = 0;
+            using (var cmd = new SqliteCommand(outstandingSql, connection))
+            {
+                var result = cmd.ExecuteScalar();
+                outstandingPayments = result != DBNull.Value ? Convert.ToDouble(result) : 0;
+            }
+
+            return (turnover, costOfGoodsSold, totalExpenses, profitLoss, outstandingPayments);
+        }
+
+        /// <summary>
+        /// Get salary payment history
+        /// </summary>
+        public static DataTable GetSalaryPaymentHistory()
+        {
+            using var connection = new SqliteConnection(SqliteConnectionString);
+            connection.Open();
+
+            string query = @"
+        SELECT 
+            e.expenseID as PaymentID,
+            s.staffID,
+            s.name as StaffName,
+            s.Role,
+            e.amount as Amount,
+            e.date as PaymentDate,
+            e.description as Description
+        FROM EXPENSES e
+        INNER JOIN STAFF s ON e.description LIKE '%' || s.name || '%' OR e.description LIKE '%Staff ID: ' || s.staffID || '%'
+        WHERE e.expenseType = 'Salary Payment'
+        ORDER BY e.date DESC, e.expenseID DESC";
+
+            using var cmd = new SqliteCommand(query, connection);
+            var dataTable = new DataTable();
+            using var reader = cmd.ExecuteReader();
+            dataTable.Load(reader);
+
+            return dataTable;
+        }
+
+        /// <summary>
+        /// Reconcile stock quantities between POS and Supplier calculations
+        /// </summary>
+        public static void ReconcileStockQuantities()
+        {
+            try
+            {
+                using var connection = new SqliteConnection(SqliteConnectionString);
+                connection.Open();
+
+                Console.WriteLine("Starting stock reconciliation...");
+
+                // Get all items
+                string getItemsSql = "SELECT itemID, stockRecieved FROM ITEM";
+                using var getItemsCmd = new SqliteCommand(getItemsSql, connection);
+                using var reader = getItemsCmd.ExecuteReader();
+
+                var itemsToUpdate = new List<(int itemID, int stockReceived)>();
+
+                while (reader.Read())
+                {
+                    int itemID = reader.GetInt32(0);
+                    int stockReceived = reader.GetInt32(1);
+                    itemsToUpdate.Add((itemID, stockReceived));
+                }
+                reader.Close();
+
+                // Recalculate stock for each item based on transactions
+                foreach (var item in itemsToUpdate)
+                {
+                    // Calculate actual sold from invoice items
+                    string soldSql = @"
+                SELECT COALESCE(SUM(ii.quantity), 0) 
+                FROM INVOICEITEM ii
+                INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
+                WHERE ii.itemID = @itemID AND iq.type = 1 AND ii.quantity > 0";
+
+                    using var soldCmd = new SqliteCommand(soldSql, connection);
+                    soldCmd.Parameters.AddWithValue("@itemID", item.itemID);
+                    int totalSold = Convert.ToInt32(soldCmd.ExecuteScalar());
+
+                    // Calculate current stock balance
+                    int currentStock = Math.Max(0, item.stockReceived - totalSold);
+
+                    // Update the item with accurate values
+                    string updateSql = @"
+                UPDATE ITEM 
+                SET stockSold = @sold, 
+                    stockQuantity = @quantity,
+                    lastModified = CURRENT_TIMESTAMP
+                WHERE itemID = @itemID";
+
+                    using var updateCmd = new SqliteCommand(updateSql, connection);
+                    updateCmd.Parameters.AddWithValue("@sold", totalSold);
+                    updateCmd.Parameters.AddWithValue("@quantity", currentStock);
+                    updateCmd.Parameters.AddWithValue("@itemID", item.itemID);
+                    updateCmd.ExecuteNonQuery();
+
+                    Console.WriteLine($"Reconciled item {item.itemID}: Received={item.stockReceived}, Sold={totalSold}, Stock={currentStock}");
+                }
+
+                Console.WriteLine("Stock reconciliation completed successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during stock reconciliation: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Safe method to ensure supplier payment tables exist
+        /// </summary>
+        public static void EnsureSupplierPaymentTablesExist()
+        {
+            try
+            {
+                using var connection = new SqliteConnection(SqliteConnectionString);
+                connection.Open();
+
+                // Check if SUPPLIER_PAYMENT table exists
+                string checkTableSql = @"
+            SELECT name FROM sqlite_master 
+            WHERE type='table' AND name='SUPPLIER_PAYMENT'";
+
+                using var checkCmd = new SqliteCommand(checkTableSql, connection);
+                var result = checkCmd.ExecuteScalar();
+
+                if (result == null)
+                {
+                    Console.WriteLine("SUPPLIER_PAYMENT table not found - creating it now");
+
+                    // Create the missing tables
+                    string createPaymentTableSql = @"
+                CREATE TABLE SUPPLIER_PAYMENT (
+                    paymentID INTEGER PRIMARY KEY AUTOINCREMENT,
+                    supplierID INTEGER NOT NULL,
+                    amount DECIMAL(10,2) NOT NULL,
+                    paymentDate TEXT NOT NULL,
+                    paymentMethod TEXT NOT NULL,
+                    referenceNumber TEXT,
+                    notes TEXT,
+                    lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID)
+                );";
+
+                    string createAllocationTableSql = @"
+                CREATE TABLE SUPPLIER_PAYMENT_ALLOCATION (
+                    allocationID INTEGER PRIMARY KEY AUTOINCREMENT,
+                    paymentID INTEGER NOT NULL,
+                    itemID INTEGER NOT NULL,
+                    quantity INTEGER NOT NULL,
+                    amount DECIMAL(10,2) NOT NULL,
+                    lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(paymentID) REFERENCES SUPPLIER_PAYMENT(paymentID),
+                    FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
+                );";
+
+                    using var cmd1 = new SqliteCommand(createPaymentTableSql, connection);
+                    cmd1.ExecuteNonQuery();
+
+                    using var cmd2 = new SqliteCommand(createAllocationTableSql, connection);
+                    cmd2.ExecuteNonQuery();
+
+                    Console.WriteLine("SUPPLIER_PAYMENT tables created successfully");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error ensuring supplier payment tables exist: {ex.Message}");
+            }
+        }
+
 
 
 
