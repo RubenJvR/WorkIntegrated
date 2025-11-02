@@ -3189,11 +3189,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Fuckwill\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
+      "projectUniqueName": "C:\\FinalSubmission\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
       "projectName": "ADIX",
-      "projectPath": "C:\\Fuckwill\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
+      "projectPath": "C:\\FinalSubmission\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
       "packagesPath": "C:\\Users\\explo.BEN-PC\\.nuget\\packages\\",
-      "outputPath": "C:\\Fuckwill\\WorkIntegrated\\ADIX\\ADIX\\obj\\",
+      "outputPath": "C:\\FinalSubmission\\WorkIntegrated\\ADIX\\ADIX\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

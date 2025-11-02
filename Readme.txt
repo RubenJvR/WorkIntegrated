@@ -6,4 +6,4 @@ once started you will be met with a login screen, the correct credentials are:
 Username: admin
 password: admin123
 
-afterwards there will be a dashboard giving a broad overview of the application 
+afterwards there will be a dashboard giving a broad overview of the application and the state of the inventory
