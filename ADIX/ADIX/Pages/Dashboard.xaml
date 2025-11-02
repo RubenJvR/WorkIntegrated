@@ -69,141 +69,217 @@
             </Setter>
         </Style>
 
-        <!-- Chart Styles -->
-        <Style x:Key="PieChartBorderStyle" TargetType="Border">
+        <!-- Chart Styles - MATCHING FINANCE PAGE EXACTLY -->
+        <Style x:Key="ChartBorderStyle" TargetType="Border">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="#4AA902"/>
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Margin" Value="10"/>
-            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Width" Value="380"/>
+            <Setter Property="Height" Value="350"/>
+            <Setter Property="Margin" Value="10,5"/>
+            <Setter Property="Padding" Value="15"/>
         </Style>
 
         <Style x:Key="ChartTitleStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="16"/>
             <Setter Property="Foreground" Value="Black"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Margin" Value="0,0,0,5"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+
+        <!-- Metric Card Style -->
+        <Style x:Key="MetricCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="BorderBrush" Value="#4AA902"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Margin" Value="8"/>
+        </Style>
+
+        <!-- Section Header Style -->
+        <Style x:Key="SectionHeaderStyle" TargetType="Border">
+            <Setter Property="Background" Value="#4AA902"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Margin" Value="0,0,0,15"/>
+        </Style>
+
+        <Style x:Key="SectionHeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Improved Metric Text Styles -->
+        <Style x:Key="MetricTitleStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="MetricValueStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#4AA902"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="5,3,5,0"/>
+        </Style>
+
+        <Style x:Key="MetricSubtitleStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="LightGray"/>
+            <Setter Property="FontSize" Value="9"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="5,2,5,0"/>
         </Style>
     </Page.Resources>
 
     <Grid>
-        <ScrollViewer>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="20">
                 <!-- Dashboard Header -->
-                <Border Background="#4AA902" Padding="10" CornerRadius="5" Margin="0 0 0 10" >
-                    <TextBlock Text="Dashboard" FontSize="20" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
+                <Border Background="#4AA902" Padding="15" CornerRadius="8" Margin="0 0 0 20">
+                    <TextBlock Text="Dashboard Overview" FontSize="24" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
                 </Border>
 
-                <!-- Total Stock / Sales / Recent Sale -->
-                <Grid Margin="0 0 0 20">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Simple Background Container -->
-                    <Border Grid.Column="1" 
-            Background="#4F4F4F" 
-            CornerRadius="20" 
-            Margin="5"
-            BorderBrush="LightGreen"/>
-                    <!-- Cards -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button Grid.Column="0" Content="&lt;" Width="30" Height="30" Margin="5" Background="#4F4F4F" BorderBrush="white"/>
-                        <Border Width="150" Height="100" Background="Green" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
-                            <TextBlock Text="{Binding TotalStock}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold" FontSize="16" />
-                        </Border>
-                        <Border Width="150" Height="100" Background="blue" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
-                            <TextBlock Text="{Binding TotalSales}" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontSize="13"/>
-                        </Border>
-                        <Border Width="150" Height="100" Background="purple" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
-                            <TextBlock Text="{Binding RecentSale}" FontWeight="Bold"  VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontSize="13"/>
-                        </Border>
-                        <Button Grid.Column="2" Content="&gt;" Width="30" Height="30" Margin="5" Background="#4F4F4F" BorderBrush="white"/>
-                    </StackPanel>
-                </Grid>
-                <!-- Inventory Summary -->
-                <Border Background="#4AA902" Padding="10" CornerRadius="5" Margin="0 0 0 10">
-                    <TextBlock Text="Inventory Summary" FontSize="16" FontWeight="Bold" Foreground="White" TextAlignment="Center"/>
+                <!-- Key Metrics Row -->
+                <Border Style="{StaticResource SectionHeaderStyle}">
+                    <TextBlock Style="{StaticResource SectionHeaderTextStyle}" Text="Key Performance Metrics"/>
                 </Border>
 
-                <!-- Inventory Alert + Sales Trend -->
-                <Grid Margin="0 0 0 20">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                <WrapPanel HorizontalAlignment="Center" Margin="0 0 0 25">
+                    <!-- Stock Value -->
+                    <Border Style="{StaticResource MetricCardStyle}" Width="190" Height="110">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10">
+                            <TextBlock Style="{StaticResource MetricTitleStyle}" Text="STOCK VALUE"/>
+                            <TextBlock Style="{StaticResource MetricValueStyle}" Text="{Binding TotalStock}"/>
+                            <TextBlock Style="{StaticResource MetricSubtitleStyle}" Text="Total Inventory Worth"/>
+                        </StackPanel>
+                    </Border>
 
-                    <!-- Left Nav -->
-                    <Button Grid.Column="0" Content="&lt;" Width="30" Height="30" Margin="5" Background="#4F4F4F" BorderBrush="white"/>
+                    <!-- Sales -->
+                    <Border Style="{StaticResource MetricCardStyle}" Width="190" Height="110">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10">
+                            <TextBlock Style="{StaticResource MetricTitleStyle}" Text="SALES (30 DAYS)"/>
+                            <TextBlock Style="{StaticResource MetricValueStyle}" Text="{Binding TotalSales}"/>
+                            <TextBlock Style="{StaticResource MetricSubtitleStyle}" Text="Total Revenue"/>
+                        </StackPanel>
+                    </Border>
 
-                    <!-- Cards -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Border Width="267" Height="136" Background="OrangeRed" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
-                            <TextBlock  Text="{Binding InventoryAlert}" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold" Foreground="White" FontSize="13"/>
-                        </Border>
-                        <Border Width="200" Height="120" Background="Green" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
-                            <TextBlock Text="{Binding SalesTrend}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" TextWrapping="Wrap" TextAlignment="Center" FontWeight="Bold" FontSize="16" />
-                        </Border>
-                    </StackPanel>
+                    <!-- Profit -->
+                    <Border Style="{StaticResource MetricCardStyle}" Width="190" Height="110">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10">
+                            <TextBlock Style="{StaticResource MetricTitleStyle}" Text="PROFIT (30 DAYS)"/>
+                            <TextBlock Style="{StaticResource MetricValueStyle}" Text="{Binding TotalProfit}"/>
+                            <TextBlock Style="{StaticResource MetricSubtitleStyle}" Text="Net Profit"/>
+                        </StackPanel>
+                    </Border>
 
-                    <!-- Right Nav -->
-                    <Button Grid.Column="2" Content="&gt;" Width="30" Height="30" Margin="5" Background="#4F4F4F" BorderBrush="white"/>
-                </Grid>
+                    <!-- Recent Sale -->
+                    <Border Style="{StaticResource MetricCardStyle}" Width="190" Height="110">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10">
+                            <TextBlock Style="{StaticResource MetricTitleStyle}" Text="RECENT SALE"/>
+                            <TextBlock Style="{StaticResource MetricValueStyle}" Text="{Binding RecentSale}" FontSize="12"/>
+                            <TextBlock Style="{StaticResource MetricSubtitleStyle}" Text="Latest Transaction"/>
+                        </StackPanel>
+                    </Border>
+                </WrapPanel>
+
+                <!-- Inventory & Sales Trend -->
+                <Border Style="{StaticResource SectionHeaderStyle}">
+                    <TextBlock Style="{StaticResource SectionHeaderTextStyle}" Text="Inventory &amp; Sales Analysis"/>
+                </Border>
+
+                <WrapPanel HorizontalAlignment="Center" Margin="0 0 0 25">
+                    <!-- Inventory Alert -->
+                    <Border Style="{StaticResource MetricCardStyle}" Width="320" Height="140">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="15">
+                            <TextBlock Text="STOCK ALERTS" Foreground="White" FontSize="14" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <TextBlock Text="{Binding InventoryAlert}" Foreground="White" FontSize="11" HorizontalAlignment="Center" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" LineHeight="14"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Sales Trend -->
+                    <Border Style="{StaticResource MetricCardStyle}" Width="320" Height="140">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="15">
+                            <TextBlock Text="SALES TREND" Foreground="White" FontSize="14" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <TextBlock Text="{Binding SalesTrend}" Foreground="White" FontSize="11" HorizontalAlignment="Center" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" LineHeight="14"/>
+                        </StackPanel>
+                    </Border>
+                </WrapPanel>
 
                 <!-- Finance Summary -->
-                <Border Background="#4AA902" Padding="10" CornerRadius="5" Margin="0 0 10 0">
-                    <TextBlock Text="Finance Summary" Foreground="White" FontSize="16" FontWeight="Bold" TextAlignment="Center"/>
+                <Border Style="{StaticResource SectionHeaderStyle}">
+                    <TextBlock Style="{StaticResource SectionHeaderTextStyle}" Text="Finance Summary"/>
                 </Border>
 
-                <!-- Finance Cards + Pie Chart -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <WrapPanel HorizontalAlignment="Center" Margin="0 0 0 20">
                     <!-- Finance Cards -->
-                    <StackPanel Orientation="Horizontal">
-                        <Border Width="200" Height="120" Background="Green" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
-                            <TextBlock Text="{Binding TotalExpenses}" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontSize="16"/>
+                    <StackPanel Margin="0,0,15,0">
+                        <!-- Total Expenses -->
+                        <Border Style="{StaticResource MetricCardStyle}" Width="300" Height="90">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10">
+                                <TextBlock Style="{StaticResource MetricTitleStyle}" Text="EXPENSES (30 DAYS)"/>
+                                <TextBlock Style="{StaticResource MetricValueStyle}" Text="{Binding TotalExpenses}"/>
+                                <TextBlock Style="{StaticResource MetricSubtitleStyle}" Text="Total Operating Costs"/>
+                            </StackPanel>
                         </Border>
-                        <Border Width="200" Height="120" Background="red" Margin="10" CornerRadius="5" BorderBrush="LightGreen" BorderThickness="1">
-                            <TextBlock Text="{Binding BiggestExpenseCategory}" FontWeight="Bold"  VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontSize="16" />
+
+                        <!-- Biggest Expense -->
+                        <Border Style="{StaticResource MetricCardStyle}" Width="300" Height="90" Margin="0,10,0,0">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10">
+                                <TextBlock Style="{StaticResource MetricTitleStyle}" Text="MAJOR EXPENSE"/>
+                                <TextBlock Style="{StaticResource MetricValueStyle}" Text="{Binding BiggestExpenseCategory}" FontSize="12"/>
+                                <TextBlock Style="{StaticResource MetricSubtitleStyle}" Text="Highest Cost Category"/>
+                            </StackPanel>
                         </Border>
                     </StackPanel>
 
-                    <!-- Pie Chart - Added to the right of finance cards -->
-                    <Border Style="{StaticResource PieChartBorderStyle}" Width="300" Height="200" Background="#4F4F4F">
-                        <StackPanel>
-                            <TextBlock Style="{StaticResource ChartTitleStyle}" Text="Expense by Category" Foreground="white"/>
+                    <!-- Pie Chart - EXACT SAME SIZE AND STYLE AS FINANCE PAGE -->
+                    <Border Style="{StaticResource ChartBorderStyle}">
+                        <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                            <TextBlock Style="{StaticResource ChartTitleStyle}" Text="Expense Distribution (30 Days)"/>
                             <lvc:PieChart Series="{Binding ExpenseSeries}"
-                                         LegendLocation="Bottom"
-                                         Hoverable="True"
-                                         InnerRadius="5"
-                                         Height="149" Width="257">
+                                     LegendLocation="Bottom"
+                                     Hoverable="True"
+                                     InnerRadius="80"
+                                     Width="340" 
+                                     Height="260"
+                                     Margin="0,5,0,0">
                                 <lvc:PieChart.ChartLegend>
                                     <lvc:DefaultLegend 
-                                        Foreground="Black" 
-                                        FontSize="10"
-                                        Margin="0,5,0,0"/>
+                                    Foreground="Black" 
+                                    FontSize="10"
+                                    Margin="0,10,0,0"
+                                    MaxWidth="300"/>
                                 </lvc:PieChart.ChartLegend>
                                 <lvc:PieChart.DataTooltip>
                                     <lvc:DefaultTooltip 
-                                        SelectionMode="OnlySender" 
-                                        ShowTitle="True"
-                                        ShowSeries="True"
-                                        Foreground="White"
-                                        Background="#2D2D2D"
-                                        BorderBrush="#4AA902"
-                                        BorderThickness="2"
-                                        FontSize="11"
-                                        FontWeight="Bold"
-                                        CornerRadius="5"/>
+                                    SelectionMode="OnlySender" 
+                                    ShowTitle="True"
+                                    ShowSeries="True"
+                                    Foreground="White"
+                                    Background="#2D2D2D"
+                                    BorderBrush="#4AA902"
+                                    BorderThickness="2"
+                                    FontSize="12"
+                                    FontWeight="Bold"
+                                    CornerRadius="5"/>
                                 </lvc:PieChart.DataTooltip>
                             </lvc:PieChart>
                         </StackPanel>
                     </Border>
-                </StackPanel>
+                </WrapPanel>
             </StackPanel>
         </ScrollViewer>
     </Grid>

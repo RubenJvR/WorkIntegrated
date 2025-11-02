@@ -50,7 +50,7 @@ namespace ADIX
             return result?.ToString() ?? "Staff"; 
         }
 
-        private const string SqliteConnectionString = "Data Source=ADIX.db";
+        public const string SqliteConnectionString = "Data Source=ADIX.db";
 
         //azure sql string connection
         public static string AzureSqlConnectionString { get; set; } = "Server=tcp:adixserver.database.windows.net,1433;Initial Catalog=ADIXDB;User ID=adixAdmin;Password=A$12fe34dc56;Encrypt=True;";
