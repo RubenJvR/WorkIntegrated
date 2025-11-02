@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using ADIX.Services;
+using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -36,6 +37,7 @@ namespace ADIX
             InitializeYearSelector();
             LoadActualData();
             LoadSuppliers();
+            UpdateReportHeader();
         }
 
         private void InitializeYearSelector()
@@ -45,17 +47,51 @@ namespace ADIX
                 YearSelector.Items.Clear();
                 int currentYear = DateTime.Now.Year;
 
-                // Add years from 2020 to current year + 1
-                for (int year = 2020; year <= currentYear + 1; year++)
+                // Add years from 2020 to current year ONLY (remove +1)
+                for (int year = 2020; year <= currentYear; year++) // Changed from currentYear + 1
                 {
                     YearSelector.Items.Add(year.ToString());
                 }
 
-              
+                // Optionally set default selection to current year
+                YearSelector.SelectedItem = currentYear.ToString();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error initializing year selector: {ex.Message}");
+            }
+        }
+
+        private void UpdateReportHeader()
+        {
+            string selectedMonth = "";
+            string selectedYear = YearSelector.SelectedItem?.ToString();
+
+            // Get the month name properly
+            if (MonthSelector.SelectedItem is ComboBoxItem monthItem)
+            {
+                selectedMonth = monthItem.Content?.ToString() ?? "";
+            }
+            else if (MonthSelector.SelectedItem != null)
+            {
+                selectedMonth = MonthSelector.SelectedItem.ToString();
+            }
+
+            if (!string.IsNullOrEmpty(selectedMonth) && !string.IsNullOrEmpty(selectedYear))
+            {
+                ReportHeader.Text = $"Monthly Report - {selectedMonth} {selectedYear}";
+            }
+            else if (!string.IsNullOrEmpty(selectedYear))
+            {
+                ReportHeader.Text = $"Monthly Report - {selectedYear}";
+            }
+            else if (!string.IsNullOrEmpty(selectedMonth))
+            {
+                ReportHeader.Text = $"Monthly Report - {selectedMonth}";
+            }
+            else
+            {
+                ReportHeader.Text = "Monthly Report";
             }
         }
 
@@ -71,6 +107,7 @@ namespace ADIX
 
                 LoadTransactionsFromDatabase(selectedMonth, int.Parse(selectedYear));
                 UpdateReportData();
+                UpdateReportHeader();
             }
             catch (Exception ex)
             {
@@ -90,7 +127,7 @@ namespace ADIX
                 foreach (DataRow row in transactionsData.Rows)
                 {
                     var transactionType = Convert.ToInt32(row["TransactionType"]);
-                    var isReturn = transactionType == 2; 
+                    var isReturn = transactionType == 2;
 
                     var transaction = new Transaction
                     {
@@ -359,20 +396,26 @@ namespace ADIX
         private void MonthSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (IsLoaded)
+            {
                 LoadActualData();
+                UpdateReportHeader();
+            }
         }
 
         private void YearSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (IsLoaded)
+            {
                 LoadActualData();
+                UpdateReportHeader();
+            }
         }
 
         private void GenerateReport_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                LoadActualData(); 
+                LoadActualData();
 
                 string message = $"Report generated for {MonthSelector.SelectedItem} {YearSelector.SelectedItem}!\n\n" +
                               $"Financial Summary:\n" +
@@ -491,27 +534,74 @@ namespace ADIX
         {
             try
             {
-                
-
                 var selectedMonth = MonthSelector.SelectedIndex + 1;
                 var selectedYear = YearSelector.SelectedItem?.ToString();
 
-                string message = $"PDF export completed successfully!\n\n" +
-                               $"Exported: Monthly Report for {MonthSelector.SelectedItem} {YearSelector.SelectedItem}\n" +
-                               $"File: Monthly_Report_{selectedYear}_{selectedMonth:00}.pdf\n\n" +
-                               $"The PDF includes:\n" +
-                               $"• {_transactions.Count} transactions\n" +
-                               $"• Financial summaries\n" +
-                               $"• Payment method breakdown\n" +
-                               $"• Expense details\n" +
-                               $"• Profit & loss statement\n" +
-                               $"• Supplier stock reports";
+                // Fix: Get the month name properly
+                string monthName = "Unknown Month";
+                if (MonthSelector.SelectedItem is ComboBoxItem monthItem)
+                {
+                    monthName = monthItem.Content?.ToString() ?? "Unknown Month";
+                }
 
-                MessageBox.Show(message, "PDF Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                if (string.IsNullOrEmpty(selectedYear) || selectedMonth == 0)
+                {
+                    MessageBox.Show("Please select a valid month and year first.", "Invalid Selection",
+                                  MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Create save file dialog
+                var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    FileName = $"Monthly_Report_{selectedYear}_{selectedMonth:00}.pdf",
+                    Filter = "PDF files (*.pdf)|*.pdf",
+                    DefaultExt = ".pdf"
+                };
+
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    // Generate PDF
+                    MonthlyReportPdfService.GeneratePdf(
+                        _currentReport,
+                        _transactions.ToList(),
+                        monthName,
+                        selectedYear,
+                        saveFileDialog.FileName
+                    );
+
+                    string message = $"PDF export completed successfully!\n\n" +
+                                   $"Exported: Monthly Report for {monthName} {selectedYear}\n" +
+                                   $"File: {System.IO.Path.GetFileName(saveFileDialog.FileName)}\n\n" +
+                                   $"The PDF includes:\n" +
+                                   $"• {_transactions.Count} transactions\n" +
+                                   $"• Financial summaries\n" +
+                                   $"• Payment method breakdown\n" +
+                                   $"• Expense details\n" +
+                                   $"• Profit & loss statement";
+
+                    MessageBox.Show(message, "PDF Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    // Optionally open the PDF after creation
+                    try
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = saveFileDialog.FileName,
+                            UseShellExecute = true
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        // Silent fail if we can't open the PDF
+                        System.Diagnostics.Debug.WriteLine($"Could not open PDF: {ex.Message}");
+                    }
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error exporting PDF: {ex.Message}");
+                MessageBox.Show($"Error exporting PDF: {ex.Message}\n\nPlease ensure QuestPDF is installed.",
+                               "PDF Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -568,16 +658,16 @@ namespace ADIX
         }
     }
 
-   
+
     public class ProfitMarginToColorConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             if (value is decimal profitMargin)
             {
-                return profitMargin >= 0 ? "#4AA902" : "#FF0000"; 
+                return profitMargin >= 0 ? "#4AA902" : "#FF0000";
             }
-            return "#4AA902"; 
+            return "#4AA902";
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)

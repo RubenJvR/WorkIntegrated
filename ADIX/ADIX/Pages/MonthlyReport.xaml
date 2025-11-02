@@ -206,10 +206,9 @@
 
             <!-- Header -->
             <Border Grid.Row="0" Style="{StaticResource HeaderBorderStyle}">
-                <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Monthly Report"/>
+                <TextBlock x:Name="ReportHeader" Style="{StaticResource HeaderTextStyle}" Text="Monthly Report"/>
             </Border>
 
-            <!-- Month and Year Selectors -->
             <!-- Month and Year Selectors -->
             <StackPanel Grid.Row="2" Orientation="Vertical">
                 <!-- Month Selector with Dynamic Placeholder -->
@@ -451,7 +450,7 @@
                    TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
-            
+
             <!-- Action Buttons -->
             <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
                 <Button x:Name="GenerateReport" 

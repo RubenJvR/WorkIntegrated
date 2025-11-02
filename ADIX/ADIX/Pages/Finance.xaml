@@ -205,7 +205,7 @@
 
                 <!-- Finance Header -->
                 <Border Style="{StaticResource HeaderBorderStyle}">
-                    <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Finance Dashboard"/>
+                    <TextBlock x:Name="FinanceHeader" Style="{StaticResource HeaderTextStyle}" Text="Finance Dashboard"/>
                 </Border>
 
                 <!-- Finance Metrics -->
