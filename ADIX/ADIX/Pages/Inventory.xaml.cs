@@ -564,7 +564,7 @@ namespace ADIX
             }
         }
 
-        // 🔍 Live search typing handler
+        // Live search typing handler
         private async void ProductSearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             string query = ProductSearchTextBox.Text.Trim();
@@ -981,7 +981,7 @@ namespace ADIX
                     {
                         // Success message
                         MessageBox.Show(
-                            $"✅ Item '{itemName}' removed successfully!\n\n" +
+                            $"Item '{itemName}' removed successfully!\n\n" +
                             "Changes will sync to other devices when online.",
                             "Remove Success",
                             MessageBoxButton.OK,
