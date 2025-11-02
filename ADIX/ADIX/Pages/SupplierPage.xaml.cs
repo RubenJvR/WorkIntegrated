@@ -1350,7 +1350,7 @@ namespace ADIX
 
                 var processButton = new Button
                 {
-                    Content = "💳 PROCESS PAYMENT", // Added emoji to make it more visible
+                    Content = "PROCESS PAYMENT", 
                     Background = new SolidColorBrush(Color.FromRgb(74, 169, 2)), // Green
                     Foreground = Brushes.White,
                     FontWeight = FontWeights.Bold,
@@ -1368,7 +1368,7 @@ namespace ADIX
 
                 var cancelButton = new Button
                 {
-                    Content = "❌ Cancel",
+                    Content = "Cancel",
                     Background = new SolidColorBrush(Color.FromRgb(79, 79, 79)), // #4F4F4F
                     Foreground = Brushes.White,
                     FontWeight = FontWeights.Bold,
