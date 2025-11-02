@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "3/tUSMVufcI=",
+  "dgSpecHash": "VbDGQ3jSHhQ=",
   "success": true,
   "projectFilePath": "D:\\VStudio work\\Repos\\ADIX_V5\\ADIX\\ADIX\\ADIX.csproj",
   "expectedPackageFiles": [
@@ -49,6 +49,7 @@
     "D:\\VStudio work\\Repos\\ADIX_V5\\ADIX\\NuGetPackages\\microsoft.sqlserver.server\\1.0.0\\microsoft.sqlserver.server.1.0.0.nupkg.sha512",
     "D:\\VStudio work\\Repos\\ADIX_V5\\ADIX\\NuGetPackages\\opentk\\3.3.1\\opentk.3.3.1.nupkg.sha512",
     "D:\\VStudio work\\Repos\\ADIX_V5\\ADIX\\NuGetPackages\\opentk.glwpfcontrol\\3.3.0\\opentk.glwpfcontrol.3.3.0.nupkg.sha512",
+    "D:\\VStudio work\\Repos\\ADIX_V5\\ADIX\\NuGetPackages\\questpdf\\2025.7.3\\questpdf.2025.7.3.nupkg.sha512",
     "D:\\VStudio work\\Repos\\ADIX_V5\\ADIX\\NuGetPackages\\skiasharp\\3.119.0\\skiasharp.3.119.0.nupkg.sha512",
     "D:\\VStudio work\\Repos\\ADIX_V5\\ADIX\\NuGetPackages\\skiasharp.harfbuzz\\3.119.0\\skiasharp.harfbuzz.3.119.0.nupkg.sha512",
     "D:\\VStudio work\\Repos\\ADIX_V5\\ADIX\\NuGetPackages\\skiasharp.nativeassets.macos\\3.119.0\\skiasharp.nativeassets.macos.3.119.0.nupkg.sha512",
