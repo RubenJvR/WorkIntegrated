@@ -261,7 +261,7 @@ namespace ADIX
             string checkQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name='SELLER'";
             using var checkCmd = new SqliteCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-            CreateSQLiteTables(connection);
+            C
             if (result == null)
             {
            
@@ -304,8 +304,7 @@ namespace ADIX
             string checkQuery = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'SELLER'";
             using var checkCmd = new SqlCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-            CreateAzureSQLTables(connection);
-
+            
             if (result == null)
             {
                 CreateAzureSQLTables(connection);
@@ -381,6 +380,8 @@ namespace ADIX
         private static void CreateSQLiteTables(SqliteConnection connection)
         {
             string createTablesSql = @"
+
+
 
         CREATE TABLE IF NOT EXISTS SELLER(
             sellerID INTEGER NOT NULL PRIMARY KEY,
