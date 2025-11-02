@@ -261,12 +261,12 @@ namespace ADIX
             string checkQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name='SELLER'";
             using var checkCmd = new SqliteCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-
+            CreateSQLiteTables(connection);
             if (result == null)
             {
            
                 CreateSQLiteTables(connection);
-                InsertTestDataSQLite(connection);
+                //InsertTestDataSQLite(connection);
             }
             else
             {
@@ -304,30 +304,79 @@ namespace ADIX
             string checkQuery = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'SELLER'";
             using var checkCmd = new SqlCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
+            CreateAzureSQLTables(connection);
 
             if (result == null)
             {
                 CreateAzureSQLTables(connection);
-                InsertTestDataAzureSQL(connection);
+                //InsertTestDataAzureSQL(connection);
             }
         }
 
         //checks username and password on login
         internal static bool ValidateUser(string username, string passwordhash)
         {
-            using var conn = new SqliteConnection(SqliteConnectionString);
-            conn.Open();
+            try
+            {
+                using var conn = new SqliteConnection(SqliteConnectionString);
+                conn.Open();
 
-            string query = "SELECT COUNT(1) FROM STAFF WHERE username = @username AND passwordhash = @passwordhash";
+                // First, ensure the STAFF table exists with correct schema
+                EnsureStaffTableExists(conn);
 
-            using var cmd = new SqliteCommand(query, conn);
-            cmd.Parameters.AddWithValue("@username", username);
-            cmd.Parameters.AddWithValue("@passwordhash", passwordhash);
+                string query = "SELECT COUNT(1) FROM STAFF WHERE userName = @username AND passwordHash = @passwordhash";
 
-            var result = cmd.ExecuteScalar();
-            return Convert.ToInt32(result) > 0;
+                using var cmd = new SqliteCommand(query, conn);
+                cmd.Parameters.AddWithValue("@username", username);
+                cmd.Parameters.AddWithValue("@passwordhash", passwordhash);
+
+                var result = cmd.ExecuteScalar();
+                return Convert.ToInt32(result) > 0;
+            }
+            catch (SqliteException ex) when (ex.SqliteErrorCode == 1) // SQLITE_ERROR - no such table
+            {
+                // Table doesn't exist yet - database still initializing
+                Console.WriteLine("STAFF table not found during login validation");
+                return false;
+            }
         }
+        private static void EnsureStaffTableExists(SqliteConnection connection)
+        {
+            try
+            {
+                // Check if STAFF table exists
+                string checkQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name='STAFF'";
+                using var checkCmd = new SqliteCommand(checkQuery, connection);
+                var result = checkCmd.ExecuteScalar();
 
+                if (result == null)
+                {
+                    // Create the STAFF table using your main schema
+                    string createStaffSql = @"
+                CREATE TABLE STAFF(
+                    staffID INTEGER NOT NULL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    Role TEXT,
+                    userName TEXT UNIQUE,
+                    passwordHash TEXT,
+                    salary REAL,
+                    lastModified TEXT DEFAULT CURRENT_TIMESTAMP
+                );
+
+                INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary)
+                VALUES (1, 'Default Admin', 'Admin', 'admin', 'admin123', 15000.00);
+            ";
+
+                    using var createCmd = new SqliteCommand(createStaffSql, connection);
+                    createCmd.ExecuteNonQuery();
+                    Console.WriteLine("STAFF table created during login validation");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error ensuring STAFF table exists: {ex.Message}");
+            }
+        }
         //creates the local tables in sqlite
         private static void CreateSQLiteTables(SqliteConnection connection)
         {
@@ -449,6 +498,9 @@ namespace ADIX
             syncedToAzure INTEGER DEFAULT 0,
             timestamp TEXT DEFAULT CURRENT_TIMESTAMP
         );
+INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary)
+    VALUES (1, 'Default Admin', 'Admin', 'admin', 'admin123', 15000.00);
+    
 
         CREATE INDEX IF NOT EXISTS idx_item_supplier ON ITEM(supplierID);
         CREATE INDEX IF NOT EXISTS idx_item_seller ON ITEM(sellerID);
@@ -1954,7 +2006,7 @@ namespace ADIX
             string checkDataSql = "SELECT COUNT(*) FROM EXPENSES";
             using var checkCmd = new SqliteCommand(checkDataSql, connection);
             var count = Convert.ToInt32(checkCmd.ExecuteScalar());
-
+/*
             if (count == 0)
             {
                 string insertSampleData = @"
@@ -1966,7 +2018,7 @@ namespace ADIX
 
                 using var insertCmd = new SqliteCommand(insertSampleData, connection);
                 insertCmd.ExecuteNonQuery();
-            }
+            }*/
         }
 
 
