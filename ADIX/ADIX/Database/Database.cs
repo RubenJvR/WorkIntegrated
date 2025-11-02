@@ -382,7 +382,6 @@ namespace ADIX
         {
             string createTablesSql = @"
 
-
         CREATE TABLE IF NOT EXISTS SELLER(
             sellerID INTEGER NOT NULL PRIMARY KEY,
             name TEXT NOT NULL,
@@ -469,7 +468,7 @@ namespace ADIX
             FOREIGN KEY(staffID) REFERENCES STAFF(staffID)
         );
 
-        -- FIXED: No CHECK constraint on quantity to allow negative values for refunds
+      
         CREATE TABLE IF NOT EXISTS INVOICEITEM(
             invoiceItemID INTEGER NOT NULL PRIMARY KEY,
             quantity INTEGER NOT NULL,
@@ -500,7 +499,29 @@ namespace ADIX
         );
 INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary)
     VALUES (1, 'Default Admin', 'Admin', 'admin', 'admin123', 15000.00);
-    
+    CREATE TABLE IF NOT EXISTS SUPPLIER_PAYMENT(
+            paymentID INTEGER PRIMARY KEY AUTOINCREMENT,
+            supplierID INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            paymentDate TEXT NOT NULL,
+            paymentMethod TEXT NOT NULL,
+            referenceNumber TEXT,
+            notes TEXT,
+            lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID)
+        );
+
+        CREATE TABLE IF NOT EXISTS SUPPLIER_PAYMENT_ALLOCATION(
+            allocationID INTEGER PRIMARY KEY AUTOINCREMENT,
+            paymentID INTEGER NOT NULL,
+            itemID INTEGER NOT NULL,
+            quantity INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(paymentID) REFERENCES SUPPLIER_PAYMENT(paymentID),
+            FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
+        );
+
 
         CREATE INDEX IF NOT EXISTS idx_item_supplier ON ITEM(supplierID);
         CREATE INDEX IF NOT EXISTS idx_item_seller ON ITEM(sellerID);
@@ -520,6 +541,8 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
         private static void CreateAzureSQLTables(SqlConnection connection)
         {
             string createTablesSql = @"
+
+
 
         CREATE TABLE SELLER(
             sellerID INT NOT NULL PRIMARY KEY,
@@ -618,7 +641,29 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
             description NVARCHAR(500),
             paymentMethod NVARCHAR(50) DEFAULT 'Cash',
             lastModified DATETIME DEFAULT GETUTCDATE()
-)
+);
+        CREATE TABLE SUPPLIER_PAYMENT(
+                    paymentID INT IDENTITY(1,1) PRIMARY KEY,
+                    supplierID INT NOT NULL,
+                    amount FLOAT NOT NULL,
+                    paymentDate DATETIME NOT NULL,
+                    paymentMethod NVARCHAR(50) NOT NULL,
+                    referenceNumber NVARCHAR(100),
+                    notes NVARCHAR(500),
+                    lastModified DATETIME DEFAULT GETUTCDATE(),
+                    FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID)
+                );
+
+        CREATE TABLE SUPPLIER_PAYMENT_ALLOCATION(
+            allocationID INT IDENTITY(1,1) PRIMARY KEY,
+            paymentID INT NOT NULL,
+            itemID INT NOT NULL,
+            quantity INT NOT NULL,
+            amount FLOAT NOT NULL,
+            lastModified DATETIME DEFAULT GETUTCDATE(),
+            FOREIGN KEY(paymentID) REFERENCES SUPPLIER_PAYMENT(paymentID),
+            FOREIGN KEY(itemID) REFERENCES ITEM(itemID)
+);
 
         CREATE INDEX idx_item_supplier ON ITEM(supplierID);
         CREATE INDEX idx_item_seller ON ITEM(sellerID);
@@ -863,6 +908,7 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
             SyncMasterData(sqliteConn, azureConn, "CUSTOMER", new[] { "customerID", "name", "phone", "email", "credit", "lastModified" });
             SyncMasterData(sqliteConn, azureConn, "STAFF", new[] { "staffID", "name", "Role", "userName", "passwordHash", "salary", "lastModified" });
             SyncExpenses(sqliteConn, azureConn);
+            SyncSupplierPayments(sqliteConn, azureConn);
             //Download missing items from azure
             DownloadMissingItemsFromAzure(sqliteConn, azureConn);
 
@@ -2626,6 +2672,296 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
             catch (Exception ex)
             {
                 Console.WriteLine($"Error ensuring supplier payment tables exist: {ex.Message}");
+            }
+        }
+        private static void SyncSupplierPayments(SqliteConnection sqliteConn, SqlConnection azureConn)
+        {
+            try
+            {
+                Console.WriteLine("[SUPPLIER_PAYMENT] Starting supplier payment sync...");
+
+                // Ensure tables exist locally
+                EnsureSupplierPaymentTablesExist();
+
+                // Get local supplier payments
+                var localPayments = GetTableData(sqliteConn, "SUPPLIER_PAYMENT",
+                    new[] { "paymentID", "supplierID", "amount", "paymentDate", "paymentMethod", "referenceNumber", "notes", "lastModified" });
+
+                // Get Azure supplier payments
+                var azurePayments = GetTableDataFromAzure(azureConn, "SUPPLIER_PAYMENT",
+                    new[] { "paymentID", "supplierID", "amount", "paymentDate", "paymentMethod", "referenceNumber", "notes", "lastModified" });
+
+                using var transaction = azureConn.BeginTransaction();
+                try
+                {
+                    // Upload local payments to Azure
+                    foreach (DataRow localRow in localPayments.Rows)
+                    {
+                        var paymentID = Convert.ToInt32(localRow["paymentID"]);
+                        var localModified = DateTime.Parse(localRow["lastModified"].ToString());
+
+                        var azureRow = azurePayments.AsEnumerable()
+                            .FirstOrDefault(r => r["paymentID"].ToString() == paymentID.ToString());
+
+                        if (azureRow == null)
+                        {
+                            // New payment - insert to Azure
+                            var insertSql = @"
+                        SET IDENTITY_INSERT SUPPLIER_PAYMENT ON;
+                        INSERT INTO SUPPLIER_PAYMENT (paymentID, supplierID, amount, paymentDate, paymentMethod, referenceNumber, notes, lastModified)
+                        VALUES (@paymentID, @supplierID, @amount, @paymentDate, @paymentMethod, @referenceNumber, @notes, @lastModified);
+                        SET IDENTITY_INSERT SUPPLIER_PAYMENT OFF;";
+
+                            using var cmd = new SqlCommand(insertSql, azureConn, transaction);
+                            cmd.Parameters.AddWithValue("@paymentID", paymentID);
+                            cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"]);
+                            cmd.Parameters.AddWithValue("@amount", localRow["amount"]);
+                            cmd.Parameters.AddWithValue("@paymentDate", localRow["paymentDate"]);
+                            cmd.Parameters.AddWithValue("@paymentMethod", localRow["paymentMethod"]);
+                            cmd.Parameters.AddWithValue("@referenceNumber", localRow["referenceNumber"] == DBNull.Value ? (object)DBNull.Value : localRow["referenceNumber"]);
+                            cmd.Parameters.AddWithValue("@notes", localRow["notes"] == DBNull.Value ? (object)DBNull.Value : localRow["notes"]);
+                            cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
+                            cmd.ExecuteNonQuery();
+
+                            Console.WriteLine($"[SUPPLIER_PAYMENT] Uploaded new payment {paymentID} to Azure");
+
+                            // Sync allocations for this payment
+                            SyncPaymentAllocationsForPayment(sqliteConn, azureConn, transaction, paymentID);
+                        }
+                        else
+                        {
+                            // Payment exists - check which is newer
+                            var azureModified = DateTime.Parse(azureRow["lastModified"].ToString());
+
+                            if (localModified > azureModified)
+                            {
+                                // Local is newer - update Azure
+                                var updateSql = @"
+                            UPDATE SUPPLIER_PAYMENT 
+                            SET supplierID=@supplierID, amount=@amount, paymentDate=@paymentDate, 
+                                paymentMethod=@paymentMethod, referenceNumber=@referenceNumber, 
+                                notes=@notes, lastModified=@lastModified
+                            WHERE paymentID=@paymentID";
+
+                                using var cmd = new SqlCommand(updateSql, azureConn, transaction);
+                                cmd.Parameters.AddWithValue("@paymentID", paymentID);
+                                cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"]);
+                                cmd.Parameters.AddWithValue("@amount", localRow["amount"]);
+                                cmd.Parameters.AddWithValue("@paymentDate", localRow["paymentDate"]);
+                                cmd.Parameters.AddWithValue("@paymentMethod", localRow["paymentMethod"]);
+                                cmd.Parameters.AddWithValue("@referenceNumber", localRow["referenceNumber"] == DBNull.Value ? (object)DBNull.Value : localRow["referenceNumber"]);
+                                cmd.Parameters.AddWithValue("@notes", localRow["notes"] == DBNull.Value ? (object)DBNull.Value : localRow["notes"]);
+                                cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
+                                cmd.ExecuteNonQuery();
+
+                                Console.WriteLine($"[SUPPLIER_PAYMENT] Updated payment {paymentID} in Azure (local newer)");
+                            }
+                        }
+                    }
+
+                    transaction.Commit();
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    throw new Exception($"Failed to upload supplier payments to Azure: {ex.Message}", ex);
+                }
+
+                // Download payments from Azure to Local
+                Console.WriteLine("[SUPPLIER_PAYMENT] Downloading changes from Azure to Local...");
+
+                foreach (DataRow azureRow in azurePayments.Rows)
+                {
+                    var paymentID = Convert.ToInt32(azureRow["paymentID"]);
+                    var azureModified = DateTime.Parse(azureRow["lastModified"].ToString());
+
+                    var localRow = localPayments.AsEnumerable()
+                        .FirstOrDefault(r => r["paymentID"].ToString() == paymentID.ToString());
+
+                    if (localRow == null)
+                    {
+                        // New payment from Azure - insert to local
+                        var insertLocalSql = @"
+                    INSERT INTO SUPPLIER_PAYMENT (paymentID, supplierID, amount, paymentDate, paymentMethod, referenceNumber, notes, lastModified)
+                    VALUES (@paymentID, @supplierID, @amount, @paymentDate, @paymentMethod, @referenceNumber, @notes, @lastModified)";
+
+                        using var cmd = new SqliteCommand(insertLocalSql, sqliteConn);
+                        cmd.Parameters.AddWithValue("@paymentID", paymentID);
+                        cmd.Parameters.AddWithValue("@supplierID", azureRow["supplierID"]);
+                        cmd.Parameters.AddWithValue("@amount", azureRow["amount"]);
+                        cmd.Parameters.AddWithValue("@paymentDate", azureRow["paymentDate"]);
+                        cmd.Parameters.AddWithValue("@paymentMethod", azureRow["paymentMethod"]);
+                        cmd.Parameters.AddWithValue("@referenceNumber", azureRow["referenceNumber"] == DBNull.Value ? (object)DBNull.Value : azureRow["referenceNumber"]);
+                        cmd.Parameters.AddWithValue("@notes", azureRow["notes"] == DBNull.Value ? (object)DBNull.Value : azureRow["notes"]);
+                        cmd.Parameters.AddWithValue("@lastModified", azureRow["lastModified"]);
+                        cmd.ExecuteNonQuery();
+
+                        Console.WriteLine($"[SUPPLIER_PAYMENT] Downloaded new payment {paymentID} from Azure");
+
+                        // Download allocations for this payment
+                        DownloadPaymentAllocationsForPayment(sqliteConn, azureConn, paymentID);
+                    }
+                    else
+                    {
+                        // Payment exists - check which is newer
+                        var localModified = DateTime.Parse(localRow["lastModified"].ToString());
+
+                        if (azureModified > localModified)
+                        {
+                            // Azure is newer - update local
+                            var updateLocalSql = @"
+                        UPDATE SUPPLIER_PAYMENT 
+                        SET supplierID=@supplierID, amount=@amount, paymentDate=@paymentDate, 
+                            paymentMethod=@paymentMethod, referenceNumber=@referenceNumber, 
+                            notes=@notes, lastModified=@lastModified
+                        WHERE paymentID=@paymentID";
+
+                            using var cmd = new SqliteCommand(updateLocalSql, sqliteConn);
+                            cmd.Parameters.AddWithValue("@paymentID", paymentID);
+                            cmd.Parameters.AddWithValue("@supplierID", azureRow["supplierID"]);
+                            cmd.Parameters.AddWithValue("@amount", azureRow["amount"]);
+                            cmd.Parameters.AddWithValue("@paymentDate", azureRow["paymentDate"]);
+                            cmd.Parameters.AddWithValue("@paymentMethod", azureRow["paymentMethod"]);
+                            cmd.Parameters.AddWithValue("@referenceNumber", azureRow["referenceNumber"] == DBNull.Value ? (object)DBNull.Value : azureRow["referenceNumber"]);
+                            cmd.Parameters.AddWithValue("@notes", azureRow["notes"] == DBNull.Value ? (object)DBNull.Value : azureRow["notes"]);
+                            cmd.Parameters.AddWithValue("@lastModified", azureRow["lastModified"]);
+                            cmd.ExecuteNonQuery();
+
+                            Console.WriteLine($"[SUPPLIER_PAYMENT] Updated local payment {paymentID} from Azure (Azure newer)");
+                        }
+                    }
+                }
+
+                Console.WriteLine("[SUPPLIER_PAYMENT] Supplier payment sync completed successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SUPPLIER_PAYMENT] Error syncing supplier payments: {ex.Message}");
+                throw;
+            }
+        }
+
+        private static void SyncPaymentAllocationsForPayment(SqliteConnection sqliteConn, SqlConnection azureConn, SqlTransaction transaction, int paymentID)
+        {
+            try
+            {
+                // Get local allocations for this payment
+                var localAllocations = GetTableData(sqliteConn, "SUPPLIER_PAYMENT_ALLOCATION",
+                    new[] { "allocationID", "paymentID", "itemID", "quantity", "amount", "lastModified" },
+                    $"WHERE paymentID = {paymentID}");
+
+                // Get Azure allocations for this payment
+                var azureAllocations = GetTableDataFromAzure(azureConn, "SUPPLIER_PAYMENT_ALLOCATION",
+                    new[] { "allocationID", "paymentID", "itemID", "quantity", "amount", "lastModified" },
+                    $"WHERE paymentID = {paymentID}");
+
+                // Upload local allocations to Azure
+                foreach (DataRow localRow in localAllocations.Rows)
+                {
+                    var allocationID = Convert.ToInt32(localRow["allocationID"]);
+                    var localModified = DateTime.Parse(localRow["lastModified"].ToString());
+
+                    var azureRow = azureAllocations.AsEnumerable()
+                        .FirstOrDefault(r => r["allocationID"].ToString() == allocationID.ToString());
+
+                    if (azureRow == null)
+                    {
+                        // New allocation - insert to Azure
+                        var insertSql = @"
+                    SET IDENTITY_INSERT SUPPLIER_PAYMENT_ALLOCATION ON;
+                    INSERT INTO SUPPLIER_PAYMENT_ALLOCATION (allocationID, paymentID, itemID, quantity, amount, lastModified)
+                    VALUES (@allocationID, @paymentID, @itemID, @quantity, @amount, @lastModified);
+                    SET IDENTITY_INSERT SUPPLIER_PAYMENT_ALLOCATION OFF;";
+
+                        using var cmd = new SqlCommand(insertSql, azureConn, transaction);
+                        cmd.Parameters.AddWithValue("@allocationID", allocationID);
+                        cmd.Parameters.AddWithValue("@paymentID", paymentID);
+                        cmd.Parameters.AddWithValue("@itemID", localRow["itemID"]);
+                        cmd.Parameters.AddWithValue("@quantity", localRow["quantity"]);
+                        cmd.Parameters.AddWithValue("@amount", localRow["amount"]);
+                        cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
+                        cmd.ExecuteNonQuery();
+
+                        Console.WriteLine($"[SUPPLIER_PAYMENT_ALLOCATION] Uploaded allocation {allocationID} to Azure");
+                    }
+                    else
+                    {
+                        // Allocation exists - check which is newer
+                        var azureModified = DateTime.Parse(azureRow["lastModified"].ToString());
+
+                        if (localModified > azureModified)
+                        {
+                            // Local is newer - update Azure
+                            var updateSql = @"
+                        UPDATE SUPPLIER_PAYMENT_ALLOCATION 
+                        SET itemID=@itemID, quantity=@quantity, amount=@amount, lastModified=@lastModified
+                        WHERE allocationID=@allocationID";
+
+                            using var cmd = new SqlCommand(updateSql, azureConn, transaction);
+                            cmd.Parameters.AddWithValue("@allocationID", allocationID);
+                            cmd.Parameters.AddWithValue("@itemID", localRow["itemID"]);
+                            cmd.Parameters.AddWithValue("@quantity", localRow["quantity"]);
+                            cmd.Parameters.AddWithValue("@amount", localRow["amount"]);
+                            cmd.Parameters.AddWithValue("@lastModified", localRow["lastModified"]);
+                            cmd.ExecuteNonQuery();
+
+                            Console.WriteLine($"[SUPPLIER_PAYMENT_ALLOCATION] Updated allocation {allocationID} in Azure (local newer)");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SUPPLIER_PAYMENT_ALLOCATION] Error syncing allocations for payment {paymentID}: {ex.Message}");
+                throw;
+            }
+        }
+
+        private static void DownloadPaymentAllocationsForPayment(SqliteConnection sqliteConn, SqlConnection azureConn, int paymentID)
+        {
+            try
+            {
+                // Get Azure allocations for this payment
+                var azureAllocations = GetTableDataFromAzure(azureConn, "SUPPLIER_PAYMENT_ALLOCATION",
+                    new[] { "allocationID", "paymentID", "itemID", "quantity", "amount", "lastModified" },
+                    $"WHERE paymentID = {paymentID}");
+
+                // Get local allocations for this payment
+                var localAllocations = GetTableData(sqliteConn, "SUPPLIER_PAYMENT_ALLOCATION",
+                    new[] { "allocationID" },
+                    $"WHERE paymentID = {paymentID}");
+
+                var localAllocationIds = new HashSet<string>(localAllocations.AsEnumerable().Select(r => r["allocationID"].ToString()));
+
+                // Download allocations from Azure to Local
+                foreach (DataRow azureRow in azureAllocations.Rows)
+                {
+                    var allocationID = Convert.ToInt32(azureRow["allocationID"]);
+
+                    if (!localAllocationIds.Contains(allocationID.ToString()))
+                    {
+                        // New allocation from Azure - insert to local
+                        var insertLocalSql = @"
+                    INSERT INTO SUPPLIER_PAYMENT_ALLOCATION (allocationID, paymentID, itemID, quantity, amount, lastModified)
+                    VALUES (@allocationID, @paymentID, @itemID, @quantity, @amount, @lastModified)";
+
+                        using var cmd = new SqliteCommand(insertLocalSql, sqliteConn);
+                        cmd.Parameters.AddWithValue("@allocationID", allocationID);
+                        cmd.Parameters.AddWithValue("@paymentID", paymentID);
+                        cmd.Parameters.AddWithValue("@itemID", azureRow["itemID"]);
+                        cmd.Parameters.AddWithValue("@quantity", azureRow["quantity"]);
+                        cmd.Parameters.AddWithValue("@amount", azureRow["amount"]);
+                        cmd.Parameters.AddWithValue("@lastModified", azureRow["lastModified"]);
+                        cmd.ExecuteNonQuery();
+
+                        Console.WriteLine($"[SUPPLIER_PAYMENT_ALLOCATION] Downloaded allocation {allocationID} from Azure");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SUPPLIER_PAYMENT_ALLOCATION] Error downloading allocations for payment {paymentID}: {ex.Message}");
+                throw;
             }
         }
 
