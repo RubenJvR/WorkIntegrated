@@ -140,13 +140,13 @@ namespace ADIX.Pages
                 cmd.Parameters.AddWithValue("@username", staff.Username ?? "");
                 cmd.Parameters.AddWithValue("@passwordHash", staff.PasswordHash ?? "");
 
-                // FIX: Ensure salary is converted to double for SQLite REAL type
+                // Ensure salary is converted to double for SQLite REAL type
                 cmd.Parameters.AddWithValue("@salary", Convert.ToDouble(staff.Salary));
 
                 cmd.Parameters.AddWithValue("@staffID", staff.StaffID);
 
                 int rowsAffected = cmd.ExecuteNonQuery();
-                // ... rest of method
+              
             }
             catch (Exception ex)
             {

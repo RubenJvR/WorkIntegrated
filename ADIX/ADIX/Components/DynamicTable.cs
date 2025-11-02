@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -79,4 +78,7 @@ namespace WorkIntegrated
                 new PropertyMetadata(null, TableDataChanged)
             );
     }
+
+    //reference for creating dynamic tables
+    //https://stackoverflow.com/questions/13106967/how-to-create-table-dynamically-in-c-sharp
 }

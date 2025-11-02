@@ -140,7 +140,7 @@ namespace ADIX
                 var paymentItem = (ComboBoxItem)PaymentMethod.SelectedItem;
                 string payment = paymentItem.Content.ToString() ?? string.Empty;
 
-                // Only filter if not "All"
+                // Only filter if not All
                 if (payment != "All")
                 {
                     // Case-insensitive comparison, handle null/empty

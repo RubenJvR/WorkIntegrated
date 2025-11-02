@@ -21,6 +21,10 @@ using System.Windows.Media;
 
 namespace ADIX
 {
+    //reference for INotifyPropertyChanged
+    //https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.inotifypropertychanged?view=net-9.0
+    //reference for sqlite
+    //https://www.sqlitetutorial.net/sqlite-csharp/insert/
     public partial class Finance : Page, INotifyPropertyChanged
     {
         private const string ConnectionString = "Data Source=ADIX.db";
@@ -443,7 +447,7 @@ namespace ADIX
             {
                 SalaryCalculationDetails.Text = $"Monthly Salary: R {selectedStaffSalary:N2} | Payment Amount: R {amount:N2}";
 
-                if (amount > selectedStaffSalary * 1.5) // Allow up to 50% bonus
+                if (amount > selectedStaffSalary * 1.5)
                 {
                     SalaryCalculationDetails.Foreground = Brushes.Orange;
                     SalaryCalculationDetails.Text += " (Note: Amount exceeds regular salary)";
@@ -487,7 +491,7 @@ namespace ADIX
                     return;
                 }
 
-                // Amount validation - prevent excessive payments
+                // Amount validation
                 if (amount > selectedStaffSalary * 2)
                 {
                     var result = MessageBox.Show($"Payment amount (R {amount:N2}) is more than double the regular salary (R {selectedStaffSalary:N2}). Are you sure you want to proceed?",
@@ -510,8 +514,8 @@ namespace ADIX
                 string paymentDescription = $"Salary payment for {staffName} (Staff ID: {selectedStaffId}) on {paymentDate:yyyy-MM-dd}";
                 Database.ProcessSalaryPayment(selectedStaffId, amount, paymentDateStr, "EFT", paymentDescription);
 
-                // Update staff salary if different from current (with validation)
-                if (Math.Abs(amount - selectedStaffSalary) > 0.01) // Only update if significantly different
+                // Update staff salary if different from current 
+                if (Math.Abs(amount - selectedStaffSalary) > 0.01) 
                 {
                     Database.UpdateStaffSalary(selectedStaffId, amount);
                 }
@@ -638,7 +642,7 @@ namespace ADIX
 
                             // Use ACTUAL dates from database
                             DateTime invoiceDate = stockReceivedDate;
-                            DateTime dueDate = invoiceDate.AddDays(30); // Standard 30-day terms
+                            DateTime dueDate = invoiceDate.AddDays(30);
 
                             paymentData.Rows.Add(
                                 reader["SupplierName"].ToString(),
@@ -920,7 +924,7 @@ namespace ADIX
                     var last6Months = GetLast6Months();
                     foreach (var month in last6Months)
                     {
-                        trendData[month.Key] = metrics.turnover / 6; // Distribute evenly as fallback
+                        trendData[month.Key] = metrics.turnover / 6;
                     }
                 }
                 catch

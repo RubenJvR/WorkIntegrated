@@ -20,7 +20,7 @@ namespace ADIX
             this.Loaded += PointOfSale_Loaded;
             this.Unloaded += PointOfSale_Unloaded;
 
-            // Setup auto-refresh timer (every 30 seconds)
+            // Setup auto-refresh timer 
             _refreshTimer = new System.Windows.Threading.DispatcherTimer();
             _refreshTimer.Interval = TimeSpan.FromSeconds(120);
             _refreshTimer.Tick += RefreshTimer_Tick;

@@ -36,7 +36,7 @@ namespace ADIX
                 // Set other default values
                 InvoiceDate = System.DateTime.Now.ToString("yyyy-MM-dd"),
                 InvoiceNumber = "INV-" + System.DateTime.Now.ToString("yyyyMMddHHmmss"),
-                // These will be calculated automatically when items are added
+                
                 SubTotal = 0,
                 TotalItemDiscounts = 0,
                 OverallDiscountAmount = 0,
@@ -101,8 +101,7 @@ namespace ADIX
                     }
                     else if (extension == ".pdf")
                     {
-                        // For PDF, you might want to use a library like iTextSharp or PDFSharp
-                        // For now, we'll save as PNG and suggest PDF as future enhancement
+                        
                         MessageBox.Show("PDF export is currently not available. Please save as PNG for now.",
                             "Export Format", MessageBoxButton.OK, MessageBoxImage.Information);
                     }

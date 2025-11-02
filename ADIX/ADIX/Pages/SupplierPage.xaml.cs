@@ -24,7 +24,7 @@ namespace ADIX
 
         private void SupplierPage_Loaded(object sender, RoutedEventArgs e)
         {
-            // Reconcile stock to ensure accurate numbers
+            // ensure accurate numbers
             Database.ReconcileStockQuantities();
             LoadSuppliers();
             LoadSupplierData();
@@ -65,7 +65,7 @@ namespace ADIX
                     });
                 }
 
-                // Select "All Suppliers" by default
+                // Select All Suppliers by default
                 Supplier.SelectedIndex = 0;
             }
             catch (Exception ex)
@@ -734,12 +734,12 @@ namespace ADIX
                 var balanceWindow = new Window
                 {
                     Title = $"Balance Summary - {balance.SupplierName}",
-                    Width = 920, // Slightly wider to accommodate scrollbar
+                    Width = 920, 
                     Height = 700,
                     WindowStartupLocation = WindowStartupLocation.CenterOwner,
                     Owner = Window.GetWindow(this),
-                    Background = new SolidColorBrush(Color.FromRgb(135, 135, 135)), // #878787
-                    ResizeMode = ResizeMode.CanResize, // Allow resizing
+                    Background = new SolidColorBrush(Color.FromRgb(135, 135, 135)), 
+                    ResizeMode = ResizeMode.CanResize, 
                     MinWidth = 900,
                     MinHeight = 600
                 };
@@ -770,7 +770,7 @@ namespace ADIX
                 // HEADER
                 var headerBorder = new Border
                 {
-                    Background = new SolidColorBrush(Color.FromRgb(74, 169, 2)), // #4AA902
+                    Background = new SolidColorBrush(Color.FromRgb(74, 169, 2)), 
                     BorderBrush = Brushes.Black,
                     BorderThickness = new Thickness(1, 1, 1, 1),
                     CornerRadius = new CornerRadius(10),
@@ -1083,8 +1083,8 @@ namespace ADIX
                     Height = 550,
                     WindowStartupLocation = WindowStartupLocation.CenterOwner,
                     Owner = Window.GetWindow(this),
-                    Background = new SolidColorBrush(Color.FromRgb(135, 135, 135)), // #878787
-                    ResizeMode = ResizeMode.CanResize, // Allow resizing for better UX
+                    Background = new SolidColorBrush(Color.FromRgb(135, 135, 135)), 
+                    ResizeMode = ResizeMode.CanResize, 
                     WindowStyle = WindowStyle.SingleBorderWindow,
                     MinWidth = 450,
                     MinHeight = 500
@@ -1164,7 +1164,7 @@ namespace ADIX
                 // Amount Input
                 var amountBorder = new Border
                 {
-                    Background = new SolidColorBrush(Color.FromRgb(79, 79, 79)), // #4F4F4F
+                    Background = new SolidColorBrush(Color.FromRgb(79, 79, 79)), 
                     BorderBrush = Brushes.Black,
                     BorderThickness = new Thickness(1, 1, 1, 1),
                     CornerRadius = new CornerRadius(6),
@@ -1411,7 +1411,7 @@ namespace ADIX
                 {
                     if (e.Key == System.Windows.Input.Key.Enter)
                     {
-                        // For notes, don't process on Enter (allows multiline)
+                        // For notes, don't process on Enter 
                         if (!notesTextBox.AcceptsReturn)
                         {
                             ProcessThePayment();

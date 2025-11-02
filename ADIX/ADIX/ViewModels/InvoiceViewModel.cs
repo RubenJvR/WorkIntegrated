@@ -33,7 +33,7 @@ namespace ADIX.ViewModels
             CalculateTotals();
         }
 
-        // Updated constructor to accept overall discount
+  
         public InvoiceViewModel(System.Collections.Generic.List<POSItem> cartItems, string customerName, string selectedStaff, string vatAmount, string paymentMethod, string customerAddress, decimal overallDiscountPercent)
         {
             InvoiceItems = new ObservableCollection<InvoiceItem>();

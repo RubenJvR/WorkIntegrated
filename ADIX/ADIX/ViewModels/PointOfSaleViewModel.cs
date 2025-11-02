@@ -172,7 +172,7 @@ namespace ADIX.ViewModels
                 _repository.AddRefundItems(refundId, itemsToRefund);
 
 
-               //Database.ProcessSale(refundId); // This will handle negative quantities for returns
+               //Database.ProcessSale(refundId) This will handle negative quantities for returns
 
                 MessageBox.Show($"Refund processed successfully!\nRefund #: {refundId}\nRefund Amount: R {Math.Abs(TotalBill):F2}",
                     "Refund Success", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -338,7 +338,7 @@ namespace ADIX.ViewModels
             get => _vatAmount;
             private set
             {
-                _vatAmount = 15m; // Always 15% for South Africa
+                _vatAmount = 15m; // Always 15%
                 OnPropertyChanged(nameof(VATAmount));
                 CalculateTotals();
             }
@@ -461,11 +461,11 @@ namespace ADIX.ViewModels
         {
             // Ensure VAT is reasonable
             if (VATAmount < 0) VATAmount = 0;
-            if (VATAmount > 30) VATAmount = 30; // Assuming max 30% VAT
+            if (VATAmount > 30) VATAmount = 30; 
 
             // Ensure discount is reasonable
             if (DiscountPercent < 0) DiscountPercent = 0;
-            if (DiscountPercent > 100) DiscountPercent = 100; // Max 100% discount
+            if (DiscountPercent > 100) DiscountPercent = 100; 
         }
 
         private bool CanCheckout(object? parameter)
@@ -513,8 +513,8 @@ namespace ADIX.ViewModels
                     CartItems.Add(item);
                 }
 
-                InitializeInvoice(); // Refresh invoice number
-                CalculateTotals();   // Recalculate totals
+                InitializeInvoice(); 
+                CalculateTotals();   
             }
             catch (Exception ex)
             {
@@ -625,7 +625,7 @@ namespace ADIX.ViewModels
 
             // Validate VATAmount
             if (_vatAmount < 0) _vatAmount = 0;
-            if (_vatAmount > 30) _vatAmount = 30; // Assuming max 30% VAT
+            if (_vatAmount > 30) _vatAmount = 30; 
 
             CalculateTotals();
         }

@@ -25,9 +25,10 @@ using static iTextSharp.text.pdf.AcroFields;
 
 namespace ADIX
 {
-    /// <summary>
-    /// Interaction logic for Inventory.xaml
-    /// </summary>
+
+    // Interaction logic for Inventory.xaml
+    //reference for sqlite
+    //https://www.sqlitetutorial.net/sqlite-csharp/insert/
     public partial class Inventory : Page
     {
         private const string ConnStr = "Data Source=ADIX.db";
@@ -90,7 +91,7 @@ namespace ADIX
                     bool success = await Database.SyncAllMissingDataAsync();
                     if (success)
                     {
-                        LoadInventoryAsync(); // Refresh the grid
+                        LoadInventoryAsync(); 
                         MessageBox.Show("All data synchronized successfully!",
                                       "Success",
                                       MessageBoxButton.OK,
@@ -129,6 +130,8 @@ namespace ADIX
                 }
             }
         }
+
+        //only used for testing
         private void ShowAllData_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -137,7 +140,7 @@ namespace ADIX
                 allData.AppendLine("=== COMPLETE DATABASE COMPARISON ===\n");
 
                 // LOCAL DATABASE
-                allData.AppendLine("📍 LOCAL DATABASE (SQLite):");
+                allData.AppendLine(" LOCAL DATABASE (SQLite):");
                 allData.AppendLine("─────────────────────────────");
 
                 using (var localConn = new SqliteConnection("Data Source=ADIX.db"))
@@ -179,7 +182,7 @@ namespace ADIX
                 allData.AppendLine("\n" + new string('=', 50) + "\n");
 
                 // AZURE DATABASE
-                allData.AppendLine("☁️ AZURE DATABASE:");
+                allData.AppendLine("AZURE DATABASE:");
                 allData.AppendLine("──────────────────");
 
                 if (!string.IsNullOrEmpty(Database.AzureSqlConnectionString))
@@ -275,6 +278,7 @@ namespace ADIX
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        //only used for testing
         private async void ForceSync_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -464,13 +468,13 @@ namespace ADIX
                     {
                         await Database.CheckAndSyncAsync();
 
-                        // CRITICAL: Reload the inventory AFTER sync to get any changes from Azure
+                        // Reload the inventory AFTER sync to get any changes from Azure
                         LoadInventoryAsync();
                     }
                     catch (Exception syncEx)
                     {
                         Console.WriteLine($"Immediate sync after min stock update failed: {syncEx.Message}");
-                        // Don't show error to user - it will sync eventually
+                        
                     }
                 }
             }
@@ -548,7 +552,7 @@ namespace ADIX
                     }
                 }
 
-                InventoryGrid.Items.Refresh(); // Refresh to display refund counts
+                InventoryGrid.Items.Refresh();
             }
             catch (Exception ex)
             {
@@ -574,7 +578,7 @@ namespace ADIX
             AutoCompletePopup.IsOpen = results.Any();
         }
 
-        // 🔍 DB search method
+        //DB search method
         private async Task<List<InventoryItem>> SearchItemsAsync(string searchTerm)
         {
             var list = new List<InventoryItem>();
@@ -863,8 +867,6 @@ namespace ADIX
             }
         }
 
-        // Call this in your constructor after LoadInventoryAsync()
-
         private void Delete_Click(object sender, RoutedEventArgs e)
         {
             if (InventoryGrid.SelectedItem == null)
@@ -966,7 +968,7 @@ namespace ADIX
 
                 try
                 {
-                    // Delete from INVOICEITEM first (foreign key constraint)
+                    // Delete from INVOICEITEM first 
                     if (invoiceCount > 0)
                     {
                         string deleteInvoiceItemsSql = "DELETE FROM INVOICEITEM WHERE itemID = @itemID";
