@@ -106,7 +106,7 @@ namespace ADIX.Services
                 double dataGridHeight = headerHeight + (dataGrid.Items.Count * rowHeight) +
                                       borderHeight + marginHeight + 10; // +10 for padding
 
-                // Adjust total height if needed
+      
                 if (dataGridHeight > 400) // If DataGrid is larger than typical A4 section
                 {
                     baseHeight = Math.Max(baseHeight, 800 + dataGridHeight);
@@ -204,7 +204,7 @@ namespace ADIX.Services
             if (original is Border originalBorder)
             {
                 Border copyBorder = new Border();
-                copyBorder.Background = Brushes.White; // Force white background
+                copyBorder.Background = Brushes.White; 
                 copyBorder.BorderBrush = originalBorder.BorderBrush;
                 copyBorder.BorderThickness = originalBorder.BorderThickness;
                 copyBorder.CornerRadius = originalBorder.CornerRadius;
@@ -218,8 +218,8 @@ namespace ADIX.Services
                 // Apply green styling for specific sections
                 if (IsHeadingBorder(originalBorder) || IsSectionBorder(originalBorder))
                 {
-                    copyBorder.Background = new SolidColorBrush(Color.FromRgb(0, 128, 0)); // Green background
-                    copyBorder.BorderBrush = Brushes.Black; // Black border
+                    copyBorder.Background = new SolidColorBrush(Color.FromRgb(0, 128, 0)); 
+                    copyBorder.BorderBrush = Brushes.Black; 
                 }
 
                 if (originalBorder.Child != null)
@@ -239,8 +239,8 @@ namespace ADIX.Services
                     FontSize = originalTextBlock.FontSize,
                     FontWeight = originalTextBlock.FontWeight,
                     FontFamily = originalTextBlock.FontFamily,
-                    Foreground = Brushes.Black, // Force black text
-                    Background = Brushes.Transparent, // Allow parent background to show through
+                    Foreground = Brushes.Black, 
+                    Background = Brushes.Transparent, 
                     HorizontalAlignment = originalTextBlock.HorizontalAlignment,
                     VerticalAlignment = originalTextBlock.VerticalAlignment,
                     TextAlignment = originalTextBlock.TextAlignment,
@@ -252,7 +252,7 @@ namespace ADIX.Services
                 // Apply white text for green backgrounds
                 if (IsHeadingText(originalTextBlock) || IsSectionText(originalTextBlock))
                 {
-                    copyTextBlock.Foreground = Brushes.White; // White text on green background
+                    copyTextBlock.Foreground = Brushes.White; 
                     copyTextBlock.FontWeight = FontWeights.Bold;
                 }
 
@@ -269,7 +269,7 @@ namespace ADIX.Services
                 copyStackPanel.Margin = originalStackPanel.Margin;
                 copyStackPanel.HorizontalAlignment = originalStackPanel.HorizontalAlignment;
                 copyStackPanel.VerticalAlignment = originalStackPanel.VerticalAlignment;
-                copyStackPanel.Background = Brushes.Transparent; // Allow parent background
+                copyStackPanel.Background = Brushes.Transparent; 
 
                 foreach (UIElement child in originalStackPanel.Children)
                 {
@@ -283,7 +283,7 @@ namespace ADIX.Services
             else if (original is Grid originalGrid)
             {
                 Grid copyGrid = new Grid();
-                copyGrid.Background = Brushes.Transparent; // Allow parent background
+                copyGrid.Background = Brushes.Transparent;
                 copyGrid.Margin = originalGrid.Margin;
 
                 // Copy column definitions
@@ -322,8 +322,8 @@ namespace ADIX.Services
                     Text = originalTextBox.Text,
                     FontSize = originalTextBox.FontSize,
                     FontFamily = originalTextBox.FontFamily,
-                    Foreground = Brushes.Black, // Force black text
-                    Background = Brushes.Transparent, // Allow parent background
+                    Foreground = Brushes.Black, 
+                    Background = Brushes.Transparent, 
                     TextWrapping = TextWrapping.Wrap,
                     Margin = originalTextBox.Margin,
                     Padding = originalTextBox.Padding,
@@ -371,7 +371,7 @@ namespace ADIX.Services
 
         private static bool IsHeadingBorder(Border border)
         {
-            // Check if this is a heading border (both Quote and Invoice) by examining visual tree
+            // Check if this is a heading border by examining visual tree
             if (border.Child is TextBlock textBlock)
             {
                 return IsHeadingText(textBlock);
@@ -441,7 +441,7 @@ namespace ADIX.Services
             // Row properties
             printGrid.RowHeight = 25;
             printGrid.ColumnHeaderHeight = 30;
-            printGrid.AlternatingRowBackground = new SolidColorBrush(Color.FromArgb(20, 0, 0, 0)); // Light gray alternating
+            printGrid.AlternatingRowBackground = new SolidColorBrush(Color.FromArgb(20, 0, 0, 0)); 
 
             // Clear and copy columns with proper widths to prevent cutting
             printGrid.Columns.Clear();
@@ -456,7 +456,7 @@ namespace ADIX.Services
                     {
                         Header = textColumn.Header,
                         Binding = textColumn.Binding,
-                        Width = new DataGridLength(120, DataGridLengthUnitType.Pixel) // Fixed width for all columns
+                        Width = new DataGridLength(120, DataGridLengthUnitType.Pixel) 
                     };
 
                     // Style for cell content - ensure black text and white background
@@ -478,8 +478,8 @@ namespace ADIX.Services
 
             // Header style - ensure green background with white text and black borders
             printGrid.ColumnHeaderStyle = new Style(typeof(DataGridColumnHeader));
-            printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(0, 128, 0)))); // Green
-            printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.White)); // White text for green background
+            printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(0, 128, 0)))); 
+            printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.White)); 
             printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.Bold));
             printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BorderBrushProperty, Brushes.Black));
             printGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
@@ -565,7 +565,7 @@ namespace ADIX.Services
         private static bool IsButtonContainer(UIElement element, Grid parentGrid)
         {
             int row = Grid.GetRow(element);
-            return row == 10; // Assuming row 10 is the button row
+            return row == 10; 
         }
 
         private static FrameworkElement CreateFallbackPrintVersion(FrameworkElement originalElement)

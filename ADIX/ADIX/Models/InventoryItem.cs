@@ -8,6 +8,8 @@ namespace ADIX
 {
     class InventoryItem
     {
+        //models reference
+        //https://learn.microsoft.com/en-us/aspnet/mvc/overview/older-versions/getting-started-with-aspnet-mvc3/cs/adding-a-model
         public int ItemID { get; set; }
         public string ItemGroup { get; set; }
         public string ItemName { get; set; }

@@ -11,6 +11,10 @@ using System.Linq;
 
 namespace ADIX
 {
+    //references for sqlite in c#
+    //https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/?tabs=net-cli
+    //references for azure sql in c#
+    //https://learn.microsoft.com/en-us/azure/azure-sql/database/connect-query-dotnet-visual-studio?view=azuresql
     public static class Database
     {
         private static string _deviceId;
@@ -33,6 +37,7 @@ namespace ADIX
         }
         internal static string GetUserRole(string username)
         {
+            //finds the user id
             using var conn = new SqliteConnection(SqliteConnectionString);
             conn.Open();
 
@@ -46,6 +51,8 @@ namespace ADIX
         }
 
         private const string SqliteConnectionString = "Data Source=ADIX.db";
+
+        //azure sql string connection
         public static string AzureSqlConnectionString { get; set; } = "Server=tcp:adixserver.database.windows.net,1433;Initial Catalog=ADIXDB;User ID=adixAdmin;Password=A$12fe34dc56;Encrypt=True;";
         public static DatabaseType CurrentDatabaseType { get; set; } = DatabaseType.SQLite;
 
@@ -58,9 +65,8 @@ namespace ADIX
             AzureSQL
         }
 
-        /// <summary>
-        /// Checks if the device has internet connectivity
-        /// </summary>
+
+        // Checks if the device has internet connectivity
         public static bool IsInternetAvailable()
         {
             try
@@ -76,11 +82,12 @@ namespace ADIX
                 return false;
             }
         }
+        //reference to check if internet is available
+        //https://www.c-sharpcorner.com/UploadFile/nipuntomar/check-internet-connection/
 
 
-        /// <summary>
-        /// Checks internet and attempts to sync if available
-        /// </summary>
+  
+        // Checks internet and attempts to sync if available
         public static async Task<bool> CheckAndSyncAsync()
         {
             if (string.IsNullOrEmpty(AzureSqlConnectionString))
@@ -111,9 +118,8 @@ namespace ADIX
             }
         }
 
-        /// <summary>
-        /// Initialize database - creates tables and syncs if internet is available
-        /// </summary>
+
+        // Initialize database - creates tables and syncs if internet is available
         public static async Task InitializeAsync()
         {
             try
@@ -158,7 +164,6 @@ namespace ADIX
                 connection.Open();
 
                 // Generate unique ID: deviceId (8 chars) + timestamp (milliseconds)
-                // Example: ABC12345_1704123456789
                 long timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
                 // For display purposes, also get a sequential number
@@ -167,7 +172,6 @@ namespace ADIX
                 long sequentialId = Convert.ToInt64(cmd.ExecuteScalar());
 
                 // Use timestamp-based ID to avoid collisions
-                // This ensures each device generates unique IDs even when offline
                 return timestamp;
             }
             catch (Exception ex)
@@ -195,7 +199,7 @@ namespace ADIX
 
                     if (!localItemIds.Contains(itemId))
                     {
-                        // This item exists in Azure but not locally - download it
+
                         var insertSql = @"
                         INSERT INTO ITEM 
                         (itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified, minimumStock)
@@ -233,11 +237,8 @@ namespace ADIX
                 using var connection = new SqliteConnection(SqliteConnectionString);
                 connection.Open();
 
-                // Use timestamp-based ID to avoid collisions between offline devices
                 long timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-                // For items, use a smaller range to keep IDs manageable
-                // Extract last 9 digits (still unique enough)
                 long itemId = timestamp % 1000000000;
 
                 return itemId;
@@ -248,6 +249,7 @@ namespace ADIX
             }
         }
 
+        //creates the local tables
         private static void InitializeSQLite()
         {
             using var connection = new SqliteConnection(SqliteConnectionString);
@@ -268,7 +270,7 @@ namespace ADIX
             }
             else
             {
-                // Run migration for existing databases
+
                 MigrateDatabase(connection);
             }
         }
@@ -293,7 +295,7 @@ namespace ADIX
             createTableCmd.ExecuteNonQuery();
         }
 
-
+        //creates the azuer table
         private static void InitializeAzureSQL()
         {
             using var connection = new SqlConnection(AzureSqlConnectionString);
@@ -310,6 +312,7 @@ namespace ADIX
             }
         }
 
+        //checks username and password on login
         internal static bool ValidateUser(string username, string passwordhash)
         {
             using var conn = new SqliteConnection(SqliteConnectionString);
@@ -325,9 +328,7 @@ namespace ADIX
             return Convert.ToInt32(result) > 0;
         }
 
-
-
-
+        //creates the local tables in sqlite
         private static void CreateSQLiteTables(SqliteConnection connection)
         {
             string createTablesSql = @"
@@ -357,22 +358,22 @@ namespace ADIX
         );
 
         CREATE TABLE IF NOT EXISTS ITEM(
-        itemID INTEGER NOT NULL PRIMARY KEY,
-        sku INTEGER,
-        itemGroup TEXT,
-        description TEXT NOT NULL,
-        retailPrice REAL NOT NULL CHECK(retailPrice >= 0),
-        costPrice REAL NOT NULL CHECK(costPrice >= 0),
-        stockQuantity INTEGER NOT NULL DEFAULT 0 CHECK(stockQuantity >= 0),
-        stockRecieved INTEGER NOT NULL,
-        stockSold INTEGER NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
-        minimumStock INTEGER NOT NULL DEFAULT 0,
-        supplierID INTEGER,
-        sellerID INTEGER,
-        lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
-        FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
-    );
+            itemID INTEGER NOT NULL PRIMARY KEY,
+            sku INTEGER,
+            itemGroup TEXT,
+            description TEXT NOT NULL,
+            retailPrice REAL NOT NULL CHECK(retailPrice >= 0),
+            costPrice REAL NOT NULL CHECK(costPrice >= 0),
+            stockQuantity INTEGER NOT NULL DEFAULT 0 CHECK(stockQuantity >= 0),
+            stockRecieved INTEGER NOT NULL,
+            stockSold INTEGER NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
+            minimumStock INTEGER NOT NULL DEFAULT 0,
+            supplierID INTEGER,
+            sellerID INTEGER,
+            lastModified TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
+            FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
+        );
 
 
 
@@ -463,6 +464,7 @@ namespace ADIX
             cmd.ExecuteNonQuery();
         }
 
+        //creates azure table
         private static void CreateAzureSQLTables(SqlConnection connection)
         {
             string createTablesSql = @"
@@ -485,22 +487,22 @@ namespace ADIX
         );
 
         CREATE TABLE ITEM(
-        itemID INT NOT NULL PRIMARY KEY,
-        sku INT,
-        itemGroup NVARCHAR(5),
-        description NVARCHAR(500) NOT NULL,
-        retailPrice FLOAT NOT NULL CHECK(retailPrice >= 0),
-        costPrice FLOAT NOT NULL CHECK(costPrice >= 0),
-        stockQuantity INT NOT NULL DEFAULT 0 CHECK(stockQuantity >= 0),
-        stockRecieved INT NOT NULL,
-        stockSold INT NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
-        supplierID INT,
-        sellerID INT,
-        lastModified DATETIME DEFAULT GETUTCDATE(),
-        minimumStock INT NOT NULL DEFAULT 0,
-        FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
-        FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
-    );
+            itemID INT NOT NULL PRIMARY KEY,
+            sku INT,
+            itemGroup NVARCHAR(5),
+            description NVARCHAR(500) NOT NULL,
+            retailPrice FLOAT NOT NULL CHECK(retailPrice >= 0),
+            costPrice FLOAT NOT NULL CHECK(costPrice >= 0),
+            stockQuantity INT NOT NULL DEFAULT 0 CHECK(stockQuantity >= 0),
+            stockRecieved INT NOT NULL,
+            stockSold INT NOT NULL DEFAULT 0 CHECK(stockSold >= 0),
+            supplierID INT,
+            sellerID INT,
+            lastModified DATETIME DEFAULT GETUTCDATE(),
+            minimumStock INT NOT NULL DEFAULT 0,
+            FOREIGN KEY(supplierID) REFERENCES SUPPLIER(supplierID),
+            FOREIGN KEY(sellerID) REFERENCES SELLER(sellerID)
+        );
 
 
         CREATE TABLE CUSTOMER(
@@ -579,18 +581,17 @@ namespace ADIX
             cmd.ExecuteNonQuery();
         }
 
-        /// <summary>
-        /// Migrate existing database to remove CHECK constraint from INVOICEITEM.quantity
-        /// </summary>
+        // Migrate existing database to remove CHECK constraint from INVOICEITEM.quantity
+
         private static void MigrateDatabase(SqliteConnection connection)
         {
             try
             {
                 // Check if we need to migrate (look for the old constraint)
                 string checkConstraintSql = @"
-            SELECT sql FROM sqlite_master 
-            WHERE type='table' AND name='INVOICEITEM' 
-            AND sql LIKE '%CHECK(quantity > 0)%'";
+                SELECT sql FROM sqlite_master 
+                WHERE type='table' AND name='INVOICEITEM' 
+                AND sql LIKE '%CHECK(quantity > 0)%'";
 
                 using var checkCmd = new SqliteCommand(checkConstraintSql, connection);
                 var result = checkCmd.ExecuteScalar()?.ToString();
@@ -652,10 +653,10 @@ namespace ADIX
         }
 
 
-        /// <summary>
-        /// Migrate Azure SQL database to remove CHECK constraint from INVOICEITEM.quantity
-        /// </summary>
-        private static void MigrateAzureSQLDatabase(SqlConnection connection)
+
+        // Migrate Azure SQL database to remove CHECK constraint from INVOICEITEM.quantity
+
+       /* private static void MigrateAzureSQLDatabase(SqlConnection connection)
         {
             try
             {
@@ -688,48 +689,48 @@ namespace ADIX
             catch (Exception ex)
             {
                 Console.WriteLine($"Azure SQL database migration failed: {ex.Message}");
-                // Don't throw - we want to continue even if migration fails
+                
             }
-        }
+        }*/
 
         private static void InsertTestDataSQLite(SqliteConnection connection)
         {
             string insertDataSql = @"
-  INSERT INTO SELLER (sellerID, name, contactInfo, bankDetails, commissionRate) VALUES
-(1, 'Robin Longbow', 'robin@archersguild.com', 'ACC-9876', 0.05),
-(2, 'Marian Fletcher', 'marian@archeryworld.com', 'ACC-6543', 0.07),
-(3, 'John Archer', 'john@bowpros.co.za', 'ACC-1122', 0.06);
+          INSERT INTO SELLER (sellerID, name, contactInfo, bankDetails, commissionRate) VALUES
+        (1, 'Robin Longbow', 'robin@archersguild.com', 'ACC-9876', 0.05),
+        (2, 'Marian Fletcher', 'marian@archeryworld.com', 'ACC-6543', 0.07),
+        (3, 'John Archer', 'john@bowpros.co.za', 'ACC-1122', 0.06);
 
-    INSERT INTO SUPPLIER (supplierID, name, contactInfo, address) VALUES
-(1, 'Precision Bows Ltd', 'sales@precisionbows.com', '45 Bowstring Lane, Johannesburg'),
-(2, 'Eagle Arrows Co', 'info@eaglearrows.com', '210 Fletching Avenue, Cape Town'),
-(3, 'TargetCraft Supplies', 'support@targetcraft.com', '33 Range Road, Durban'),
-(4, 'African Archery Distributors', 'orders@africanarchery.co.za', '78 Safari Street, Pretoria');
+            INSERT INTO SUPPLIER (supplierID, name, contactInfo, address) VALUES
+        (1, 'Precision Bows Ltd', 'sales@precisionbows.com', '45 Bowstring Lane, Johannesburg'),
+        (2, 'Eagle Arrows Co', 'info@eaglearrows.com', '210 Fletching Avenue, Cape Town'),
+        (3, 'TargetCraft Supplies', 'support@targetcraft.com', '33 Range Road, Durban'),
+        (4, 'African Archery Distributors', 'orders@africanarchery.co.za', '78 Safari Street, Pretoria');
 
-    INSERT INTO ITEM (itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockRecieved, stockSold, supplierID, sellerID, minimumStock) VALUES
-(1001, 1001, 'BOW', 'Longbow Elite', 4500.00, 3000.00, 15, 15, 0, 1, 1, 5),
-(1002, 1002, 'BOW', 'Recurve Bow Pro', 5200.00, 3400.00, 10, 10, 0, 1, 2, 3),
-(2001, 2001, 'ARR', 'Carbon Arrows (Pack of 12)', 850.00, 550.00, 50, 50, 0, 2, 1, 20),
-(2002, 2002, 'ARR', 'Traditional Wooden Arrows', 600.00, 400.00, 40, 40, 0, 2, 2, 15),
-(3001, 3001, 'TAR', 'Foam Target Block', 750.00, 500.00, 25, 25, 0, 3, 1, 10),
-(3002, 3002, 'TAR', '3D Deer Target', 1800.00, 1200.00, 10, 10, 0, 3, 2, 3);
+            INSERT INTO ITEM (itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockRecieved, stockSold, supplierID, sellerID, minimumStock) VALUES
+        (1001, 1001, 'BOW', 'Longbow Elite', 4500.00, 3000.00, 15, 15, 0, 1, 1, 5),
+        (1002, 1002, 'BOW', 'Recurve Bow Pro', 5200.00, 3400.00, 10, 10, 0, 1, 2, 3),
+        (2001, 2001, 'ARR', 'Carbon Arrows (Pack of 12)', 850.00, 550.00, 50, 50, 0, 2, 1, 20),
+        (2002, 2002, 'ARR', 'Traditional Wooden Arrows', 600.00, 400.00, 40, 40, 0, 2, 2, 15),
+        (3001, 3001, 'TAR', 'Foam Target Block', 750.00, 500.00, 25, 25, 0, 3, 1, 10),
+        (3002, 3002, 'TAR', '3D Deer Target', 1800.00, 1200.00, 10, 10, 0, 3, 2, 3);
 
 
-    INSERT INTO STAFF (staffID, name, Role, userName, passwordHash, salary) VALUES
-(1, 'Ruben Janse', 'Admin', 'ruben', 'hashedpassword1', 15000.00),
-(2, 'Sarah Ndlovu', 'Cashier', 'sarah', 'hashedpassword2', 9000.00),
-(3, 'Michael Smith', 'Manager', 'michael', 'hashedpassword3', 12000.00),
-(4, 'Emily Johnson', 'Cashier', 'emily', 'hashedpassword4', 9000.00),
-(5, 'David Brown', 'Sales', 'david', 'hashedpassword5', 8000.00),
-(6, 'Admin', 'Admin', 'admin', 'admin123', 15000.00);
+            INSERT INTO STAFF (staffID, name, Role, userName, passwordHash, salary) VALUES
+        (1, 'Ruben Janse', 'Admin', 'ruben', 'hashedpassword1', 15000.00),
+        (2, 'Sarah Ndlovu', 'Cashier', 'sarah', 'hashedpassword2', 9000.00),
+        (3, 'Michael Smith', 'Manager', 'michael', 'hashedpassword3', 12000.00),
+        (4, 'Emily Johnson', 'Cashier', 'emily', 'hashedpassword4', 9000.00),
+        (5, 'David Brown', 'Sales', 'david', 'hashedpassword5', 8000.00),
+        (6, 'Admin', 'Admin', 'admin', 'admin123', 15000.00);
 
-   INSERT INTO CUSTOMER (customerID, name, phone, email, credit) VALUES
-(1, 'Alice Archer', '0712345678', 'alice@archerymail.com', 100.00),
-(2, 'Bob Bowman', '0723456789', 'bob@archerymail.com', 50.00),
-(3, 'Charlie Fletcher', '0734567890', 'charlie@archerymail.com', 75.00),
-(4, 'Diana Huntress', '0745678901', 'diana@bowhunt.co.za', 0.00),
-(5, 'Edward Marksman', '0756789012', 'edward@targetpro.com', 120.00);
-";
+           INSERT INTO CUSTOMER (customerID, name, phone, email, credit) VALUES
+        (1, 'Alice Archer', '0712345678', 'alice@archerymail.com', 100.00),
+        (2, 'Bob Bowman', '0723456789', 'bob@archerymail.com', 50.00),
+        (3, 'Charlie Fletcher', '0734567890', 'charlie@archerymail.com', 75.00),
+        (4, 'Diana Huntress', '0745678901', 'diana@bowhunt.co.za', 0.00),
+        (5, 'Edward Marksman', '0756789012', 'edward@targetpro.com', 120.00);
+        ";
 
 
             using var cmd = new SqliteCommand(insertDataSql, connection);
@@ -741,49 +742,49 @@ namespace ADIX
             string insertDataSql = @"
 
 
-      INSERT INTO SELLER (sellerID, name, contactInfo, bankDetails, commissionRate) VALUES
-(1, 'Robin Longbow', 'robin@archersguild.com', 'ACC-9876', 0.05),
-(2, 'Marian Fletcher', 'marian@archeryworld.com', 'ACC-6543', 0.07),
-(3, 'John Archer', 'john@bowpros.co.za', 'ACC-1122', 0.06);
+                  INSERT INTO SELLER (sellerID, name, contactInfo, bankDetails, commissionRate) VALUES
+            (1, 'Robin Longbow', 'robin@archersguild.com', 'ACC-9876', 0.05),
+            (2, 'Marian Fletcher', 'marian@archeryworld.com', 'ACC-6543', 0.07),
+            (3, 'John Archer', 'john@bowpros.co.za', 'ACC-1122', 0.06);
 
-    INSERT INTO SUPPLIER (supplierID, name, contactInfo, address) VALUES
-(1, 'Precision Bows Ltd', 'sales@precisionbows.com', '45 Bowstring Lane, Johannesburg'),
-(2, 'Eagle Arrows Co', 'info@eaglearrows.com', '210 Fletching Avenue, Cape Town'),
-(3, 'TargetCraft Supplies', 'support@targetcraft.com', '33 Range Road, Durban'),
-(4, 'African Archery Distributors', 'orders@africanarchery.co.za', '78 Safari Street, Pretoria');
+                INSERT INTO SUPPLIER (supplierID, name, contactInfo, address) VALUES
+            (1, 'Precision Bows Ltd', 'sales@precisionbows.com', '45 Bowstring Lane, Johannesburg'),
+            (2, 'Eagle Arrows Co', 'info@eaglearrows.com', '210 Fletching Avenue, Cape Town'),
+            (3, 'TargetCraft Supplies', 'support@targetcraft.com', '33 Range Road, Durban'),
+            (4, 'African Archery Distributors', 'orders@africanarchery.co.za', '78 Safari Street, Pretoria');
 
-    INSERT INTO ITEM (itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockRecieved, stockSold, supplierID, sellerID, minimumStock) VALUES
-(1001, 1001, 'BOW', 'Longbow Elite', 4500.00, 3000.00, 15, 15, 0, 1, 1, 5),
-(1002, 1002, 'BOW', 'Recurve Bow Pro', 5200.00, 3400.00, 10, 10, 0, 1, 2, 3),
-(2001, 2001, 'ARR', 'Carbon Arrows (Pack of 12)', 850.00, 550.00, 50, 50, 0, 2, 1, 20),
-(2002, 2002, 'ARR', 'Traditional Wooden Arrows', 600.00, 400.00, 40, 40, 0, 2, 2, 15),
-(3001, 3001, 'TAR', 'Foam Target Block', 750.00, 500.00, 25, 25, 0, 3, 1, 10),
-(3002, 3002, 'TAR', '3D Deer Target', 1800.00, 1200.00, 10, 10, 0, 3, 2, 3);
+                INSERT INTO ITEM (itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockRecieved, stockSold, supplierID, sellerID, minimumStock) VALUES
+            (1001, 1001, 'BOW', 'Longbow Elite', 4500.00, 3000.00, 15, 15, 0, 1, 1, 5),
+            (1002, 1002, 'BOW', 'Recurve Bow Pro', 5200.00, 3400.00, 10, 10, 0, 1, 2, 3),
+            (2001, 2001, 'ARR', 'Carbon Arrows (Pack of 12)', 850.00, 550.00, 50, 50, 0, 2, 1, 20),
+            (2002, 2002, 'ARR', 'Traditional Wooden Arrows', 600.00, 400.00, 40, 40, 0, 2, 2, 15),
+            (3001, 3001, 'TAR', 'Foam Target Block', 750.00, 500.00, 25, 25, 0, 3, 1, 10),
+            (3002, 3002, 'TAR', '3D Deer Target', 1800.00, 1200.00, 10, 10, 0, 3, 2, 3);
 
 
-    INSERT INTO STAFF (staffID, name, Role, userName, passwordHash, salary) VALUES
-(1, 'Ruben Janse', 'Admin', 'ruben', 'hashedpassword1', 15000.00),
-(2, 'Sarah Ndlovu', 'Cashier', 'sarah', 'hashedpassword2', 9000.00),
-(3, 'Michael Smith', 'Manager', 'michael', 'hashedpassword3', 12000.00),
-(4, 'Emily Johnson', 'Cashier', 'emily', 'hashedpassword4', 9000.00),
-(5, 'David Brown', 'Sales', 'david', 'hashedpassword5', 8000.00),
-(6, 'Admin', 'Admin', 'admin', 'admin123', 15000.00);
-   INSERT INTO CUSTOMER (customerID, name, phone, email, credit) VALUES
-(1, 'Alice Archer', '0712345678', 'alice@archerymail.com', 100.00),
-(2, 'Bob Bowman', '0723456789', 'bob@archerymail.com', 50.00),
-(3, 'Charlie Fletcher', '0734567890', 'charlie@archerymail.com', 75.00),
-(4, 'Diana Huntress', '0745678901', 'diana@bowhunt.co.za', 0.00),
-(5, 'Edward Marksman', '0756789012', 'edward@targetpro.com', 120.00);
-";
+                INSERT INTO STAFF (staffID, name, Role, userName, passwordHash, salary) VALUES
+            (1, 'Ruben Janse', 'Admin', 'ruben', 'hashedpassword1', 15000.00),
+            (2, 'Sarah Ndlovu', 'Cashier', 'sarah', 'hashedpassword2', 9000.00),
+            (3, 'Michael Smith', 'Manager', 'michael', 'hashedpassword3', 12000.00),
+            (4, 'Emily Johnson', 'Cashier', 'emily', 'hashedpassword4', 9000.00),
+            (5, 'David Brown', 'Sales', 'david', 'hashedpassword5', 8000.00),
+            (6, 'Admin', 'Admin', 'admin', 'admin123', 15000.00);
+               INSERT INTO CUSTOMER (customerID, name, phone, email, credit) VALUES
+            (1, 'Alice Archer', '0712345678', 'alice@archerymail.com', 100.00),
+            (2, 'Bob Bowman', '0723456789', 'bob@archerymail.com', 50.00),
+            (3, 'Charlie Fletcher', '0734567890', 'charlie@archerymail.com', 75.00),
+            (4, 'Diana Huntress', '0745678901', 'diana@bowhunt.co.za', 0.00),
+            (5, 'Edward Marksman', '0756789012', 'edward@targetpro.com', 120.00);
+            ";
 
 
             using var cmd = new SqlCommand(insertDataSql, connection);
             cmd.ExecuteNonQuery();
         }
 
-        /// <summary>
-        /// Transaction-based sync: Syncs transactions and recalculates inventory
-        /// </summary>
+
+        //Transaction-based sync
+
         public static async Task SyncTransactionBasedAsync()
         {
             if (string.IsNullOrEmpty(AzureSqlConnectionString))
@@ -804,32 +805,31 @@ namespace ADIX
 
             Console.WriteLine("Starting transaction-based sync...");
 
-            // Step 1: Sync master data (bidirectional - newest wins)
+            //Sync master data
             SyncMasterData(sqliteConn, azureConn, "SELLER", new[] { "sellerID", "name", "contactInfo", "bankDetails", "commissionRate", "lastModified" });
             SyncMasterData(sqliteConn, azureConn, "SUPPLIER", new[] { "supplierID", "name", "contactInfo", "address", "lastModified" });
             SyncMasterData(sqliteConn, azureConn, "CUSTOMER", new[] { "customerID", "name", "phone", "email", "credit", "lastModified" });
             SyncMasterData(sqliteConn, azureConn, "STAFF", new[] { "staffID", "name", "Role", "userName", "passwordHash", "salary", "lastModified" });
             SyncExpenses(sqliteConn, azureConn);
-            // Step 2: DOWNLOAD MISSING ITEMS FROM AZURE FIRST
+            //Download missing items from azure
             DownloadMissingItemsFromAzure(sqliteConn, azureConn);
 
-            // Step 3: Sync item master data (prices, descriptions) but NOT quantities YET
+            //sync inventory data without quantities
             SyncItemMasterDataWithoutInventory(sqliteConn, azureConn);
 
-            // Step 4: Sync transactions FIRST (upload local transactions to Azure)
+            //uploads local transactions
             SyncTransactions(sqliteConn, azureConn);
 
-            // Step 5: Recalculate inventory on BOTH databases independently
+            //recalculates inventories
             RecalculateInventoryOnBothDatabases(sqliteConn, azureConn);
 
-            // Step 6: Sync reports
+            //Sync reports
             SyncMasterData(sqliteConn, azureConn, "REPORT", new[] { "reportID", "reportType", "date", "staffID", "lastModified" });
 
             Console.WriteLine("Transaction-based sync completed successfully.");
         }
-        /// <summary>
-        /// Comprehensive sync that ensures all missing data is downloaded from Azure
-        /// </summary>
+
+        //sync that ensures all missing data is downloaded from Azure
         public static async Task<bool> SyncAllMissingDataAsync()
         {
             if (string.IsNullOrEmpty(AzureSqlConnectionString))
@@ -870,16 +870,16 @@ namespace ADIX
 
             Console.WriteLine("Starting comprehensive data sync...");
 
-            // Step 1: Download all missing master data tables
+            //Download all missing master data tables
             DownloadAllMissingMasterData(sqliteConn, azureConn);
 
-            // Step 2: Download all missing items
+            //Download all missing items
             DownloadAllMissingItems(sqliteConn, azureConn);
 
-            // Step 3: Download all missing transactions
+            //Download all missing transactions
             DownloadAllMissingTransactions(sqliteConn, azureConn);
 
-            // Step 4: Upload any local data that's missing from Azure
+            //Upload any local data that's missing from Azure
             UploadMissingLocalData(sqliteConn, azureConn);
 
             Console.WriteLine("Comprehensive data sync completed successfully.");
@@ -982,7 +982,7 @@ namespace ADIX
 
                     if (localRow == null)
                     {
-                        // New expense from Azure - insert to local
+                        // New expense from Azure insert to local
                         var insertLocalSql = @"
                             INSERT INTO EXPENSES (expenseID, expenseType, amount, date, description, paymentMethod, lastModified)
                             VALUES (@expenseID, @expenseType, @amount, @date, @description, @paymentMethod, @lastModified)";
@@ -1094,7 +1094,7 @@ namespace ADIX
 
                 // Get all Azure items
                 var azureItems = GetTableDataFromAzure(azureConn, "ITEM",
-             new[] { "itemID", "sku", "itemGroup", "description", "retailPrice", "costPrice", "stockQuantity", "stockSold", "stockRecieved", "supplierID", "sellerID", "lastModified", "minimumStock" });
+                new[] { "itemID", "sku", "itemGroup", "description", "retailPrice", "costPrice", "stockQuantity", "stockSold", "stockRecieved", "supplierID", "sellerID", "lastModified", "minimumStock" });
 
                 // Get all local item IDs
                 var localItems = GetTableData(sqliteConn, "ITEM", new[] { "itemID" });
@@ -1108,10 +1108,10 @@ namespace ADIX
                     if (!localItemIds.Contains(itemId))
                     {
                         var insertSql = @"
-INSERT INTO ITEM 
-(itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified, minimumStock)
-VALUES 
-(@itemID, @sku, @itemGroup, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified, @minimumStock)";
+                        INSERT INTO ITEM 
+                        (itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified, minimumStock)
+                        VALUES 
+                        (@itemID, @sku, @itemGroup, @description, @retailPrice, @costPrice, @stockQuantity, @stockSold, @stockRecieved, @supplierID, @sellerID, @lastModified, @minimumStock)";
 
                         using var cmd = new SqliteCommand(insertSql, sqliteConn);
 
@@ -1161,10 +1161,10 @@ VALUES
                     {
                         // Insert invoice
                         var insertInvoiceSql = @"
-                INSERT INTO INVOICEQUOTE 
-                (invoiceQuoteID, date, type, totalAmount, customerID, staffID, paymentMethod, paymentStatus, lastModified, synced)
-                VALUES 
-                (@invoiceQuoteID, @date, @type, @totalAmount, @customerID, @staffID, @paymentMethod, @paymentStatus, @lastModified, 1)";
+                        INSERT INTO INVOICEQUOTE 
+                        (invoiceQuoteID, date, type, totalAmount, customerID, staffID, paymentMethod, paymentStatus, lastModified, synced)
+                        VALUES 
+                        (@invoiceQuoteID, @date, @type, @totalAmount, @customerID, @staffID, @paymentMethod, @paymentStatus, @lastModified, 1)";
 
                         using var cmd = new SqliteCommand(insertInvoiceSql, sqliteConn);
 
@@ -1211,10 +1211,10 @@ VALUES
                     if (!localItemIds.Contains(itemId))
                     {
                         var insertSql = @"
-                INSERT INTO INVOICEITEM 
-                (invoiceItemID, quantity, priceAtSale, itemID, invoiceQuoteID, lastModified, synced)
-                VALUES 
-                (@invoiceItemID, @quantity, @priceAtSale, @itemID, @invoiceQuoteID, @lastModified, 1)";
+                        INSERT INTO INVOICEITEM 
+                        (invoiceItemID, quantity, priceAtSale, itemID, invoiceQuoteID, lastModified, synced)
+                        VALUES 
+                        (@invoiceItemID, @quantity, @priceAtSale, @itemID, @invoiceQuoteID, @lastModified, 1)";
 
                         using var cmd = new SqliteCommand(insertSql, sqliteConn);
 
@@ -1237,7 +1237,7 @@ VALUES
 
         private static void UploadMissingLocalData(SqliteConnection sqliteConn, SqlConnection azureConn)
         {
-            // This will use your existing SyncTransactionBased method to upload local data
+            // This will use existing SyncTransactionBased method to upload local data
             SyncTransactions(sqliteConn, azureConn);
         }
 
@@ -1277,19 +1277,19 @@ VALUES
         }
         private static void SyncItemMasterDataWithoutInventory(SqliteConnection sqliteConn, SqlConnection azureConn)
         {
-            // FIXED: Now includes stockRecieved in sync
+            
             string[] columns = {
-        "itemID",
-        "sku",
-        "itemGroup",
-        "description",
-        "retailPrice",
-        "costPrice",
-        "stockRecieved",  // ← ADDED THIS
-        "minimumStock",
-        "supplierID",
-        "sellerID",
-        "lastModified"
+            "itemID",
+            "sku",
+            "itemGroup",
+            "description",
+            "retailPrice",
+            "costPrice",
+            "stockRecieved",  
+            "minimumStock",
+            "supplierID",
+            "sellerID",
+            "lastModified"
     };
 
             var localData = GetTableData(sqliteConn, "ITEM", columns);
@@ -1306,12 +1306,12 @@ VALUES
 
                     if (azureRow == null)
                     {
-                        // New item - insert to Azure with stockRecieved
+                        
                         var insertSql = @"
-INSERT INTO ITEM 
-(itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified, minimumStock)
-VALUES 
-(@itemID, @sku, @itemGroup, @description, @retailPrice, @costPrice, 0, 0, @stockRecieved, @supplierID, @sellerID, @lastModified, @minimumStock)";
+                        INSERT INTO ITEM 
+                        (itemID, sku, itemGroup, description, retailPrice, costPrice, stockQuantity, stockSold, stockRecieved, supplierID, sellerID, lastModified, minimumStock)
+                        VALUES 
+                        (@itemID, @sku, @itemGroup, @description, @retailPrice, @costPrice, 0, 0, @stockRecieved, @supplierID, @sellerID, @lastModified, @minimumStock)";
 
                         using var cmd = new SqlCommand(insertSql, azureConn, transaction);
                         cmd.Parameters.AddWithValue("@itemID", itemID);
@@ -1320,7 +1320,7 @@ VALUES
                         cmd.Parameters.AddWithValue("@description", localRow["description"]);
                         cmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
                         cmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
-                        cmd.Parameters.AddWithValue("@stockRecieved", localRow["stockRecieved"]);  // ← SYNCING THIS NOW
+                        cmd.Parameters.AddWithValue("@stockRecieved", localRow["stockRecieved"]); 
                         cmd.Parameters.AddWithValue("@minimumStock", localRow["minimumStock"]);
                         cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
                         cmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
@@ -1331,26 +1331,26 @@ VALUES
                     }
                     else
                     {
-                        // Item exists - check which is newer
+                        // Item exists check which is newer
                         var localModified = DateTime.Parse(localRow["lastModified"].ToString());
                         var azureModified = DateTime.Parse(azureRow["lastModified"].ToString());
 
                         if (localModified > azureModified)
                         {
-                            // Local is newer - update Azure INCLUDING stockRecieved
+                            // Local is newer update Azure INCLUDING stockRecieved
                             var updateSql = @"
-UPDATE ITEM 
-SET description=@description, 
-    sku=@sku,
-    itemGroup=@itemGroup,
-    retailPrice=@retailPrice, 
-    costPrice=@costPrice, 
-    stockRecieved=@stockRecieved,
-    supplierID=@supplierID, 
-    sellerID=@sellerID,
-    minimumStock=@minimumStock,
-    lastModified=@lastModified
-WHERE itemID=@itemID";
+                            UPDATE ITEM 
+                            SET description=@description, 
+                                sku=@sku,
+                                itemGroup=@itemGroup,
+                                retailPrice=@retailPrice, 
+                                costPrice=@costPrice, 
+                                stockRecieved=@stockRecieved,
+                                supplierID=@supplierID, 
+                                sellerID=@sellerID,
+                                minimumStock=@minimumStock,
+                                lastModified=@lastModified
+                            WHERE itemID=@itemID";
 
                             using var cmd = new SqlCommand(updateSql, azureConn, transaction);
                             cmd.Parameters.AddWithValue("@itemID", itemID);
@@ -1359,7 +1359,7 @@ WHERE itemID=@itemID";
                             cmd.Parameters.AddWithValue("@itemGroup", localRow["itemGroup"] == DBNull.Value ? (object)DBNull.Value : localRow["itemGroup"]);
                             cmd.Parameters.AddWithValue("@retailPrice", localRow["retailPrice"]);
                             cmd.Parameters.AddWithValue("@costPrice", localRow["costPrice"]);
-                            cmd.Parameters.AddWithValue("@stockRecieved", localRow["stockRecieved"]);  // ← SYNCING THIS NOW
+                            cmd.Parameters.AddWithValue("@stockRecieved", localRow["stockRecieved"]);
                             cmd.Parameters.AddWithValue("@supplierID", localRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : localRow["supplierID"]);
                             cmd.Parameters.AddWithValue("@sellerID", localRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : localRow["sellerID"]);
                             cmd.Parameters.AddWithValue("@minimumStock", localRow["minimumStock"]);
@@ -1390,29 +1390,29 @@ WHERE itemID=@itemID";
 
                 if (localRow == null)
                 {
-                    // Item exists in Azure but not locally - handled by DownloadMissingItemsFromAzure
+                    // Item exists in Azure but not locally handled by DownloadMissingItemsFromAzure
                     continue;
                 }
 
                 var localModified = DateTime.Parse(localRow["lastModified"].ToString());
                 var azureModified = DateTime.Parse(azureRow["lastModified"].ToString());
 
-                // Azure is newer - update local
+                // Azure is newer update local
                 if (azureModified > localModified)
                 {
                     var updateLocalSql = @"
-UPDATE ITEM 
-SET description=@description, 
-    sku=@sku,
-    itemGroup=@itemGroup,
-    retailPrice=@retailPrice, 
-    costPrice=@costPrice, 
-    stockRecieved=@stockRecieved,
-    supplierID=@supplierID, 
-    sellerID=@sellerID,
-    minimumStock=@minimumStock,
-    lastModified=@lastModified
-WHERE itemID=@itemID";
+                UPDATE ITEM 
+                SET description=@description, 
+                    sku=@sku,
+                    itemGroup=@itemGroup,
+                    retailPrice=@retailPrice, 
+                    costPrice=@costPrice, 
+                    stockRecieved=@stockRecieved,
+                    supplierID=@supplierID, 
+                    sellerID=@sellerID,
+                    minimumStock=@minimumStock,
+                    lastModified=@lastModified
+                WHERE itemID=@itemID";
 
                     using var cmd = new SqliteCommand(updateLocalSql, sqliteConn);
                     cmd.Parameters.AddWithValue("@itemID", itemID);
@@ -1421,7 +1421,7 @@ WHERE itemID=@itemID";
                     cmd.Parameters.AddWithValue("@itemGroup", azureRow["itemGroup"] == DBNull.Value ? (object)DBNull.Value : azureRow["itemGroup"]);
                     cmd.Parameters.AddWithValue("@retailPrice", azureRow["retailPrice"]);
                     cmd.Parameters.AddWithValue("@costPrice", azureRow["costPrice"]);
-                    cmd.Parameters.AddWithValue("@stockRecieved", azureRow["stockRecieved"]);  // ← SYNCING THIS NOW
+                    cmd.Parameters.AddWithValue("@stockRecieved", azureRow["stockRecieved"]); 
                     cmd.Parameters.AddWithValue("@supplierID", azureRow["supplierID"] == DBNull.Value ? (object)DBNull.Value : azureRow["supplierID"]);
                     cmd.Parameters.AddWithValue("@sellerID", azureRow["sellerID"] == DBNull.Value ? (object)DBNull.Value : azureRow["sellerID"]);
                     cmd.Parameters.AddWithValue("@minimumStock", azureRow["minimumStock"]);
@@ -1433,7 +1433,7 @@ WHERE itemID=@itemID";
             }
         }
 
-        private static (int stockQuantity, int stockSold, int stockRecieved) GetLocalInventory(SqliteConnection conn, int itemID)
+       /* private static (int stockQuantity, int stockSold, int stockRecieved) GetLocalInventory(SqliteConnection conn, int itemID)
         {
             var query = "SELECT stockQuantity, stockSold, stockRecieved FROM ITEM WHERE itemID = @itemID";
             using var cmd = new SqliteCommand(query, conn);
@@ -1446,7 +1446,7 @@ WHERE itemID=@itemID";
             }
 
             return (0, 0, 0);
-        }
+        }*/
 
         public static void InitializeStockReceived(int itemID)
         {
@@ -1502,7 +1502,7 @@ WHERE itemID=@itemID";
                     var itemID = item["itemID"];
                     var stockReceived = Convert.ToInt32(item["stockRecieved"]);
 
-                    // Calculate total sold from invoice items (type 1 = invoice/sale)
+                    // Calculate total sold from invoice items type 1 = invoice/sale
                     var soldSql = @"SELECT COALESCE(SUM(ii.quantity), 0) 
                            FROM INVOICEITEM ii
                            INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
@@ -1573,7 +1573,7 @@ WHERE itemID=@itemID";
             using var transaction = azureConn.BeginTransaction();
             try
             {
-                // Sync from Azure to Local (download changes from cloud)
+                // Sync from Azure to Local 
                 foreach (DataRow azureRow in azureData.Rows)
                 {
                     var primaryKey = azureRow[columns[0]];
@@ -1598,7 +1598,7 @@ WHERE itemID=@itemID";
                     }
                 }
 
-                // Sync from Local to Azure (upload changes to cloud)
+                // Sync from Local to Azure 
                 foreach (DataRow localRow in localData.Rows)
                 {
                     var primaryKey = localRow[columns[0]];
@@ -1608,7 +1608,7 @@ WHERE itemID=@itemID";
 
                     if (azureRow == null)
                     {
-                        // Check for duplicate (same name, different ID)
+                        // Check for duplicate
                         if (tableName == "CUSTOMER")
                         {
                             var nameDuplicateCheck = @"SELECT customerID FROM CUSTOMER WHERE name = @name";
@@ -1618,7 +1618,7 @@ WHERE itemID=@itemID";
 
                             if (existingId != null)
                             {
-                                // Merge: Update local to use Azure's ID
+                                //Update local to use Azure's ID
                                 Console.WriteLine($"[{tableName}] Merging duplicate customer: Local ID {primaryKey} -> Azure ID {existingId}");
 
                                 using var mergeCmd = new SqliteCommand(
@@ -1681,7 +1681,7 @@ WHERE itemID=@itemID";
 
                     if (exists)
                     {
-                        // CONFLICT: Invoice ID already exists in Azure (from another device)
+                        //Invoice ID already exists in Azure (from another device)
                         Console.WriteLine($"[CONFLICT] Invoice {invoiceId} already exists in Azure. Generating new ID...");
 
                         // Generate new unique ID for this invoice
@@ -1712,8 +1712,8 @@ WHERE itemID=@itemID";
 
                     // Insert invoice header to Azure
                     var insertSql = @"INSERT INTO INVOICEQUOTE 
-                (invoiceQuoteID, date, type, totalAmount, customerID, staffID, paymentMethod, paymentStatus, lastModified) 
-                VALUES (@id, @date, @type, @amount, @custID, @staffID, @paymentMethod, @paymentStatus, @lastModified)";
+                    (invoiceQuoteID, date, type, totalAmount, customerID, staffID, paymentMethod, paymentStatus, lastModified) 
+                    VALUES (@id, @date, @type, @amount, @custID, @staffID, @paymentMethod, @paymentStatus, @lastModified)";
 
                     using var insertCmd = new SqlCommand(insertSql, azureConn, transaction);
                     insertCmd.Parameters.AddWithValue("@id", invoiceId);
@@ -1729,10 +1729,10 @@ WHERE itemID=@itemID";
 
                     Console.WriteLine($"[INVOICE] Synced invoice {invoiceId} to Azure");
 
-                    // Sync invoice items only (NO inventory adjustment here)
+                    //Sync invoice items only
                     SyncInvoiceItemsOnly(sqliteConn, azureConn, transaction, invoiceId);
 
-                    // Mark as synced locally
+                    //Mark as synced locally
                     using var updateCmd = new SqliteCommand("UPDATE INVOICEQUOTE SET synced = 1 WHERE invoiceQuoteID = @id", sqliteConn);
                     updateCmd.Parameters.AddWithValue("@id", invoiceId);
                     updateCmd.ExecuteNonQuery();
@@ -1748,7 +1748,7 @@ WHERE itemID=@itemID";
             }
         }
 
-        // New method - just sync invoice items without touching inventory
+        //sync invoice items without touching inventory
         private static void SyncInvoiceItemsOnly(
             SqliteConnection sqliteConn,
             SqlConnection azureConn,
@@ -1776,7 +1776,7 @@ WHERE itemID=@itemID";
 
                 if (!itemExists)
                 {
-                    // Insert the invoice item only - NO inventory changes
+                    // Insert the invoice item only
                     var insertItemSql = @"INSERT INTO INVOICEITEM 
                 (invoiceItemID, quantity, priceAtSale, itemID, invoiceQuoteID, lastModified)
                 VALUES (@itemID, @quantity, @price, @productID, @invoiceID, @lastModified)";
@@ -1795,11 +1795,8 @@ WHERE itemID=@itemID";
             }
         }
 
-        // Add these methods to the Database class in Database.cs
 
-        /// <summary>
-        /// Get monthly sales transactions for reporting
-        /// </summary>
+        // Get monthly sales transactions for reporting
         public static DataTable GetMonthlyTransactions(int month, int year)
         {
             using var connection = new SqliteConnection(SqliteConnectionString);
@@ -1833,9 +1830,9 @@ WHERE itemID=@itemID";
             return dataTable;
         }
 
-        /// <summary>
-        /// Get monthly financial summary
-        /// </summary>
+      
+        //Get monthly financial summary
+
         public static (decimal cardAmount, decimal cashAmount, decimal eftAmount,
                        decimal returnAmount, decimal creditAmount, decimal totalTurnover)
             GetMonthlyFinancialSummary(int month, int year)
@@ -1883,7 +1880,7 @@ WHERE itemID=@itemID";
                 }
             }
 
-            // Returns (negative amounts from invoice items)
+            // Returns
             string returnsQuery = @"
         SELECT COALESCE(SUM(ii.quantity * ii.priceAtSale), 0) as ReturnAmount
         FROM INVOICEITEM ii
@@ -1903,9 +1900,8 @@ WHERE itemID=@itemID";
             return (cardAmount, cashAmount, eftAmount, returnAmount, creditAmount, totalTurnover);
         }
 
-        /// <summary>
-        /// Get cost of goods sold for the month
-        /// </summary>
+
+        // Get cost of goods sold for the month
         public static decimal GetMonthlyCOGS(int month, int year)
         {
             using var connection = new SqliteConnection(SqliteConnectionString);
@@ -1919,7 +1915,7 @@ WHERE itemID=@itemID";
         WHERE strftime('%m', iq.date) = @month 
         AND strftime('%Y', iq.date) = @year
         AND iq.type = 1  -- Sales only
-        AND ii.quantity > 0";  // Positive quantities only (exclude returns)
+        AND ii.quantity > 0";  
 
             using var cmd = new SqliteCommand(query, connection);
             cmd.Parameters.AddWithValue("@month", month.ToString("00"));
@@ -1929,9 +1925,9 @@ WHERE itemID=@itemID";
             return result != DBNull.Value ? Convert.ToDecimal(result) : 0m;
         }
 
-        /// <summary>
-        /// Create expenses table if it doesn't exist
-        /// </summary>
+    
+        // Create expenses table if it doesn't exist
+
         public static void InitializeExpensesTable()
         {
             using var connection = new SqliteConnection(SqliteConnectionString);
@@ -1974,7 +1970,7 @@ WHERE itemID=@itemID";
         }
 
 
-        private static void SyncInvoiceItems(SqliteConnection sqliteConn, SqlConnection azureConn, SqlTransaction transaction, long invoiceID)
+        /*private static void SyncInvoiceItems(SqliteConnection sqliteConn, SqlConnection azureConn, SqlTransaction transaction, long invoiceID)
         {
             var items = new DataTable();
             using (var cmd = new SqliteCommand("SELECT * FROM INVOICEITEM WHERE invoiceQuoteID = @id AND synced = 0", sqliteConn))
@@ -1998,7 +1994,7 @@ WHERE itemID=@itemID";
                              VALUES (@id, @qty, @price, @itemID, @invoiceID)";
                     using var insertCmd = new SqlCommand(insertSql, azureConn, transaction);
                     insertCmd.Parameters.AddWithValue("@id", item["invoiceItemID"]);
-                    insertCmd.Parameters.AddWithValue("@qty", item["quantity"]); // Can be negative for refunds
+                    insertCmd.Parameters.AddWithValue("@qty", item["quantity"]); 
                     insertCmd.Parameters.AddWithValue("@price", item["priceAtSale"]);
                     insertCmd.Parameters.AddWithValue("@itemID", item["itemID"]);
                     insertCmd.Parameters.AddWithValue("@invoiceID", item["invoiceQuoteID"]);
@@ -2019,7 +2015,7 @@ WHERE itemID=@itemID";
                     updateCmd.ExecuteNonQuery();
                 }
             }
-        }
+        }*/
 
         private static DataTable GetTableData(SqliteConnection connection, string tableName, string[] columns)
         {
@@ -2098,9 +2094,8 @@ WHERE itemID=@itemID";
         }
 
 
-        /// <summary>
-        /// Add a new expense to the EXPENSES table
-        /// </summary>
+        // Add a new expense to the EXPENSES table
+
         public static void AddExpense(string expenseType, double amount, string date, string description = "")
         {
             using var connection = new SqliteConnection(SqliteConnectionString);
@@ -2110,15 +2105,15 @@ WHERE itemID=@itemID";
             InitializeExpensesTable();
 
             string insertSql = @"
-        INSERT INTO EXPENSES (expenseType, amount, date, description, paymentMethod)
-        VALUES (@expenseType, @amount, @date, @description, @paymentMethod)";
+            INSERT INTO EXPENSES (expenseType, amount, date, description, paymentMethod)
+            VALUES (@expenseType, @amount, @date, @description, @paymentMethod)";
 
             using var cmd = new SqliteCommand(insertSql, connection);
             cmd.Parameters.AddWithValue("@expenseType", expenseType);
             cmd.Parameters.AddWithValue("@amount", amount);
             cmd.Parameters.AddWithValue("@date", date);
             cmd.Parameters.AddWithValue("@description", description);
-            cmd.Parameters.AddWithValue("@paymentMethod", "Cash"); // Default payment method
+            cmd.Parameters.AddWithValue("@paymentMethod", "Cash");
             cmd.ExecuteNonQuery();
 
             Console.WriteLine($"Added expense: {expenseType} - R {amount:N2}");
@@ -2126,9 +2121,9 @@ WHERE itemID=@itemID";
 
 
 
-        /// <summary>
-        /// Get all expenses for chart data
-        /// </summary>
+   
+        // Get all expenses for chart data
+
         public static DataTable GetExpensesForCharts()
         {
             using var connection = new SqliteConnection(SqliteConnectionString);
@@ -2138,11 +2133,11 @@ WHERE itemID=@itemID";
             InitializeExpensesTable();
 
             string query = @"
-        SELECT expenseType, SUM(amount) as TotalAmount
-        FROM EXPENSES
-        WHERE date >= date('now', '-30 days')
-        GROUP BY expenseType
-        ORDER BY TotalAmount DESC";
+            SELECT expenseType, SUM(amount) as TotalAmount
+            FROM EXPENSES
+            WHERE date >= date('now', '-30 days')
+            GROUP BY expenseType
+            ORDER BY TotalAmount DESC";
 
             using var cmd = new SqliteCommand(query, connection);
             var dataTable = new DataTable();
@@ -2152,9 +2147,9 @@ WHERE itemID=@itemID";
             return dataTable;
         }
 
-        /// <summary>
-        /// Get monthly expense trend data
-        /// </summary>
+    
+        //Get monthly expense trend data
+
         public static Dictionary<string, double> GetMonthlyExpenseTrend()
         {
             var trendData = new Dictionary<string, double>();
@@ -2191,9 +2186,8 @@ WHERE itemID=@itemID";
             return trendData;
         }
 
-        /// <summary>
-        /// Process a salary payment and record it as an expense
-        /// </summary>
+        //Process a salary payment and record it as an expense
+
         public static void ProcessSalaryPayment(int staffID, double amount, string date, string paymentMethod = "EFT", string description = "Salary Payment")
         {
             using var connection = new SqliteConnection(SqliteConnectionString);
@@ -2204,8 +2198,8 @@ WHERE itemID=@itemID";
 
             // Add salary payment to expenses
             string insertExpenseSql = @"
-        INSERT INTO EXPENSES (expenseType, amount, date, description, paymentMethod)
-        VALUES (@expenseType, @amount, @date, @description, @paymentMethod)";
+            INSERT INTO EXPENSES (expenseType, amount, date, description, paymentMethod)
+            VALUES (@expenseType, @amount, @date, @description, @paymentMethod)";
 
             using var expenseCmd = new SqliteCommand(insertExpenseSql, connection);
             expenseCmd.Parameters.AddWithValue("@expenseType", "Salary Payment");
@@ -2219,9 +2213,9 @@ WHERE itemID=@itemID";
             Console.WriteLine($"Processed salary payment: Staff {staffID} - R {amount:N2}");
         }
 
-        /// <summary>
-        /// Get all staff members with their salary information
-        /// </summary>
+  
+        // Get all staff members with their salary information
+
         public static DataTable GetStaffWithSalaries()
         {
             using var connection = new SqliteConnection(SqliteConnectionString);
@@ -2246,11 +2240,8 @@ WHERE itemID=@itemID";
             return dataTable;
         }
 
+        // Get all expenses for display in the finance page
 
-
-        /// <summary>
-        /// Get all expenses for display in the finance page
-        /// </summary>
         public static DataTable GetExpensesForDisplay()
         {
             using var connection = new SqliteConnection(SqliteConnectionString);
@@ -2292,9 +2283,8 @@ WHERE itemID=@itemID";
             return dataTable;
         }
 
-        /// <summary>
-        /// Update staff salary in the STAFF table
-        /// </summary>
+
+        // Update staff salary in the STAFF table
         public static void UpdateStaffSalary(int staffID, double newSalary)
         {
             using var connection = new SqliteConnection(SqliteConnectionString);
@@ -2315,9 +2305,8 @@ WHERE itemID=@itemID";
             Console.WriteLine($"Updated salary for staff {staffID} to R {newSalary:N2}");
         }
 
-        /// <summary>
-        /// Update EXPENSES table schema to include paymentMethod column
-        /// </summary>
+
+        // Update EXPENSES table schema to include paymentMethod column
         public static void UpdateExpensesTableSchema()
         {
             using var connection = new SqliteConnection(SqliteConnectionString);
@@ -2344,16 +2333,14 @@ WHERE itemID=@itemID";
             }
         }
 
-        /// <summary>
-        /// Enhanced method to get accurate financial metrics
-        /// </summary>
+        // Enhanced method to get accurate financial metrics
         public static (double turnover, double cogs, double expenses, double profitLoss, double outstandingPayments)
             GetAccurateFinancialMetrics()
         {
             using var connection = new SqliteConnection(SqliteConnectionString);
             connection.Open();
 
-            // 1. Monthly Turnover (last 30 days sales)
+            // Monthly Turnover 
             string turnoverSql = @"
         SELECT COALESCE(SUM(totalAmount), 0) 
         FROM INVOICEQUOTE 
@@ -2367,7 +2354,7 @@ WHERE itemID=@itemID";
                 turnover = result != DBNull.Value ? Convert.ToDouble(result) : 0;
             }
 
-            // 2. Accurate Cost of Goods Sold (based on actual items sold)
+            //  Accurate Cost of Goods Sold 
             string cogsSql = @"
         SELECT COALESCE(SUM(ii.quantity * i.costPrice), 0)
         FROM INVOICEITEM ii
@@ -2375,7 +2362,7 @@ WHERE itemID=@itemID";
         INNER JOIN ITEM i ON ii.itemID = i.itemID
         WHERE iq.type = 1 
         AND iq.date >= date('now', '-30 days')
-        AND ii.quantity > 0"; // Only positive quantities (exclude returns)
+        AND ii.quantity > 0"; 
 
             double costOfGoodsSold = 0;
             using (var cmd = new SqliteCommand(cogsSql, connection))
@@ -2384,12 +2371,12 @@ WHERE itemID=@itemID";
                 costOfGoodsSold = result != DBNull.Value ? Convert.ToDouble(result) : 0;
             }
 
-            // 3. Accurate Expenses (user expenses + auto-generated salary expenses)
+            //Accurate Expenses 
             string expensesSql = @"
         SELECT COALESCE(SUM(amount), 0) 
         FROM EXPENSES 
         WHERE date >= date('now', '-30 days')
-        AND expenseType != 'Salary Payment'"; // Exclude salary payments as they're handled separately
+        AND expenseType != 'Salary Payment'"; 
 
             double userExpenses = 0;
             using (var cmd = new SqliteCommand(expensesSql, connection))
@@ -2398,7 +2385,7 @@ WHERE itemID=@itemID";
                 userExpenses = result != DBNull.Value ? Convert.ToDouble(result) : 0;
             }
 
-            // 4. Add salary expenses from staff payments in the period
+            // Add salary expenses from staff payments in the period
             string salaryExpensesSql = @"
         SELECT COALESCE(SUM(amount), 0) 
         FROM EXPENSES 
@@ -2415,7 +2402,7 @@ WHERE itemID=@itemID";
             double totalExpenses = userExpenses + salaryExpenses + costOfGoodsSold;
             double profitLoss = turnover - totalExpenses;
 
-            // 5. Accurate Outstanding Supplier Payments
+            // Accurate Outstanding Supplier Payments
             string outstandingSql = @"
         SELECT COALESCE(SUM(i.costPrice * i.stockQuantity), 0)
         FROM ITEM i
@@ -2432,9 +2419,8 @@ WHERE itemID=@itemID";
             return (turnover, costOfGoodsSold, totalExpenses, profitLoss, outstandingPayments);
         }
 
-        /// <summary>
-        /// Get salary payment history
-        /// </summary>
+
+        // Get salary payment history
         public static DataTable GetSalaryPaymentHistory()
         {
             using var connection = new SqliteConnection(SqliteConnectionString);
@@ -2462,9 +2448,7 @@ WHERE itemID=@itemID";
             return dataTable;
         }
 
-        /// <summary>
-        /// Reconcile stock quantities between POS and Supplier calculations
-        /// </summary>
+        // Reconcile stock quantities between POS and Supplier calculations
         public static void ReconcileStockQuantities()
         {
             try
@@ -2494,10 +2478,10 @@ WHERE itemID=@itemID";
                 {
                     // Calculate actual sold from invoice items
                     string soldSql = @"
-                SELECT COALESCE(SUM(ii.quantity), 0) 
-                FROM INVOICEITEM ii
-                INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
-                WHERE ii.itemID = @itemID AND iq.type = 1 AND ii.quantity > 0";
+                    SELECT COALESCE(SUM(ii.quantity), 0) 
+                    FROM INVOICEITEM ii
+                    INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
+                    WHERE ii.itemID = @itemID AND iq.type = 1 AND ii.quantity > 0";
 
                     using var soldCmd = new SqliteCommand(soldSql, connection);
                     soldCmd.Parameters.AddWithValue("@itemID", item.itemID);
@@ -2508,11 +2492,11 @@ WHERE itemID=@itemID";
 
                     // Update the item with accurate values
                     string updateSql = @"
-                UPDATE ITEM 
-                SET stockSold = @sold, 
-                    stockQuantity = @quantity,
-                    lastModified = CURRENT_TIMESTAMP
-                WHERE itemID = @itemID";
+                    UPDATE ITEM 
+                    SET stockSold = @sold, 
+                        stockQuantity = @quantity,
+                        lastModified = CURRENT_TIMESTAMP
+                    WHERE itemID = @itemID";
 
                     using var updateCmd = new SqliteCommand(updateSql, connection);
                     updateCmd.Parameters.AddWithValue("@sold", totalSold);
@@ -2531,9 +2515,8 @@ WHERE itemID=@itemID";
             }
         }
 
-        /// <summary>
-        /// Safe method to ensure supplier payment tables exist
-        /// </summary>
+
+        //ensure supplier payment tables exist
         public static void EnsureSupplierPaymentTablesExist()
         {
             try
@@ -2543,8 +2526,8 @@ WHERE itemID=@itemID";
 
                 // Check if SUPPLIER_PAYMENT table exists
                 string checkTableSql = @"
-            SELECT name FROM sqlite_master 
-            WHERE type='table' AND name='SUPPLIER_PAYMENT'";
+                SELECT name FROM sqlite_master 
+                WHERE type='table' AND name='SUPPLIER_PAYMENT'";
 
                 using var checkCmd = new SqliteCommand(checkTableSql, connection);
                 var result = checkCmd.ExecuteScalar();
@@ -2593,10 +2576,6 @@ WHERE itemID=@itemID";
                 Console.WriteLine($"Error ensuring supplier payment tables exist: {ex.Message}");
             }
         }
-
-
-
-
 
         public static void MarkSyncRequired()
         {
@@ -2658,9 +2637,9 @@ WHERE itemID=@itemID";
             }
         }
 
-        /// <summary>
-        /// Helper method to add inventory (e.g., when receiving stock)
-        /// </summary>
+
+        //Helper method to add inventory 
+        //not used
         public static void AddStock(int itemID, int quantity)
         {
             using var connection = new SqliteConnection(SqliteConnectionString);
@@ -2676,9 +2655,9 @@ WHERE itemID=@itemID";
             Console.WriteLine($"Added {quantity} units to item {itemID}");
         }
 
-        /// <summary>
-        /// Helper method called when processing a sale (after creating invoice)
-        /// </summary>
+ 
+        //Helper method called when processing a sale 
+        // not used
         public static void ProcessSale(long invoiceID)
         {
             // Mark invoice and items as needing sync

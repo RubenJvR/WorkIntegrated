@@ -2,6 +2,8 @@
 
 namespace ADIX.Models
 {
+    //models reference
+    //https://learn.microsoft.com/en-us/aspnet/mvc/overview/older-versions/getting-started-with-aspnet-mvc3/cs/adding-a-model
     public class POSItem : INotifyPropertyChanged
     {
         private int _itemID;
@@ -72,7 +74,7 @@ namespace ADIX.Models
             get => _itemDiscount;
             set
             {
-                // Validate discount range (0-100)
+                // Validate discount range 
                 decimal validDiscount = value;
                 if (validDiscount < 0) validDiscount = 0;
                 if (validDiscount > 100) validDiscount = 100;
@@ -100,7 +102,7 @@ namespace ADIX.Models
 
         private void CalculateTotals()
         {
-            // Calculate base total amount (quantity * price)
+            // Calculate base total amount 
             decimal baseTotal = _quantity * _price;
             TotalAmount = baseTotal;
 

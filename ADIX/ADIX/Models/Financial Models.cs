@@ -1,4 +1,4 @@
-﻿// FinancialModels.cs
+﻿
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -6,6 +6,9 @@ using Microsoft.Data.Sqlite;
 
 namespace ADIX.Models
 {
+
+    //models reference
+    //https://learn.microsoft.com/en-us/aspnet/mvc/overview/older-versions/getting-started-with-aspnet-mvc3/cs/adding-a-model
     // Main financial report model
     public class FinancialReport
     {

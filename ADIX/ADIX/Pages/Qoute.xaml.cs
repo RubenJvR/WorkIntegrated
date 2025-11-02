@@ -34,7 +34,7 @@ namespace ADIX
                 // Set other default values
                 InvoiceDate = System.DateTime.Now.ToString("yyyy-MM-dd"),
                 InvoiceNumber = "Q-" + System.DateTime.Now.ToString("yyyyMMddHHmmss"),
-                // These will be calculated automatically when items are added
+                
                 SubTotal = 0,
                 TotalItemDiscounts = 0,
                 OverallDiscountAmount = 0,

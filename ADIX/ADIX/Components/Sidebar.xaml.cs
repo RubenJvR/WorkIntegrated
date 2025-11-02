@@ -145,7 +145,7 @@ namespace ADIX
             else
             {
                 // Expand mode - show text and icons
-                CollapseText.Text = "←"; // Left arrow to indicate collapse
+                CollapseText.Text = "←";
                 DashboardText.Visibility = Visibility.Visible;
                 POSText.Visibility = Visibility.Visible;
                 InventoryText.Visibility = Visibility.Visible;
@@ -191,7 +191,8 @@ namespace ADIX
                 ToolTipService.SetToolTip(FinanceButton, null);
                 ToolTipService.SetToolTip(MonthlyReportButton, null);
                 ToolTipService.SetToolTip(SalesButton, null);
-             
+                ToolTipService.SetToolTip(StaffButton, null);
+
             }
 
             CollapseToggled?.Invoke(this, _isCollapsed);
@@ -263,5 +264,8 @@ namespace ADIX
         {
             SetActiveButton(pageName);
         }
+
+        //referencing for sidebar
+        //https://stackoverflow.com/questions/11826568/creating-a-sidebar-flyout-like-windows-desktop-app-in-wpf
     }
 }

@@ -5,6 +5,10 @@ using System.Windows.Controls;
 
 namespace ADIX
 {
+    //references
+    //https://www.c-sharpcorner.com/UploadFile/nipuntomar/check-internet-connection/
+    //https://stackoverflow.com/questions/11826568/creating-a-sidebar-flyout-like-windows-desktop-app-in-wpf
+    //
     public partial class MainWindow : Window
     {
         public MainWindow()
@@ -135,13 +139,13 @@ namespace ADIX
         }
         private bool IsAllowedPageForNonAdmin(string pageName)
         {
-            // Define which pages non-admin users can access
+            // non admins can access these pages
             var allowedPages = new[] { "Dashboard", "POS", "Inventory" };
             return allowedPages.Contains(pageName);
         }
         private void SidebarControl_Loaded(object sender, RoutedEventArgs e)
         {
-            // Optional: Any sidebar initialization code
+            
         }
     }
 }
