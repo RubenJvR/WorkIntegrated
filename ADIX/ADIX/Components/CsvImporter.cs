@@ -45,6 +45,20 @@ namespace ADIX.Components
                         return false;
                     }
 
+                    // Check and handle missing suppliers/sellers
+                    if (!EnsureSuppliersAndSellersExist(products))
+                    {
+                        return false; // User cancelled or there was an error
+                    }
+
+                    // If all products were removed due to missing suppliers
+                    if (products.Count == 0)
+                    {
+                        MessageBox.Show("No products remaining after filtering out items with unknown suppliers.",
+                            "Import Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return false;
+                    }
+
                     var result = MessageBox.Show(
                         $"Found {products.Count} products to import.\n\nDo you want to proceed?",
                         "Confirm Import",
@@ -63,11 +77,11 @@ namespace ADIX.Components
                             System.Threading.Tasks.Task.Run(async () => { await Database.CheckAndSyncAsync(); });
                         }
 
-                        return true; 
+                        return true;
                     }
                 }
 
-                return false; 
+                return false;
             }
             catch (Exception ex)
             {
@@ -291,6 +305,196 @@ namespace ADIX.Components
             }
 
             return importedCount + updatedCount;
+        }
+
+       
+        private static bool EnsureSuppliersAndSellersExist(List<Product> products)
+        {
+            try
+            {
+                using var conn = new SqliteConnection("Data Source=ADIX.db");
+                conn.Open();
+
+                var missingSuppliers = new HashSet<int>();
+                var missingSellers = new HashSet<int>();
+
+                // Check for missing suppliers and sellers
+                foreach (var product in products)
+                {
+                    // Check supplier
+                    if (product.SupplierID > 0)
+                    {
+                        var checkSupplierCmd = new SqliteCommand(
+                            "SELECT COUNT(*) FROM SUPPLIER WHERE supplierID = @id", conn);
+                        checkSupplierCmd.Parameters.AddWithValue("@id", product.SupplierID);
+                        var supplierExists = Convert.ToInt32(checkSupplierCmd.ExecuteScalar()) > 0;
+
+                        if (!supplierExists)
+                            missingSuppliers.Add(product.SupplierID);
+                    }
+
+                    // Check seller
+                    if (product.SellerID > 0)
+                    {
+                        var checkSellerCmd = new SqliteCommand(
+                            "SELECT COUNT(*) FROM SELLER WHERE sellerID = @id", conn);
+                        checkSellerCmd.Parameters.AddWithValue("@id", product.SellerID);
+                        var sellerExists = Convert.ToInt32(checkSellerCmd.ExecuteScalar()) > 0;
+
+                        if (!sellerExists)
+                            missingSellers.Add(product.SellerID);
+                    }
+                }
+
+                // Prompt user to add missing suppliers
+                if (missingSuppliers.Any())
+                {
+                    var result = MessageBox.Show(
+                        $"The following supplier IDs were not found: {string.Join(", ", missingSuppliers)}\n\n" +
+                        "Would you like to add them now? Click Yes to add each supplier, or No to skip these items.",
+                        "Missing Suppliers",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        foreach (int supplierId in missingSuppliers)
+                        {
+                            if (!AddSupplierWithId(supplierId))
+                            {
+                                MessageBox.Show($"Failed to add supplier with ID {supplierId}. Import cancelled.",
+                                              "Import Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                return false;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Remove products with missing suppliers
+                        products.RemoveAll(p => missingSuppliers.Contains(p.SupplierID));
+                    }
+                }
+
+                // For sellers, just auto-create them using the same logic as suppliers
+                if (missingSellers.Any())
+                {
+                    foreach (int sellerId in missingSellers)
+                    {
+                        if (!AddSellerWithId(sellerId))
+                        {
+                            MessageBox.Show($"Failed to add seller with ID {sellerId}. Import cancelled.",
+                                          "Import Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            return false;
+                        }
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error checking suppliers/sellers: {ex.Message}", "Import Error",
+                               MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+        }
+
+        private static bool AddSupplierWithId(int supplierId)
+        {
+            try
+            {
+                // Prompt user for supplier details
+                string supplierName = Microsoft.VisualBasic.Interaction.InputBox(
+                    $"Enter name for supplier ID {supplierId}:",
+                    "Add Supplier",
+                    $"Supplier {supplierId}");
+
+                if (string.IsNullOrWhiteSpace(supplierName))
+                {
+                    return false; // User cancelled
+                }
+
+                string contactInfo = Microsoft.VisualBasic.Interaction.InputBox(
+                    $"Enter contact information for {supplierName}:",
+                    "Supplier Contact Info",
+                    "");
+
+                string address = Microsoft.VisualBasic.Interaction.InputBox(
+                    $"Enter address for {supplierName}:",
+                    "Supplier Address",
+                    "");
+
+                using var conn = new SqliteConnection("Data Source=ADIX.db");
+                conn.Open();
+
+                var insertCmd = new SqliteCommand(
+                    @"INSERT INTO SUPPLIER (supplierID, name, contactInfo, address, lastModified) 
+              VALUES (@id, @name, @contact, @address, CURRENT_TIMESTAMP)", conn);
+
+                insertCmd.Parameters.AddWithValue("@id", supplierId);
+                insertCmd.Parameters.AddWithValue("@name", supplierName.Trim());
+                insertCmd.Parameters.AddWithValue("@contact", contactInfo?.Trim() ?? "");
+                insertCmd.Parameters.AddWithValue("@address", address?.Trim() ?? "");
+
+                int rowsAffected = insertCmd.ExecuteNonQuery();
+
+                if (rowsAffected > 0)
+                {
+                    MessageBox.Show($"Supplier '{supplierName}' added successfully with ID: {supplierId}",
+                                  "Supplier Added", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    // Mark sync required
+                    Database.MarkSyncRequired();
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adding supplier: {ex.Message}", "Error",
+                               MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+        }
+
+        private static bool AddSellerWithId(int sellerId)
+        {
+            try
+            {
+                // Auto-create seller with generic information
+                using var conn = new SqliteConnection("Data Source=ADIX.db");
+                conn.Open();
+
+                var insertCmd = new SqliteCommand(
+                    @"INSERT INTO SELLER (sellerID, name, contactInfo, bankDetails, commissionRate, lastModified) 
+              VALUES (@id, @name, @contact, @bank, @commission, CURRENT_TIMESTAMP)", conn);
+
+                insertCmd.Parameters.AddWithValue("@id", sellerId);
+                insertCmd.Parameters.AddWithValue("@name", $"Seller {sellerId}");
+                insertCmd.Parameters.AddWithValue("@contact", "To be updated");
+                insertCmd.Parameters.AddWithValue("@bank", "To be updated");
+                insertCmd.Parameters.AddWithValue("@commission", 0.05); // Default commission
+
+                int rowsAffected = insertCmd.ExecuteNonQuery();
+
+                if (rowsAffected > 0)
+                {
+                    Console.WriteLine($"Auto-created seller with ID: {sellerId}");
+
+                    // Mark sync required
+                    Database.MarkSyncRequired();
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error auto-creating seller: {ex.Message}", "Error",
+                               MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
         }
         //references to adding data to sqlite
         //https://www.sqlitetutorial.net/sqlite-csharp/insert/
