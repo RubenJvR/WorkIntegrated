@@ -78,6 +78,10 @@
               "target": "Package",
               "version": "[9.0.8, )"
             },
+            "QuestPDF": {
+              "target": "Package",
+              "version": "[2025.7.3, )"
+            },
             "SQLitePCLRaw.bundle_e_sqlite3": {
               "target": "Package",
               "version": "[2.1.10, )"
