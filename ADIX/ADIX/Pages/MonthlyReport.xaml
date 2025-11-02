@@ -453,17 +453,6 @@
 
             <!-- Action Buttons -->
             <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
-                <Button x:Name="GenerateReport" 
-                        Content="Generate Report" 
-                        Style="{StaticResource SupplierButtonStyle}" 
-                        Width="150"
-                        Click="GenerateReport_Click"/>
-                <Button x:Name="SaveFullReport" 
-                        Content="Save Full Month Report" 
-                        Style="{StaticResource SupplierButtonStyle}" 
-                        Width="180"
-                        Click="SaveFullReport_Click"
-                        Margin="20,0,0,0"/>
                 <Button x:Name="ExportPdf" 
                         Content="Export as PDF" 
                         Style="{StaticResource SupplierButtonStyle}" 

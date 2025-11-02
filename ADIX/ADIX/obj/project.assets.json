@@ -3374,31 +3374,23 @@
     ]
   },
   "packageFolders": {
-    "D:\\VStudio work\\Repos\\ADIX_V5\\ADIX\\NuGetPackages": {},
-    "D:\\Program fike (SDK tools)\\NuGetPackages": {}
+    "C:\\Users\\explo.BEN-PC\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-<<<<<<< HEAD
       "projectUniqueName": "C:\\FinalSubmission\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
       "projectName": "ADIX",
       "projectPath": "C:\\FinalSubmission\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
       "packagesPath": "C:\\Users\\explo.BEN-PC\\.nuget\\packages\\",
       "outputPath": "C:\\FinalSubmission\\WorkIntegrated\\ADIX\\ADIX\\obj\\",
-=======
-      "projectUniqueName": "D:\\VStudio work\\Repos\\ADIX_V5\\ADIX\\ADIX\\ADIX.csproj",
-      "projectName": "ADIX",
-      "projectPath": "D:\\VStudio work\\Repos\\ADIX_V5\\ADIX\\ADIX\\ADIX.csproj",
-      "packagesPath": "D:\\VStudio work\\Repos\\ADIX_V5\\ADIX\\NuGetPackages",
-      "outputPath": "D:\\VStudio work\\Repos\\ADIX_V5\\ADIX\\ADIX\\obj\\",
->>>>>>> main
       "projectStyle": "PackageReference",
       "fallbackFolders": [
-        "D:\\Program fike (SDK tools)\\NuGetPackages"
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\kagis\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\explo.BEN-PC\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -3424,8 +3416,7 @@
         "enableAudit": "true",
         "auditLevel": "low",
         "auditMode": "direct"
-      },
-      "SdkAnalysisLevel": "9.0.300"
+      }
     },
     "frameworks": {
       "net8.0-windows7.0": {
@@ -3507,11 +3498,17 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "c:\\program files\\dotnet\\sdk\\8.0.205/PortableRuntimeIdentifierGraph.json"
       }
     }
   },
   "logs": [
+    {
+      "code": "Undefined",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Problem reading the cache file C:\\FinalSubmission\\WorkIntegrated\\ADIX\\ADIX\\obj\\project.nuget.cache : Invalid property identifier character: <. Path 'version', line 3, position 0."
+    },
     {
       "code": "NU1701",
       "level": "Warning",

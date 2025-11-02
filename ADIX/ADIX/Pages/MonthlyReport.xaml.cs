@@ -318,77 +318,136 @@ namespace ADIX
                 var selectedMonth = MonthSelector.SelectedIndex + 1;
                 var selectedYear = YearSelector.SelectedItem?.ToString();
 
+                // Get month name properly
+                string monthName = "Unknown Month";
+                if (MonthSelector.SelectedItem is ComboBoxItem monthItem)
+                {
+                    monthName = monthItem.Content?.ToString() ?? "Unknown Month";
+                }
+
                 if (string.IsNullOrEmpty(selectedYear) || selectedMonth == 0)
                 {
                     MessageBox.Show("Please select a valid month and year.", "Invalid Date", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                // Generate supplier-specific report
-                using var connection = new SqliteConnection(SqliteConnectionString);
-                connection.Open();
-
-                string query = @"
-                    SELECT 
-                        i.description as ItemDescription,
-                        i.stockQuantity as CurrentStock,
-                        i.stockSold as SoldThisMonth,
-                        i.retailPrice as RetailPrice,
-                        i.costPrice as CostPrice,
-                        (SELECT COALESCE(SUM(ii.quantity), 0) 
-                         FROM INVOICEITEM ii 
-                         INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
-                         WHERE ii.itemID = i.itemID 
-                         AND strftime('%m', iq.date) = @month 
-                         AND strftime('%Y', iq.date) = @year) as MonthlySales
-                    FROM ITEM i
-                    WHERE i.supplierID = @supplierId
-                    ORDER BY i.description";
-
-                using var cmd = new SqliteCommand(query, connection);
-                cmd.Parameters.AddWithValue("@supplierId", selectedSupplier.Id);
-                cmd.Parameters.AddWithValue("@month", selectedMonth.ToString("00"));
-                cmd.Parameters.AddWithValue("@year", selectedYear);
-
-                var reportData = new List<string>();
-                decimal totalStockValue = 0;
-                decimal totalSalesValue = 0;
-                int totalItems = 0;
-
-                using var reader = cmd.ExecuteReader();
-                while (reader.Read())
+                // Create save file dialog
+                var saveFileDialog = new Microsoft.Win32.SaveFileDialog
                 {
-                    var description = reader["ItemDescription"].ToString();
-                    var currentStock = Convert.ToInt32(reader["CurrentStock"]);
-                    var monthlySales = Convert.ToInt32(reader["MonthlySales"]);
-                    var retailPrice = Convert.ToDecimal(reader["RetailPrice"]);
-                    var costPrice = Convert.ToDecimal(reader["CostPrice"]);
+                    FileName = $"Supplier_Report_{selectedSupplier.Name.Replace(" ", "_")}_{selectedYear}_{selectedMonth:00}.pdf",
+                    Filter = "PDF files (*.pdf)|*.pdf",
+                    DefaultExt = ".pdf"
+                };
 
-                    var stockValue = currentStock * costPrice;
-                    var salesValue = monthlySales * retailPrice;
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    // Generate supplier-specific report data
+                    using var connection = new SqliteConnection(SqliteConnectionString);
+                    connection.Open();
 
-                    totalStockValue += stockValue;
-                    totalSalesValue += salesValue;
-                    totalItems++;
+                    string query = @"
+                SELECT 
+                    i.description as ItemDescription,
+                    i.stockQuantity as CurrentStock,
+                    i.stockSold as SoldThisMonth,
+                    i.retailPrice as RetailPrice,
+                    i.costPrice as CostPrice,
+                    (SELECT COALESCE(SUM(ii.quantity), 0) 
+                     FROM INVOICEITEM ii 
+                     INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
+                     WHERE ii.itemID = i.itemID 
+                     AND strftime('%m', iq.date) = @month 
+                     AND strftime('%Y', iq.date) = @year
+                     AND iq.type = 1
+                     AND ii.quantity > 0) as MonthlySales
+                FROM ITEM i
+                WHERE i.supplierID = @supplierId
+                ORDER BY i.description";
 
-                    reportData.Add($"{description}: Stock: {currentStock}, Monthly Sales: {monthlySales}, Stock Value: R {stockValue:F2}");
+                    using var cmd = new SqliteCommand(query, connection);
+                    cmd.Parameters.AddWithValue("@supplierId", selectedSupplier.Id);
+                    cmd.Parameters.AddWithValue("@month", selectedMonth.ToString("00"));
+                    cmd.Parameters.AddWithValue("@year", selectedYear);
+
+                    var supplierReport = new Services.SupplierReportData
+                    {
+                        SupplierName = selectedSupplier.Name,
+                        MonthName = monthName,
+                        Year = selectedYear,
+                        TotalItems = 0,
+                        TotalStockValue = 0,
+                        TotalSalesValue = 0,
+                        TotalStockQuantity = 0,
+                        TotalMonthlySales = 0,
+                        Items = new List<Services.SupplierItemData>()
+                    };
+
+                    using var reader = cmd.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        var description = reader["ItemDescription"].ToString();
+                        var currentStock = Convert.ToInt32(reader["CurrentStock"]);
+                        var monthlySales = Convert.ToInt32(reader["MonthlySales"]);
+                        var retailPrice = Convert.ToDecimal(reader["RetailPrice"]);
+                        var costPrice = Convert.ToDecimal(reader["CostPrice"]);
+
+                        var stockValue = currentStock * costPrice;
+                        var salesValue = monthlySales * retailPrice;
+
+                        supplierReport.Items.Add(new Services.SupplierItemData
+                        {
+                            Description = description,
+                            CurrentStock = currentStock,
+                            MonthlySales = monthlySales,
+                            RetailPrice = retailPrice,
+                            CostPrice = costPrice,
+                            StockValue = stockValue,
+                            SalesValue = salesValue
+                        });
+
+                        supplierReport.TotalStockValue += stockValue;
+                        supplierReport.TotalSalesValue += salesValue;
+                        supplierReport.TotalStockQuantity += currentStock;
+                        supplierReport.TotalMonthlySales += monthlySales;
+                        supplierReport.TotalItems++;
+                    }
+
+                    // Generate PDF
+                    Services.SupplierReportPdfService.GeneratePdf(supplierReport, saveFileDialog.FileName);
+
+                    string message = $"PDF export completed successfully!\n\n" +
+                                   $"Exported: Supplier Report for {selectedSupplier.Name}\n" +
+                                   $"Period: {monthName} {selectedYear}\n" +
+                                   $"File: {System.IO.Path.GetFileName(saveFileDialog.FileName)}\n\n" +
+                                   $"The PDF includes:\n" +
+                                   $"• {supplierReport.TotalItems} items\n" +
+                                   $"• Total Stock Value: R {supplierReport.TotalStockValue:F2}\n" +
+                                   $"• Monthly Sales Value: R {supplierReport.TotalSalesValue:F2}\n" +
+                                   $"• Total Stock: {supplierReport.TotalStockQuantity} units\n" +
+                                   $"• Total Sold: {supplierReport.TotalMonthlySales} units";
+
+                    MessageBox.Show(message, "PDF Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    
+                    try
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = saveFileDialog.FileName,
+                            UseShellExecute = true
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        
+                        System.Diagnostics.Debug.WriteLine($"Could not open PDF: {ex.Message}");
+                    }
                 }
-
-                string message = $"Supplier report for {selectedSupplier.Name} saved successfully!\n\n" +
-                               $"Report Period: {MonthSelector.SelectedItem} {selectedYear}\n" +
-                               $"Summary:\n" +
-                               $"• Total Items: {totalItems}\n" +
-                               $"• Total Stock Value: R {totalStockValue:F2}\n" +
-                               $"• Monthly Sales Value: R {totalSalesValue:F2}\n\n" +
-                               $"Items ({reportData.Count}):\n" +
-                               string.Join("\n", reportData.Take(10)) +
-                               (reportData.Count > 10 ? "\n..." : "");
-
-                MessageBox.Show(message, "Supplier Report Saved", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error saving supplier report: {ex.Message}");
+                MessageBox.Show($"Error generating supplier report PDF: {ex.Message}\n\nPlease ensure QuestPDF is installed.",
+                               "PDF Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
