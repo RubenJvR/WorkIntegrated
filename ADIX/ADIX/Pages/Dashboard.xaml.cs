@@ -4,26 +4,17 @@ using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace ADIX
 {
     public partial class Dashboard : Page, INotifyPropertyChanged
     {
-        private const string ConnectionString = "Data Source=ADIX.db";
-
-        // Only include the pie chart series
+        // Chart series
         public SeriesCollection ExpenseSeries { get; set; }
 
         // Dashboard metrics
@@ -33,6 +24,8 @@ namespace ADIX
         public string InventoryAlert { get; set; }
         public string TotalExpenses { get; set; }
         public string BiggestExpenseCategory { get; set; }
+        public string SalesTrend { get; set; }
+        public string TotalProfit { get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -68,53 +61,126 @@ namespace ADIX
         {
             try
             {
-                using var connection = new SqliteConnection(ConnectionString);
+                using var connection = new SqliteConnection(Database.SqliteConnectionString);
                 connection.Open();
 
-                // Load Total Stock
-                var stockCmd = new SqliteCommand("SELECT SUM(stockQuantity) FROM ITEM", connection);
-                var totalStock = stockCmd.ExecuteScalar();
-                TotalStock = totalStock != DBNull.Value ? $"TOTAL STOCK : {totalStock}" : "TOTAL STOCK : 0";
+                // 1. Load Total Stock Value (cost price * quantity) - ACCURATE DATA
+                var stockCmd = new SqliteCommand(@"
+                    SELECT COALESCE(SUM(stockQuantity * costPrice), 0) 
+                    FROM ITEM 
+                    WHERE stockQuantity > 0", connection);
+                var totalStockValue = Convert.ToDouble(stockCmd.ExecuteScalar());
+                TotalStock = $"R {totalStockValue:N2}";
 
-                // Load Total Sales (last 30 days)
+                // 2. Load Total Sales (last 30 days) - ACCURATE DATA
                 var salesCmd = new SqliteCommand(@"
-            SELECT SUM(totalAmount) 
-            FROM INVOICEQUOTE 
-            WHERE type = 1 
-            AND date >= datetime('now', '-30 days')", connection);
-                var totalSales = salesCmd.ExecuteScalar();
-                TotalSales = totalSales != DBNull.Value ? $"TOTAL SALES : R {Convert.ToDouble(totalSales):N0}" : "TOTAL SALES : R 0";
+                    SELECT COALESCE(SUM(totalAmount), 0) 
+                    FROM INVOICEQUOTE 
+                    WHERE type = 1 
+                    AND date >= date('now', '-30 days')", connection);
+                var totalSales = Convert.ToDouble(salesCmd.ExecuteScalar());
+                TotalSales = $"R {totalSales:N2}";
 
-                // Load Recent Sale
+                // 3. Load Most Recent Sale - ACCURATE DATA
                 var recentCmd = new SqliteCommand(@"
-            SELECT totalAmount 
-            FROM INVOICEQUOTE 
-            WHERE type = 1 
-            ORDER BY date DESC LIMIT 1", connection);
-                var recentSale = recentCmd.ExecuteScalar();
-                RecentSale = recentSale != DBNull.Value ? $"RECENT SALE : R {Convert.ToDouble(recentSale):N0}" : "RECENT SALE : 0";
+                    SELECT totalAmount, date 
+                    FROM INVOICEQUOTE 
+                    WHERE type = 1 
+                    ORDER BY date DESC LIMIT 1", connection);
+                using (var reader = recentCmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        var amount = Convert.ToDouble(reader["totalAmount"]);
+                        var date = DateTime.Parse(reader["date"].ToString());
+                        RecentSale = $"R {amount:N2}\n{date:MMM dd}";
+                    }
+                    else
+                    {
+                        RecentSale = "No sales";
+                    }
+                }
 
-                // Load Inventory Alerts (items with low stock) // counts all rows with stockQuantity > 10
+                // 4. Load Inventory Alerts (items below minimum stock) - ACCURATE DATA
                 var alertCmd = new SqliteCommand(@"
-            SELECT COUNT(*) 
-            FROM ITEM 
-            WHERE stockQuantity <= 10", connection);
-                var alertCount = alertCmd.ExecuteScalar();
-                InventoryAlert = Convert.ToInt32(alertCount) > 0 ?
-                    $" STOCK ALERT: Low stock on  {alertCount} items" : "ALL STOCK OK";
+                    SELECT COUNT(*) 
+                    FROM ITEM 
+                    WHERE stockQuantity <= minimumStock 
+                    AND minimumStock > 0", connection);
+                var alertCount = Convert.ToInt32(alertCmd.ExecuteScalar());
 
-                // Load Total Profit from Stock Sold
-                var profitCmd = new SqliteCommand(@"
-SELECT SUM((retailPrice - costPrice) * stockSold) 
-FROM ITEM", connection);
-                var totalProfit = profitCmd.ExecuteScalar();
-                TotalExpenses = totalProfit != DBNull.Value ? $"TOTAL PROFIT : R {Convert.ToDouble(totalProfit):N0}" : "TOTAL PROFIT : R 0";
+                if (alertCount > 0)
+                {
+                    var lowStockCmd = new SqliteCommand(@"
+                        SELECT description, stockQuantity, minimumStock 
+                        FROM ITEM 
+                        WHERE stockQuantity <= minimumStock 
+                        AND minimumStock > 0 
+                        LIMIT 3", connection);
 
-                // Biggest Expense Category
-                BiggestExpenseCategory = $"BIGGEST EXPENSE : {GetBiggestExpenseCategory(connection)}";
+                    var alertDetails = new List<string>();
+                    using (var reader = lowStockCmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            alertDetails.Add($"{reader["description"]}: {reader["stockQuantity"]}/{reader["minimumStock"]}");
+                        }
+                    }
+                    // Format with proper line breaks
+                    InventoryAlert = $"{alertCount} items low\n{string.Join("\n", alertDetails.Take(2))}";
+                }
+                else
+                {
+                    InventoryAlert = "All items OK";
+                }
 
-                // Calculate Sales Trend (compare current month vs previous month)
+                // 5. Load Total Expenses (last 30 days) - ACCURATE DATA
+                var expensesCmd = new SqliteCommand(@"
+                    SELECT COALESCE(SUM(amount), 0) 
+                    FROM EXPENSES 
+                    WHERE date >= date('now', '-30 days')", connection);
+                var totalExpenses = Convert.ToDouble(expensesCmd.ExecuteScalar());
+                TotalExpenses = $"R {totalExpenses:N2}";
+
+                // 6. Load Biggest Expense Category - ACCURATE DATA
+                var biggestExpenseCmd = new SqliteCommand(@"
+                    SELECT expenseType, SUM(amount) as Total
+                    FROM EXPENSES
+                    WHERE date >= date('now', '-30 days')
+                    GROUP BY expenseType
+                    ORDER BY Total DESC
+                    LIMIT 1", connection);
+
+                using (var reader = biggestExpenseCmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        var category = reader["expenseType"].ToString();
+                        var amount = Convert.ToDouble(reader["Total"]);
+                        BiggestExpenseCategory = $"{category}";
+                    }
+                    else
+                    {
+                        BiggestExpenseCategory = "None";
+                    }
+                }
+
+                // 7. Calculate Sales Trend (current month vs previous month) - ACCURATE DATA
                 SalesTrend = CalculateSalesTrend(connection);
+
+                // 8. Load Total Profit (last 30 days) - ACCURATE DATA
+                var profitCmd = new SqliteCommand(@"
+                    SELECT 
+                        COALESCE(SUM(ii.quantity * (ii.priceAtSale - i.costPrice)), 0) as Profit
+                    FROM INVOICEITEM ii
+                    INNER JOIN INVOICEQUOTE iq ON ii.invoiceQuoteID = iq.invoiceQuoteID
+                    INNER JOIN ITEM i ON ii.itemID = i.itemID
+                    WHERE iq.type = 1 
+                    AND iq.date >= date('now', '-30 days')
+                    AND ii.quantity > 0", connection);
+
+                var totalProfit = Convert.ToDouble(profitCmd.ExecuteScalar());
+                TotalProfit = $"R {totalProfit:N2}";
 
                 // Notify property changes
                 OnPropertyChanged(nameof(TotalStock));
@@ -124,6 +190,7 @@ FROM ITEM", connection);
                 OnPropertyChanged(nameof(TotalExpenses));
                 OnPropertyChanged(nameof(BiggestExpenseCategory));
                 OnPropertyChanged(nameof(SalesTrend));
+                OnPropertyChanged(nameof(TotalProfit));
             }
             catch (Exception ex)
             {
@@ -132,39 +199,42 @@ FROM ITEM", connection);
             }
         }
 
-        // Add this property to your class
-        public string SalesTrend { get; set; }
-
         private string CalculateSalesTrend(SqliteConnection connection)
         {
             try
             {
-                // Simple test - just count sales invoices
-                var testCmd = new SqliteCommand(@"
-            SELECT COUNT(*) as SalesCount,
-                   COALESCE(SUM(totalAmount), 0) as TotalSales
-            FROM INVOICEQUOTE 
-            WHERE type = 1", connection);
+                // Get current month sales
+                var currentMonthCmd = new SqliteCommand(@"
+                    SELECT COALESCE(SUM(totalAmount), 0) 
+                    FROM INVOICEQUOTE 
+                    WHERE type = 1 
+                    AND strftime('%Y-%m', date) = strftime('%Y-%m', 'now')", connection);
+                var currentMonthSales = Convert.ToDouble(currentMonthCmd.ExecuteScalar());
 
-                using (var reader = testCmd.ExecuteReader())
+                // Get previous month sales
+                var prevMonthCmd = new SqliteCommand(@"
+                    SELECT COALESCE(SUM(totalAmount), 0) 
+                    FROM INVOICEQUOTE 
+                    WHERE type = 1 
+                    AND strftime('%Y-%m', date) = strftime('%Y-%m', 'now', '-1 month')", connection);
+                var prevMonthSales = Convert.ToDouble(prevMonthCmd.ExecuteScalar());
+
+                if (prevMonthSales > 0)
                 {
-                    if (reader.Read())
-                    {
-                        int salesCount = Convert.ToInt32(reader["SalesCount"]);
-                        double totalSales = Convert.ToDouble(reader["TotalSales"]);
-
-                        if (salesCount > 0)
-                        {
-                            return $"ACTIVE: {salesCount} sales\nTOTAL: R {totalSales:N0}";
-                        }
-                    }
+                    var trendPercent = ((currentMonthSales - prevMonthSales) / prevMonthSales) * 100;
+                    var trendIcon = trendPercent >= 0 ? "↗" : "↘";
+                    return $"{trendPercent:0}% {trendIcon}\nR {currentMonthSales:N0}";
+                }
+                else if (currentMonthSales > 0)
+                {
+                    return $"NEW DATA\nR {currentMonthSales:N0}";
                 }
 
-                return "SALES TREND: NO DATA";
+                return "NO DATA";
             }
             catch (Exception ex)
             {
-                return $"ERROR: {ex.Message}";
+                return $"ERROR";
             }
         }
 
@@ -172,50 +242,108 @@ FROM ITEM", connection);
         {
             try
             {
-                // Create sample expense data for the pie chart
-                var expenses = new Dictionary<string, double>
+                using var connection = new SqliteConnection(Database.SqliteConnectionString);
+                connection.Open();
+
+                // Get actual expense data from database - SAME AS FINANCE PAGE
+                var expensesCmd = new SqliteCommand(@"
+                    SELECT expenseType, SUM(amount) as Total
+                    FROM EXPENSES
+                    WHERE date >= date('now', '-30 days')
+                    GROUP BY expenseType
+                    ORDER BY Total DESC", connection);
+
+                var expenses = new Dictionary<string, double>();
+                using (var reader = expensesCmd.ExecuteReader())
                 {
-                    ["Rent"] = 15000,
-                    ["Salaries"] = 12000,
-                    ["Inventory"] = 8000,
-                    ["Utilities"] = 3000,
-                    ["Marketing"] = 2000
-                };
+                    while (reader.Read())
+                    {
+                        expenses[reader["expenseType"].ToString()] = Convert.ToDouble(reader["Total"]);
+                    }
+                }
+
+                // If no expense data, use database metrics
+                if (expenses.Count == 0)
+                {
+                    // Try to get financial metrics as fallback
+                    try
+                    {
+                        var metrics = Database.GetAccurateFinancialMetrics();
+                        if (metrics.expenses > 0)
+                        {
+                            expenses["Operating Costs"] = metrics.expenses;
+                        }
+                    }
+                    catch
+                    {
+                        // Final fallback only if database is completely unavailable
+                        expenses = new Dictionary<string, double>
+                        {
+                            ["No Data"] = 1
+                        };
+                    }
+                }
 
                 UpdateChartData(expenses);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading chart: {ex.Message}");
-                // Fallback data
-                var sampleExpenses = new Dictionary<string, double>
+                MessageBox.Show($"Error loading chart data: {ex.Message}");
+                // Fallback to database metrics
+                try
                 {
-                    ["Rent"] = 15000,
-                    ["Salaries"] = 12000,
-                    ["Inventory"] = 8000
-                };
-                UpdateChartData(sampleExpenses);
+                    var metrics = Database.GetAccurateFinancialMetrics();
+                    var fallbackExpenses = new Dictionary<string, double>();
+
+                    if (metrics.expenses > 0)
+                        fallbackExpenses["Operating Costs"] = metrics.expenses;
+
+                    if (fallbackExpenses.Count > 0)
+                    {
+                        UpdateChartData(fallbackExpenses);
+                    }
+                    else
+                    {
+                        // Final fallback
+                        var minimalFallback = new Dictionary<string, double>
+                        {
+                            ["Database Unavailable"] = 1
+                        };
+                        UpdateChartData(minimalFallback);
+                    }
+                }
+                catch
+                {
+                    // Absolute final fallback
+                    var minimalFallback = new Dictionary<string, double>
+                    {
+                        ["No Data Available"] = 1
+                    };
+                    UpdateChartData(minimalFallback);
+                }
             }
         }
 
         private void UpdateChartData(Dictionary<string, double> expenseCategories)
         {
-            // Pie Chart - Expense Distribution
             ExpenseSeries = new SeriesCollection();
-            var colors = new[] { "RED", "#FF2D2D2D", "#FF4F4F4F", "#FF878787", "#FFA9A9A9" };
+
+            // Use the EXACT SAME colors as Finance page
+            var colors = new[] { "#FF4AA902", "#FF2D2D2D", "#FF4F4F4F", "#FF878787", "#FFA9A9A9", "#FFD3D3D3", "#FFE8E8E8", "#FF4A90E2", "#FF50E3C2", "#FFBD10E0" };
+
             int colorIndex = 0;
 
-            foreach (var category in expenseCategories.Where(c => c.Value > 0))
+            foreach (var category in expenseCategories.Where(c => c.Value > 0).OrderByDescending(c => c.Value))
             {
                 ExpenseSeries.Add(new PieSeries
                 {
                     Title = category.Key,
                     Values = new ChartValues<double> { category.Value },
-                    DataLabels = true,
-                    LabelPoint = point => $"{point.Y:N0}",
+                    DataLabels = false,
                     Fill = (Brush)new BrushConverter().ConvertFromString(colors[colorIndex % colors.Length]),
                     Stroke = Brushes.White,
-                    StrokeThickness = 1
+                    StrokeThickness = 2,
+                    FontSize = 10
                 });
                 colorIndex++;
             }
@@ -223,28 +351,16 @@ FROM ITEM", connection);
             OnPropertyChanged(nameof(ExpenseSeries));
         }
 
-        private string GetBiggestExpenseCategory(SqliteConnection connection)
-        {
-            try
-            {
-                // Simple logic to determine biggest expense
-                return "Rent"; // You can enhance this with actual data logic
-            }
-            catch
-            {
-                return "Rent";
-            }
-        }
-
         private void SetDefaultData()
         {
-            TotalStock = "TOTAL STOCK : 0";
-            TotalSales = "TOTAL SALES : R 0";
-            RecentSale = "RECENT SALE : R 0";
-            InventoryAlert = "ALL STOCK OK";
-            TotalExpenses = "TOTAL EXPENSES : R 0";
-            BiggestExpenseCategory = "BIGGEST EXPENSE : Rent";
-            SalesTrend = "SALES TREND: ↗ 12% UP";
+            TotalStock = "R 0";
+            TotalSales = "R 0";
+            RecentSale = "No sales";
+            InventoryAlert = "All items OK";
+            TotalExpenses = "R 0";
+            BiggestExpenseCategory = "None";
+            SalesTrend = "NO DATA";
+            TotalProfit = "R 0";
         }
 
         protected void OnPropertyChanged(string name)
