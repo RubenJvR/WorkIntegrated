@@ -1,8 +1,18 @@
 {
   "version": 2,
+<<<<<<< HEAD
+<<<<<<< HEAD
+  "dgSpecHash": "Y2oUzW6D+hclEFuFz/Mc92hu5STaqlP3KdLOn0xlTgjEFDuafA3V2YwcFeA+plW34gQIxg7KDlcy+Iz5dWvMEA==",
+  "success": true,
+  "projectFilePath": "C:\\FinalSubmission\\WorkIntegrated\\ADIX\\ADIX\\ADIX.csproj",
+=======
+  "dgSpecHash": "3/tUSMVufcI=",
+=======
   "dgSpecHash": "VbDGQ3jSHhQ=",
+>>>>>>> main
   "success": true,
   "projectFilePath": "D:\\VStudio work\\Repos\\ADIX_V5\\ADIX\\ADIX\\ADIX.csproj",
+>>>>>>> main
   "expectedPackageFiles": [
     "D:\\VStudio work\\Repos\\ADIX_V5\\ADIX\\NuGetPackages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "D:\\VStudio work\\Repos\\ADIX_V5\\ADIX\\NuGetPackages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",

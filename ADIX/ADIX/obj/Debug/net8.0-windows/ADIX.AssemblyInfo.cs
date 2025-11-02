@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ADIX")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2277823dc132743cc495e7253e74bbfce1027b91")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+840e33c4f60b1d9694db64956bad697b8d1b6716")]
 [assembly: System.Reflection.AssemblyProductAttribute("ADIX")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ADIX")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

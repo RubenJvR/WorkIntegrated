@@ -20,6 +20,7 @@ namespace ADIX
         public Login()
         {
             InitializeComponent();
+
         }
 
         private void Login_button(object sender, RoutedEventArgs e)

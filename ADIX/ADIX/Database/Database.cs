@@ -543,7 +543,6 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
             string createTablesSql = @"
 
 
-
         CREATE TABLE SELLER(
             sellerID INT NOT NULL PRIMARY KEY,
             name NVARCHAR(255) NOT NULL,
@@ -2215,6 +2214,21 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
             cmd.ExecuteNonQuery();
 
             Console.WriteLine($"Added expense: {expenseType} - R {amount:N2}");
+            if (IsInternetAvailable() && !string.IsNullOrEmpty(AzureSqlConnectionString))
+            {
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await CheckAndSyncAsync();
+                        Console.WriteLine($"[SYNC] Expense '{expenseType}' synced to Azure immediately");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[SYNC] Failed to sync expense immediately: {ex.Message}");
+                    }
+                });
+            }
         }
 
 
@@ -2291,7 +2305,7 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
             using var connection = new SqliteConnection(SqliteConnectionString);
             connection.Open();
 
-            // Ensure expenses table exists with correct schema
+            
             InitializeExpensesTable();
 
             // Add salary payment to expenses
@@ -2309,6 +2323,21 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
 
             MarkSyncRequired();
             Console.WriteLine($"Processed salary payment: Staff {staffID} - R {amount:N2}");
+            if (IsInternetAvailable() && !string.IsNullOrEmpty(AzureSqlConnectionString))
+            {
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await CheckAndSyncAsync();
+                        Console.WriteLine($"[SYNC] Salary payment for staff {staffID} synced to Azure immediately");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[SYNC] Failed to sync salary payment immediately: {ex.Message}");
+                    }
+                });
+            }
         }
 
   
@@ -2707,10 +2736,10 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
                         {
                             // New payment - insert to Azure
                             var insertSql = @"
-                        SET IDENTITY_INSERT SUPPLIER_PAYMENT ON;
-                        INSERT INTO SUPPLIER_PAYMENT (paymentID, supplierID, amount, paymentDate, paymentMethod, referenceNumber, notes, lastModified)
-                        VALUES (@paymentID, @supplierID, @amount, @paymentDate, @paymentMethod, @referenceNumber, @notes, @lastModified);
-                        SET IDENTITY_INSERT SUPPLIER_PAYMENT OFF;";
+                SET IDENTITY_INSERT SUPPLIER_PAYMENT ON;
+                INSERT INTO SUPPLIER_PAYMENT (paymentID, supplierID, amount, paymentDate, paymentMethod, referenceNumber, notes, lastModified)
+                VALUES (@paymentID, @supplierID, @amount, @paymentDate, @paymentMethod, @referenceNumber, @notes, @lastModified);
+                SET IDENTITY_INSERT SUPPLIER_PAYMENT OFF;";
 
                             using var cmd = new SqlCommand(insertSql, azureConn, transaction);
                             cmd.Parameters.AddWithValue("@paymentID", paymentID);
@@ -2725,7 +2754,7 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
 
                             Console.WriteLine($"[SUPPLIER_PAYMENT] Uploaded new payment {paymentID} to Azure");
 
-                            // Sync allocations for this payment
+                            // Sync allocations for this payment - pass the transaction
                             SyncPaymentAllocationsForPayment(sqliteConn, azureConn, transaction, paymentID);
                         }
                         else
@@ -2737,11 +2766,11 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
                             {
                                 // Local is newer - update Azure
                                 var updateSql = @"
-                            UPDATE SUPPLIER_PAYMENT 
-                            SET supplierID=@supplierID, amount=@amount, paymentDate=@paymentDate, 
-                                paymentMethod=@paymentMethod, referenceNumber=@referenceNumber, 
-                                notes=@notes, lastModified=@lastModified
-                            WHERE paymentID=@paymentID";
+                    UPDATE SUPPLIER_PAYMENT 
+                    SET supplierID=@supplierID, amount=@amount, paymentDate=@paymentDate, 
+                        paymentMethod=@paymentMethod, referenceNumber=@referenceNumber, 
+                        notes=@notes, lastModified=@lastModified
+                    WHERE paymentID=@paymentID";
 
                                 using var cmd = new SqlCommand(updateSql, azureConn, transaction);
                                 cmd.Parameters.AddWithValue("@paymentID", paymentID);
@@ -2782,8 +2811,8 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
                     {
                         // New payment from Azure - insert to local
                         var insertLocalSql = @"
-                    INSERT INTO SUPPLIER_PAYMENT (paymentID, supplierID, amount, paymentDate, paymentMethod, referenceNumber, notes, lastModified)
-                    VALUES (@paymentID, @supplierID, @amount, @paymentDate, @paymentMethod, @referenceNumber, @notes, @lastModified)";
+            INSERT INTO SUPPLIER_PAYMENT (paymentID, supplierID, amount, paymentDate, paymentMethod, referenceNumber, notes, lastModified)
+            VALUES (@paymentID, @supplierID, @amount, @paymentDate, @paymentMethod, @referenceNumber, @notes, @lastModified)";
 
                         using var cmd = new SqliteCommand(insertLocalSql, sqliteConn);
                         cmd.Parameters.AddWithValue("@paymentID", paymentID);
@@ -2810,11 +2839,11 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
                         {
                             // Azure is newer - update local
                             var updateLocalSql = @"
-                        UPDATE SUPPLIER_PAYMENT 
-                        SET supplierID=@supplierID, amount=@amount, paymentDate=@paymentDate, 
-                            paymentMethod=@paymentMethod, referenceNumber=@referenceNumber, 
-                            notes=@notes, lastModified=@lastModified
-                        WHERE paymentID=@paymentID";
+                UPDATE SUPPLIER_PAYMENT 
+                SET supplierID=@supplierID, amount=@amount, paymentDate=@paymentDate, 
+                    paymentMethod=@paymentMethod, referenceNumber=@referenceNumber, 
+                    notes=@notes, lastModified=@lastModified
+                WHERE paymentID=@paymentID";
 
                             using var cmd = new SqliteCommand(updateLocalSql, sqliteConn);
                             cmd.Parameters.AddWithValue("@paymentID", paymentID);
@@ -2850,8 +2879,8 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
                     new[] { "allocationID", "paymentID", "itemID", "quantity", "amount", "lastModified" },
                     $"WHERE paymentID = {paymentID}");
 
-                // Get Azure allocations for this payment
-                var azureAllocations = GetTableDataFromAzure(azureConn, "SUPPLIER_PAYMENT_ALLOCATION",
+                // Get Azure allocations for this payment - must use the transaction
+                var azureAllocations = GetTableDataFromAzureWithTransaction(azureConn, transaction, "SUPPLIER_PAYMENT_ALLOCATION",
                     new[] { "allocationID", "paymentID", "itemID", "quantity", "amount", "lastModified" },
                     $"WHERE paymentID = {paymentID}");
 
@@ -2868,10 +2897,10 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
                     {
                         // New allocation - insert to Azure
                         var insertSql = @"
-                    SET IDENTITY_INSERT SUPPLIER_PAYMENT_ALLOCATION ON;
-                    INSERT INTO SUPPLIER_PAYMENT_ALLOCATION (allocationID, paymentID, itemID, quantity, amount, lastModified)
-                    VALUES (@allocationID, @paymentID, @itemID, @quantity, @amount, @lastModified);
-                    SET IDENTITY_INSERT SUPPLIER_PAYMENT_ALLOCATION OFF;";
+            SET IDENTITY_INSERT SUPPLIER_PAYMENT_ALLOCATION ON;
+            INSERT INTO SUPPLIER_PAYMENT_ALLOCATION (allocationID, paymentID, itemID, quantity, amount, lastModified)
+            VALUES (@allocationID, @paymentID, @itemID, @quantity, @amount, @lastModified);
+            SET IDENTITY_INSERT SUPPLIER_PAYMENT_ALLOCATION OFF;";
 
                         using var cmd = new SqlCommand(insertSql, azureConn, transaction);
                         cmd.Parameters.AddWithValue("@allocationID", allocationID);
@@ -2893,9 +2922,9 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
                         {
                             // Local is newer - update Azure
                             var updateSql = @"
-                        UPDATE SUPPLIER_PAYMENT_ALLOCATION 
-                        SET itemID=@itemID, quantity=@quantity, amount=@amount, lastModified=@lastModified
-                        WHERE allocationID=@allocationID";
+                UPDATE SUPPLIER_PAYMENT_ALLOCATION 
+                SET itemID=@itemID, quantity=@quantity, amount=@amount, lastModified=@lastModified
+                WHERE allocationID=@allocationID";
 
                             using var cmd = new SqlCommand(updateSql, azureConn, transaction);
                             cmd.Parameters.AddWithValue("@allocationID", allocationID);
@@ -2916,7 +2945,22 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
                 throw;
             }
         }
+        private static DataTable GetTableDataFromAzureWithTransaction(SqlConnection connection, SqlTransaction transaction, string tableName, string[] columns, string whereClause = "")
+        {
+            var dataTable = new DataTable();
+            var columnList = string.Join(", ", columns);
+            var sql = $"SELECT {columnList} FROM {tableName}";
 
+            if (!string.IsNullOrEmpty(whereClause))
+            {
+                sql += " " + whereClause;
+            }
+
+            using var cmd = new SqlCommand(sql, connection, transaction);
+            using var reader = cmd.ExecuteReader();
+            dataTable.Load(reader);
+            return dataTable;
+        }
         private static void DownloadPaymentAllocationsForPayment(SqliteConnection sqliteConn, SqlConnection azureConn, int paymentID)
         {
             try

@@ -321,8 +321,11 @@ namespace ADIX
                 stockSold,
                 stockRecieved,
                 minimumStock
-            FROM ITEM;
+            FROM ITEM
+            WHERE description != 'DELETED_ITEM' 
+            AND itemGroup IS NOT NULL; 
         ";
+
 
                 using var cmd = new SqliteCommand(query, conn);
                 using var reader = await cmd.ExecuteReaderAsync();
@@ -561,7 +564,7 @@ namespace ADIX
             }
         }
 
-        // 🔍 Live search typing handler
+        // Live search typing handler
         private async void ProductSearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             string query = ProductSearchTextBox.Text.Trim();
@@ -884,27 +887,29 @@ namespace ADIX
                 return;
             }
 
-            // Debug: Check if ItemID is properly set
-            if (selectedItem.ItemID <= 0)
-            {
-                MessageBox.Show($"Invalid ItemID: {selectedItem.ItemID}. Cannot delete.", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
+            // Enhanced confirmation dialog
             var result = MessageBox.Show(
                 $"Are you sure you want to delete '{selectedItem.ItemName}'?\n\n" +
                 $"Item ID: {selectedItem.ItemID}\n" +
                 $"SKU: {selectedItem.SKU}\n" +
-                $"Current Stock: {selectedItem.BalanceStock}\n\n" +
-                "This action cannot be undone.",
+                $"Current Stock: {selectedItem.BalanceStock}\n" +
+                $"Item Group: {selectedItem.ItemGroup}\n\n" +
+                "This action cannot be undone and will affect inventory reports.",
                 "Confirm Delete",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
 
             if (result == MessageBoxResult.Yes)
             {
-                DeleteItemFromDatabase(selectedItem.ItemID, selectedItem.ItemName);
+                try
+                {
+                    DeleteItemFromDatabase(selectedItem.ItemID, selectedItem.ItemName);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error deleting item: {ex.Message}", "Delete Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
         private async void Inventory_Loaded(object sender, RoutedEventArgs e)
@@ -939,63 +944,46 @@ namespace ADIX
 
                 if (itemExists == 0)
                 {
-                    MessageBox.Show("Item not found or already deleted.", "Delete Failed",
+                    MessageBox.Show("Item not found.", "Delete Failed",
                         MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
-                }
-
-                // Check if item has any invoice records
-                string checkInvoicesSql = "SELECT COUNT(*) FROM INVOICEITEM WHERE itemID = @itemID";
-                using var checkCmd = new SqliteCommand(checkInvoicesSql, conn);
-                checkCmd.Parameters.AddWithValue("@itemID", itemId);
-                int invoiceCount = Convert.ToInt32(checkCmd.ExecuteScalar());
-
-                if (invoiceCount > 0)
-                {
-                    var confirmResult = MessageBox.Show(
-                        $"This item has {invoiceCount} invoice record(s).\n\n" +
-                        "Deleting it may affect historical sales data.\n\n" +
-                        "Do you still want to delete?",
-                        "Warning: Item Has Invoices",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Warning);
-
-                    if (confirmResult == MessageBoxResult.No)
-                        return;
                 }
 
                 using var transaction = conn.BeginTransaction();
 
                 try
                 {
-                    // Delete from INVOICEITEM first 
-                    if (invoiceCount > 0)
-                    {
-                        string deleteInvoiceItemsSql = "DELETE FROM INVOICEITEM WHERE itemID = @itemID";
-                        using var deleteInvoiceItemsCmd = new SqliteCommand(deleteInvoiceItemsSql, conn, transaction);
-                        deleteInvoiceItemsCmd.Parameters.AddWithValue("@itemID", itemId);
-                        deleteInvoiceItemsCmd.ExecuteNonQuery();
-                    }
+                    // Set all values to null instead of deleting
+                    string nullifyItemSql = @"
+                UPDATE ITEM 
+                SET 
+                    sku = NULL,
+                    itemGroup = NULL,
+                    description = 'DELETED_ITEM',
+                    retailPrice = 0,
+                    costPrice = 0,
+                    stockQuantity = 0,
+                    stockRecieved = 0,
+                    stockSold = 0,
+                    minimumStock = 0,
+                    supplierID = NULL,
+                    sellerID = NULL,
+                    lastModified = CURRENT_TIMESTAMP
+                WHERE itemID = @itemID";
 
-                    // Delete the item
-                    string deleteItemSql = "DELETE FROM ITEM WHERE itemID = @itemID";
-                    using var deleteCmd = new SqliteCommand(deleteItemSql, conn, transaction);
-                    deleteCmd.Parameters.AddWithValue("@itemID", itemId);
-                    int rowsAffected = deleteCmd.ExecuteNonQuery();
-
-                    // LOG THE DELETION FOR SYNC
-                    string logDeletionSql = "INSERT INTO DELETION_LOG (tableName, recordID) VALUES ('ITEM', @itemID)";
-                    using var logCmd = new SqliteCommand(logDeletionSql, conn, transaction);
-                    logCmd.Parameters.AddWithValue("@itemID", itemId);
-                    logCmd.ExecuteNonQuery();
+                    using var updateCmd = new SqliteCommand(nullifyItemSql, conn, transaction);
+                    updateCmd.Parameters.AddWithValue("@itemID", itemId);
+                    int rowsAffected = updateCmd.ExecuteNonQuery();
 
                     transaction.Commit();
 
                     if (rowsAffected > 0)
                     {
+                        // Success message
                         MessageBox.Show(
-                            $"Item '{itemName}' deleted successfully! Sync will propagate to other devices.",
-                            "Delete Success",
+                            $"Item '{itemName}' removed successfully!\n\n" +
+                            "Changes will sync to other devices when online.",
+                            "Remove Success",
                             MessageBoxButton.OK,
                             MessageBoxImage.Information);
 
@@ -1013,17 +1001,18 @@ namespace ADIX
                                 try
                                 {
                                     await Database.CheckAndSyncAsync();
+                                    Console.WriteLine($"[SYNC] Nullified item {itemId} synced to Azure");
                                 }
                                 catch (Exception syncEx)
                                 {
-                                    Console.WriteLine($"Sync after delete failed: {syncEx.Message}");
+                                    Console.WriteLine($"Sync after nullify failed: {syncEx.Message}");
                                 }
                             });
                         }
                     }
                     else
                     {
-                        MessageBox.Show("Failed to delete item.", "Delete Failed",
+                        MessageBox.Show("Failed to remove item - no rows affected.", "Remove Failed",
                             MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
@@ -1040,7 +1029,7 @@ namespace ADIX
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error deleting item: {ex.Message}", "Delete Error",
+                MessageBox.Show($"Error removing item: {ex.Message}", "Remove Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
