@@ -2214,6 +2214,21 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
             cmd.ExecuteNonQuery();
 
             Console.WriteLine($"Added expense: {expenseType} - R {amount:N2}");
+            if (IsInternetAvailable() && !string.IsNullOrEmpty(AzureSqlConnectionString))
+            {
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await CheckAndSyncAsync();
+                        Console.WriteLine($"[SYNC] Expense '{expenseType}' synced to Azure immediately");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[SYNC] Failed to sync expense immediately: {ex.Message}");
+                    }
+                });
+            }
         }
 
 
@@ -2290,7 +2305,7 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
             using var connection = new SqliteConnection(SqliteConnectionString);
             connection.Open();
 
-            // Ensure expenses table exists with correct schema
+            
             InitializeExpensesTable();
 
             // Add salary payment to expenses
@@ -2308,6 +2323,21 @@ INSERT OR IGNORE INTO STAFF (staffID, name, Role, userName, passwordHash, salary
 
             MarkSyncRequired();
             Console.WriteLine($"Processed salary payment: Staff {staffID} - R {amount:N2}");
+            if (IsInternetAvailable() && !string.IsNullOrEmpty(AzureSqlConnectionString))
+            {
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await CheckAndSyncAsync();
+                        Console.WriteLine($"[SYNC] Salary payment for staff {staffID} synced to Azure immediately");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[SYNC] Failed to sync salary payment immediately: {ex.Message}");
+                    }
+                });
+            }
         }
 
   

@@ -189,6 +189,9 @@ namespace ADIX
         /// <summary>
         /// Process a payment to a supplier
         /// </summary>
+        /// <summary>
+        /// Process a payment to a supplier
+        /// </summary>
         public static bool ProcessPayment(int supplierID, decimal amount, string paymentDate,
                                         string paymentMethod, string referenceNumber = "", string notes = "")
         {
@@ -198,10 +201,10 @@ namespace ADIX
                 connection.Open();
 
                 string insertSql = @"
-                    INSERT INTO SUPPLIER_PAYMENT 
-                    (supplierID, amount, paymentDate, paymentMethod, referenceNumber, notes)
-                    VALUES 
-                    (@supplierID, @amount, @paymentDate, @paymentMethod, @referenceNumber, @notes)";
+            INSERT INTO SUPPLIER_PAYMENT 
+            (supplierID, amount, paymentDate, paymentMethod, referenceNumber, notes)
+            VALUES 
+            (@supplierID, @amount, @paymentDate, @paymentMethod, @referenceNumber, @notes)";
 
                 using var cmd = new SqliteCommand(insertSql, connection);
                 cmd.Parameters.AddWithValue("@supplierID", supplierID);
@@ -217,6 +220,24 @@ namespace ADIX
                 {
                     // Mark sync required
                     Database.MarkSyncRequired();
+
+                    // Trigger immediate sync if internet is available
+                    if (Database.IsInternetAvailable())
+                    {
+                        Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await Database.CheckAndSyncAsync();
+                                Console.WriteLine($"[SUPPLIER PAYMENT] Payment synced to Azure for supplier {supplierID}");
+                            }
+                            catch (Exception syncEx)
+                            {
+                                Console.WriteLine($"[SUPPLIER PAYMENT] Sync failed: {syncEx.Message}");
+                                // Payment is still saved locally and will sync later
+                            }
+                        });
+                    }
                     return true;
                 }
 
@@ -229,9 +250,8 @@ namespace ADIX
             }
         }
 
-        /// <summary>
-        /// Get all suppliers with their current balances
-        /// </summary>
+        // Get all suppliers with their current balances
+
         public static DataTable GetAllSuppliersWithBalances()
         {
             using var connection = new SqliteConnection(ConnectionString);
