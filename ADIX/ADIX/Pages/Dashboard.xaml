@@ -69,13 +69,15 @@
             </Setter>
         </Style>
 
-        <!-- Chart Styles -->
-        <Style x:Key="PieChartBorderStyle" TargetType="Border">
+        <!-- Chart Styles - MATCHING FINANCE PAGE EXACTLY -->
+        <Style x:Key="ChartBorderStyle" TargetType="Border">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="#4AA902"/>
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Margin" Value="10"/>
+            <Setter Property="Width" Value="380"/>
+            <Setter Property="Height" Value="350"/>
+            <Setter Property="Margin" Value="10,5"/>
             <Setter Property="Padding" Value="15"/>
         </Style>
 
@@ -243,24 +245,23 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- Pie Chart - IMPROVED LAYOUT -->
-                    <Border Style="{StaticResource PieChartBorderStyle}" Width="380" Height="240" Background="White">
-                        <StackPanel>
-                            <TextBlock Style="{StaticResource ChartTitleStyle}" Text="Expense Distribution (30 Days)" Foreground="Black"/>
+                    <!-- Pie Chart - EXACT SAME SIZE AND STYLE AS FINANCE PAGE -->
+                    <Border Style="{StaticResource ChartBorderStyle}">
+                        <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                            <TextBlock Style="{StaticResource ChartTitleStyle}" Text="Expense Distribution (30 Days)"/>
                             <lvc:PieChart Series="{Binding ExpenseSeries}"
                                      LegendLocation="Bottom"
                                      Hoverable="True"
-                                     InnerRadius="70"
-                                     Height="170" 
-                                     Width="340"
+                                     InnerRadius="80"
+                                     Width="340" 
+                                     Height="260"
                                      Margin="0,5,0,0">
                                 <lvc:PieChart.ChartLegend>
                                     <lvc:DefaultLegend 
                                     Foreground="Black" 
-                                    FontSize="9"
-                                    Margin="0,8,0,0"
-                                    MaxWidth="320"
-                                    FontWeight="Bold"/>
+                                    FontSize="10"
+                                    Margin="0,10,0,0"
+                                    MaxWidth="300"/>
                                 </lvc:PieChart.ChartLegend>
                                 <lvc:PieChart.DataTooltip>
                                     <lvc:DefaultTooltip 
@@ -271,7 +272,7 @@
                                     Background="#2D2D2D"
                                     BorderBrush="#4AA902"
                                     BorderThickness="2"
-                                    FontSize="11"
+                                    FontSize="12"
                                     FontWeight="Bold"
                                     CornerRadius="5"/>
                                 </lvc:PieChart.DataTooltip>

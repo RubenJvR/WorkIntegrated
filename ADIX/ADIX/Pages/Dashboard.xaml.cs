@@ -14,8 +14,6 @@ namespace ADIX
 {
     public partial class Dashboard : Page, INotifyPropertyChanged
     {
-        private const string ConnectionString = "Data Source=ADIX.db";
-
         // Chart series
         public SeriesCollection ExpenseSeries { get; set; }
 
@@ -63,10 +61,10 @@ namespace ADIX
         {
             try
             {
-                using var connection = new SqliteConnection(ConnectionString);
+                using var connection = new SqliteConnection(Database.SqliteConnectionString);
                 connection.Open();
 
-                // 1. Load Total Stock Value (cost price * quantity)
+                // 1. Load Total Stock Value (cost price * quantity) - ACCURATE DATA
                 var stockCmd = new SqliteCommand(@"
                     SELECT COALESCE(SUM(stockQuantity * costPrice), 0) 
                     FROM ITEM 
@@ -74,7 +72,7 @@ namespace ADIX
                 var totalStockValue = Convert.ToDouble(stockCmd.ExecuteScalar());
                 TotalStock = $"R {totalStockValue:N2}";
 
-                // 2. Load Total Sales (last 30 days)
+                // 2. Load Total Sales (last 30 days) - ACCURATE DATA
                 var salesCmd = new SqliteCommand(@"
                     SELECT COALESCE(SUM(totalAmount), 0) 
                     FROM INVOICEQUOTE 
@@ -83,7 +81,7 @@ namespace ADIX
                 var totalSales = Convert.ToDouble(salesCmd.ExecuteScalar());
                 TotalSales = $"R {totalSales:N2}";
 
-                // 3. Load Most Recent Sale
+                // 3. Load Most Recent Sale - ACCURATE DATA
                 var recentCmd = new SqliteCommand(@"
                     SELECT totalAmount, date 
                     FROM INVOICEQUOTE 
@@ -103,7 +101,7 @@ namespace ADIX
                     }
                 }
 
-                // 4. Load Inventory Alerts (items below minimum stock)
+                // 4. Load Inventory Alerts (items below minimum stock) - ACCURATE DATA
                 var alertCmd = new SqliteCommand(@"
                     SELECT COUNT(*) 
                     FROM ITEM 
@@ -136,7 +134,7 @@ namespace ADIX
                     InventoryAlert = "All items OK";
                 }
 
-                // 5. Load Total Expenses (last 30 days)
+                // 5. Load Total Expenses (last 30 days) - ACCURATE DATA
                 var expensesCmd = new SqliteCommand(@"
                     SELECT COALESCE(SUM(amount), 0) 
                     FROM EXPENSES 
@@ -144,7 +142,7 @@ namespace ADIX
                 var totalExpenses = Convert.ToDouble(expensesCmd.ExecuteScalar());
                 TotalExpenses = $"R {totalExpenses:N2}";
 
-                // 6. Load Biggest Expense Category
+                // 6. Load Biggest Expense Category - ACCURATE DATA
                 var biggestExpenseCmd = new SqliteCommand(@"
                     SELECT expenseType, SUM(amount) as Total
                     FROM EXPENSES
@@ -167,10 +165,10 @@ namespace ADIX
                     }
                 }
 
-                // 7. Calculate Sales Trend (current month vs previous month)
+                // 7. Calculate Sales Trend (current month vs previous month) - ACCURATE DATA
                 SalesTrend = CalculateSalesTrend(connection);
 
-                // 8. Load Total Profit (last 30 days)
+                // 8. Load Total Profit (last 30 days) - ACCURATE DATA
                 var profitCmd = new SqliteCommand(@"
                     SELECT 
                         COALESCE(SUM(ii.quantity * (ii.priceAtSale - i.costPrice)), 0) as Profit
@@ -244,10 +242,10 @@ namespace ADIX
         {
             try
             {
-                using var connection = new SqliteConnection(ConnectionString);
+                using var connection = new SqliteConnection(Database.SqliteConnectionString);
                 connection.Open();
 
-                // Get actual expense data from database
+                // Get actual expense data from database - SAME AS FINANCE PAGE
                 var expensesCmd = new SqliteCommand(@"
                     SELECT expenseType, SUM(amount) as Total
                     FROM EXPENSES
@@ -264,17 +262,26 @@ namespace ADIX
                     }
                 }
 
-                // If no expense data, use sample data
+                // If no expense data, use database metrics
                 if (expenses.Count == 0)
                 {
-                    expenses = new Dictionary<string, double>
+                    // Try to get financial metrics as fallback
+                    try
                     {
-                        ["Rent"] = 15000,
-                        ["Salaries"] = 12000,
-                        ["Inventory"] = 8000,
-                        ["Utilities"] = 3000,
-                        ["Other"] = 2000
-                    };
+                        var metrics = Database.GetAccurateFinancialMetrics();
+                        if (metrics.expenses > 0)
+                        {
+                            expenses["Operating Costs"] = metrics.expenses;
+                        }
+                    }
+                    catch
+                    {
+                        // Final fallback only if database is completely unavailable
+                        expenses = new Dictionary<string, double>
+                        {
+                            ["No Data"] = 1
+                        };
+                    }
                 }
 
                 UpdateChartData(expenses);
@@ -282,14 +289,38 @@ namespace ADIX
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading chart data: {ex.Message}");
-                // Fallback data
-                var sampleExpenses = new Dictionary<string, double>
+                // Fallback to database metrics
+                try
                 {
-                    ["Rent"] = 15000,
-                    ["Salaries"] = 12000,
-                    ["Inventory"] = 8000
-                };
-                UpdateChartData(sampleExpenses);
+                    var metrics = Database.GetAccurateFinancialMetrics();
+                    var fallbackExpenses = new Dictionary<string, double>();
+
+                    if (metrics.expenses > 0)
+                        fallbackExpenses["Operating Costs"] = metrics.expenses;
+
+                    if (fallbackExpenses.Count > 0)
+                    {
+                        UpdateChartData(fallbackExpenses);
+                    }
+                    else
+                    {
+                        // Final fallback
+                        var minimalFallback = new Dictionary<string, double>
+                        {
+                            ["Database Unavailable"] = 1
+                        };
+                        UpdateChartData(minimalFallback);
+                    }
+                }
+                catch
+                {
+                    // Absolute final fallback
+                    var minimalFallback = new Dictionary<string, double>
+                    {
+                        ["No Data Available"] = 1
+                    };
+                    UpdateChartData(minimalFallback);
+                }
             }
         }
 
@@ -297,7 +328,7 @@ namespace ADIX
         {
             ExpenseSeries = new SeriesCollection();
 
-            // Use the same colors as Finance page
+            // Use the EXACT SAME colors as Finance page
             var colors = new[] { "#FF4AA902", "#FF2D2D2D", "#FF4F4F4F", "#FF878787", "#FFA9A9A9", "#FFD3D3D3", "#FFE8E8E8", "#FF4A90E2", "#FF50E3C2", "#FFBD10E0" };
 
             int colorIndex = 0;
