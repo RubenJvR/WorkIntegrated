@@ -261,7 +261,7 @@ namespace ADIX
             string checkQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name='SELLER'";
             using var checkCmd = new SqliteCommand(checkQuery, connection);
             var result = checkCmd.ExecuteScalar();
-            
+            C
             if (result == null)
             {
            
