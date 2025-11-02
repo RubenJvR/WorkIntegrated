@@ -171,10 +171,10 @@ namespace ADIX.Repositories
                 // Create or get customer
                 int customerId = GetOrCreateCustomer(conn, customerName, address);
 
-                // FIXED: Use Database.GetNextInvoiceNumber() for timestamp-based unique IDs
+                // Use Database.GetNextInvoiceNumber() for timestamp-based unique IDs
                 long invoiceId = Database.GetNextInvoiceNumber();
 
-                // Create invoice with synced = 0 (not synced yet) and explicit ID
+                // Create invoice with synced = 0 and explicit ID
                 string query = @"
                     INSERT INTO INVOICEQUOTE (invoiceQuoteID, date, type, totalAmount, customerID, staffID, paymentMethod, paymentStatus, synced, lastModified)
                     VALUES (@invoiceID, @date, @type, @totalAmount, @customerID, @staffID, @paymentMethod, @paymentStatus, 0, CURRENT_TIMESTAMP)";
@@ -315,9 +315,9 @@ namespace ADIX.Repositories
             return Database.GetNextInvoiceNumber();
         }
 
-        /// <summary>
-        /// Create a refund invoice
-        /// </summary>
+       
+        //Create a refund invoice
+       
         public long CreateRefund(string customerName, int staffId, decimal vatAmount, string address, decimal totalAmount)
         {
             try
@@ -356,9 +356,9 @@ namespace ADIX.Repositories
             }
         }
 
-        /// <summary>
-        /// Add refund items to invoice (with negative quantities)
-        /// </summary>
+        
+        // Add refund items to invoice (with negative quantities)
+   
         public void AddRefundItems(long refundId, List<POSItem> items)
         {
             SqliteConnection conn = null;
@@ -506,9 +506,9 @@ namespace ADIX.Repositories
             }
         }
 
-        /// <summary>
-        /// Get sync status for display
-        /// </summary>
+
+        //Get sync status for display
+  
         public SyncStatus GetSyncStatus()
         {
             try
@@ -542,9 +542,9 @@ namespace ADIX.Repositories
             }
         }
 
-        /// <summary>
-        /// Force a manual sync
-        /// </summary>
+
+        // Force a manual sync
+
         public async System.Threading.Tasks.Task<bool> ForceSyncAsync()
         {
             if (!Database.IsInternetAvailable())

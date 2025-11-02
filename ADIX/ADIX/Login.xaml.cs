@@ -27,7 +27,7 @@ namespace ADIX
             string username = UsernameText.Text;
             string password = passwordBox.Password;
 
-            // Add your authentication logic here
+            
             if (Database.ValidateUser(username, password))
             {
 
@@ -42,6 +42,7 @@ namespace ADIX
             else
             {
                 MessageBox.Show("Invalid username or password.");
+
             }
         }
 

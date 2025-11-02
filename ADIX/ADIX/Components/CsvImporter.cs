@@ -1,12 +1,7 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace ADIX.Components
@@ -68,11 +63,11 @@ namespace ADIX.Components
                             System.Threading.Tasks.Task.Run(async () => { await Database.CheckAndSyncAsync(); });
                         }
 
-                        return true; // Import successful
+                        return true; 
                     }
                 }
 
-                return false; // User cancelled
+                return false; 
             }
             catch (Exception ex)
             {
@@ -81,6 +76,8 @@ namespace ADIX.Components
                 return false;
             }
         }
+        //reference for importing from csv
+        //https://stackoverflow.com/questions/5282999/reading-csv-file-and-storing-values-into-an-array 
 
         private static List<Product> ParseCsv(string filePath)
         {
@@ -127,7 +124,10 @@ namespace ADIX.Components
             }
             return parsedList;
         }
-
+        //Referencing for parsing
+        //https://medium.com/@icodewithben/lesson-on-parsing-data-types-in-c-0b9581607ebe
+        //Referencing for string manipulation
+        //https://learn.microsoft.com/en-us/dotnet/api/system.string.trim?view=net-9.0
         private static decimal ParseDecimal(string value)
         {
             value = value.Trim().Trim('"');
@@ -205,8 +205,7 @@ namespace ADIX.Components
 
                     if (itemExists)
                     {
-                        // FIXED: Update stockRecieved to track actual received stock
-                        // The quantity field in CSV represents NEW stock being added
+                        
                         var updateCmd = new SqliteCommand(
                             @"UPDATE ITEM 
                               SET stockQuantity = stockQuantity + @newQuantity,
@@ -225,7 +224,7 @@ namespace ADIX.Components
                         updateCmd.Parameters.AddWithValue("@retailPrice", (double)product.RetailPrice);
                         updateCmd.Parameters.AddWithValue("@costPrice", (double)product.CostPrice);
                         updateCmd.Parameters.AddWithValue("@itemGroup",
-                            string.IsNullOrWhiteSpace(product.ItemGroup) ? (object)DBNull.Value : product.ItemGroup);
+                        string.IsNullOrWhiteSpace(product.ItemGroup) ? (object)DBNull.Value : product.ItemGroup);
                         updateCmd.Parameters.AddWithValue("@itemID", existingId);
 
                         updateCmd.ExecuteNonQuery();
@@ -293,5 +292,7 @@ namespace ADIX.Components
 
             return importedCount + updatedCount;
         }
+        //references to adding data to sqlite
+        //https://www.sqlitetutorial.net/sqlite-csharp/insert/
     }
 }

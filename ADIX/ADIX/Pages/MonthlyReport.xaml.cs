@@ -51,8 +51,7 @@ namespace ADIX
                     YearSelector.Items.Add(year.ToString());
                 }
 
-                // Don't set default selection initially - let placeholder show
-                // The user will make their first selection
+              
             }
             catch (Exception ex)
             {
@@ -91,7 +90,7 @@ namespace ADIX
                 foreach (DataRow row in transactionsData.Rows)
                 {
                     var transactionType = Convert.ToInt32(row["TransactionType"]);
-                    var isReturn = transactionType == 2; // Assuming type 2 is returns/refunds
+                    var isReturn = transactionType == 2; 
 
                     var transaction = new Transaction
                     {
@@ -373,7 +372,7 @@ namespace ADIX
         {
             try
             {
-                LoadActualData(); // Reload data with current month/year filter
+                LoadActualData(); 
 
                 string message = $"Report generated for {MonthSelector.SelectedItem} {YearSelector.SelectedItem}!\n\n" +
                               $"Financial Summary:\n" +
@@ -492,8 +491,7 @@ namespace ADIX
         {
             try
             {
-                // In a real implementation, you would generate an actual PDF here
-                // For now, we'll show a confirmation message with actual data
+                
 
                 var selectedMonth = MonthSelector.SelectedIndex + 1;
                 var selectedYear = YearSelector.SelectedItem?.ToString();
@@ -577,9 +575,9 @@ namespace ADIX
         {
             if (value is decimal profitMargin)
             {
-                return profitMargin >= 0 ? "#4AA902" : "#FF0000"; // Green for positive, Red for negative
+                return profitMargin >= 0 ? "#4AA902" : "#FF0000"; 
             }
-            return "#4AA902"; // Default color
+            return "#4AA902"; 
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)

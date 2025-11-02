@@ -37,9 +37,7 @@ namespace ADIX
             public string PaymentModel { get; set; } // "Immediate" or "Consignment"
         }
 
-        /// <summary>
-        /// Calculate total amount owed to a supplier based on different payment models
-        /// </summary>
+        // Calculate total amount owed to a supplier based on different payment models
         public static SupplierBalance CalculateSupplierBalance(int supplierID)
         {
             var balance = new SupplierBalance { SupplierID = supplierID };

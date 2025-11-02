@@ -401,20 +401,7 @@
                 </DataGrid>
             </Border>
 
-            <!-- Bottom Buttons -->
-			<StackPanel Grid.Row="14" Orientation="Horizontal"
-                        HorizontalAlignment="Center" Margin="0,10,0,0">
-				<Button Content="Generate Table" Width="150" Height="40"
-                        Background="#4F4F4F" Foreground="White" FontWeight="Bold" Margin="5"
-                        Click="GenerateTable_Click"/>
-				<Button Content="Refund" Width="150" Height="40"
-                        Background="#4F4F4F" Foreground="White" FontWeight="Bold" Margin="5"
-                        Click="Refund_Click"/>
-				<Button Content="Export as Pdf" Width="150" Height="40"
-                        Background="#4F4F4F" Foreground="White" Margin="5"
-                        Click="ExportPdf_Click"/>
-
-			</StackPanel>
+           
 		</Grid>
 	</Grid>
 </Page>

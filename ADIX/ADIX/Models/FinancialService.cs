@@ -7,6 +7,8 @@ using System.Linq;
 
 namespace ADIX.Models
 {
+    //models reference
+    //https://learn.microsoft.com/en-us/aspnet/mvc/overview/older-versions/getting-started-with-aspnet-mvc3/cs/adding-a-model
     public static class FinancialService
     {
         private const string ConnectionString = "Data Source=ADIX.db";

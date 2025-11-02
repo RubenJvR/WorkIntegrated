@@ -15,9 +15,9 @@ using System.Windows.Shapes;
 
 namespace ADIX
 {
-    /// <summary>
-    /// Interaction logic for Consignment.xaml
-    /// </summary>
+
+    // Interaction logic for Consignment.xaml
+
     public partial class Consignment : Page
     {
         public Consignment()

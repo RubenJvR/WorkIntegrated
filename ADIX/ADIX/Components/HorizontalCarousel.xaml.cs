@@ -16,9 +16,9 @@ using System.Windows.Shapes;
 
 namespace ADIX
 {
-    /// <summary>
-    /// Interaction logic for HorizontalCarousel.xaml
-    /// </summary>
+    
+    //Interaction logic for HorizontalCarousel.xaml
+
     public partial class HorizontalCarousel : UserControl
     {
         public ObservableCollection<string> Items { get; }
