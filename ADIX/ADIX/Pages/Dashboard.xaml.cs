@@ -64,7 +64,7 @@ namespace ADIX
                 using var connection = new SqliteConnection(Database.SqliteConnectionString);
                 connection.Open();
 
-                // 1. Load Total Stock Value (cost price * quantity) - ACCURATE DATA
+                // Load Total Stock Value (cost price * quantity) 
                 var stockCmd = new SqliteCommand(@"
                     SELECT COALESCE(SUM(stockQuantity * costPrice), 0) 
                     FROM ITEM 
@@ -72,7 +72,7 @@ namespace ADIX
                 var totalStockValue = Convert.ToDouble(stockCmd.ExecuteScalar());
                 TotalStock = $"R {totalStockValue:N2}";
 
-                // 2. Load Total Sales (last 30 days) - ACCURATE DATA
+                // Load Total Sales (last 30 days) 
                 var salesCmd = new SqliteCommand(@"
                     SELECT COALESCE(SUM(totalAmount), 0) 
                     FROM INVOICEQUOTE 
@@ -81,7 +81,7 @@ namespace ADIX
                 var totalSales = Convert.ToDouble(salesCmd.ExecuteScalar());
                 TotalSales = $"R {totalSales:N2}";
 
-                // 3. Load Most Recent Sale - ACCURATE DATA
+                // Load Most Recent Sale 
                 var recentCmd = new SqliteCommand(@"
                     SELECT totalAmount, date 
                     FROM INVOICEQUOTE 
@@ -101,7 +101,7 @@ namespace ADIX
                     }
                 }
 
-                // 4. Load Inventory Alerts (items below minimum stock) - ACCURATE DATA
+                //  Load Inventory Alerts
                 var alertCmd = new SqliteCommand(@"
                     SELECT COUNT(*) 
                     FROM ITEM 
@@ -134,7 +134,7 @@ namespace ADIX
                     InventoryAlert = "All items OK";
                 }
 
-                // 5. Load Total Expenses (last 30 days) - ACCURATE DATA
+                // Load Total Expenses 
                 var expensesCmd = new SqliteCommand(@"
                     SELECT COALESCE(SUM(amount), 0) 
                     FROM EXPENSES 
@@ -142,7 +142,7 @@ namespace ADIX
                 var totalExpenses = Convert.ToDouble(expensesCmd.ExecuteScalar());
                 TotalExpenses = $"R {totalExpenses:N2}";
 
-                // 6. Load Biggest Expense Category - ACCURATE DATA
+                // Load Biggest Expense Category
                 var biggestExpenseCmd = new SqliteCommand(@"
                     SELECT expenseType, SUM(amount) as Total
                     FROM EXPENSES
@@ -165,10 +165,10 @@ namespace ADIX
                     }
                 }
 
-                // 7. Calculate Sales Trend (current month vs previous month) - ACCURATE DATA
+                // Calculate Sales Trend (current month vs previous month) 
                 SalesTrend = CalculateSalesTrend(connection);
 
-                // 8. Load Total Profit (last 30 days) - ACCURATE DATA
+                // Load Total Profit (last 30 days)
                 var profitCmd = new SqliteCommand(@"
                     SELECT 
                         COALESCE(SUM(ii.quantity * (ii.priceAtSale - i.costPrice)), 0) as Profit
@@ -328,7 +328,7 @@ namespace ADIX
         {
             ExpenseSeries = new SeriesCollection();
 
-            // Use the EXACT SAME colors as Finance page
+            
             var colors = new[] { "#FF4AA902", "#FF2D2D2D", "#FF4F4F4F", "#FF878787", "#FFA9A9A9", "#FFD3D3D3", "#FFE8E8E8", "#FF4A90E2", "#FF50E3C2", "#FFBD10E0" };
 
             int colorIndex = 0;

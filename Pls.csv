@@ -1,0 +1,11 @@
+SKU,ItemGroup,Description,RetailPrice,CostPrice,StockQuantity,StockReceived,SupplierID,SellerID
+1005,BOW,"Compound Bow Pro",6800.00,4500.00,8,8,1,1
+1006,BOW,"Youth Training Bow",2800.00,1800.00,12,12,1,2
+2004,ARR,"Aluminum Arrows (Pack of 6)",450.00,280.00,30,30,2,1
+2005,ARR,"Carbon Express Arrows",1200.00,800.00,15,15,2,2
+3003,TAR,"Bullseye Target Face",180.00,120.00,50,50,3,1
+3004,TAR,"3D Bear Target",2200.00,1500.00,5,5,3,2
+4004,ACC,"Bow Case Deluxe",1500.00,900.00,10,10,1,1
+4005,ACC,"Arrow Quiver",650.00,400.00,25,25,1,2
+4006,ACC,"Bow Stand",320.00,200.00,20,20,3,1
+4007,ACC,"Release Aid",850.00,550.00,18,18,2,2
